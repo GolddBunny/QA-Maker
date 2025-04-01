@@ -1,0 +1,52 @@
+{
+    "nodes": [
+        {
+            "id": "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80",
+            "level": null,
+            "human_readable_id": 0,
+            "source_id": "5fe700e0-6dd9-45b9-b01f-8836c7958b8c",
+            "description": "The Computer Engineering Department is responsible for organizing and overseeing the computer programming and web programming courses",
+            "weight": null,
+            "cluster": 1,
+            "entity_type": null,
+            "degree": 15,
+            "type": "ORGANIZATION"
+        },
+        {
+            "id": "\ud0d0\uad6c\uad00307",
+            "level": null,
+            "human_readable_id": 6,
+            "source_id": "2e3cb981-194f-4775-a590-3041826dd0e3",
+            "description": "Room where the web programming course midterm exam is held\nRoom where the computer programming course midterm and final exams are held",
+            "weight": null,
+            "cluster": 1,
+            "entity_type": null,
+            "degree": 1,
+            "type": "ROOM"
+        },
+        {
+            "id": "\ud0d0\uad6c\uad00103",
+            "level": null,
+            "human_readable_id": 14,
+            "source_id": "3030ad99-67cc-4a5b-8cd9-de10d82413fe",
+            "description": "Room where the web programming course final exam is held",
+            "weight": null,
+            "cluster": 1,
+            "entity_type": null,
+            "degree": 1,
+            "type": "ROOM"
+        }
+    ],
+    "edges": [
+        {
+            "source": "\ucef4\ud4e8\ud130\uacf5\ud559\ubd80",
+            "target": "\ud0d0\uad6c\uad00103",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "Room \ud0d0\uad6c\uad00103 is where the web programming course final exam is held",
+            "weight": 18.0
+        }
+    ]
+}

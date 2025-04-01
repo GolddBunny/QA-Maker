@@ -12,7 +12,7 @@ def ensure_page_directory(page_id):
     """
     base_path = f'../data/input/{page_id}'
     input_path = os.path.join(base_path, 'input')
-    upload_path = f'../frontend/public/page/{page_id}/input'
+    upload_path = f'../frontend/public/data/{page_id}/input'
     
     os.makedirs(base_path, exist_ok=True)
     os.makedirs(input_path, exist_ok=True)
@@ -59,7 +59,7 @@ def init_page(page_id):
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
 
-        #graphrag init --root ./src/page/{page_id} 명령어 실행
+        #graphrag init --root ./src/data/{page_id} 명령어 실행
         init_command = [
             'graphrag', 'init', '--root', base_path
         ]
@@ -101,7 +101,7 @@ def init_page(page_id):
 def delete_page(page_id):
     try:
         base_path = f'../data/input/{page_id}'
-        public_path = f'../frontend/public/page/{page_id}'
+        public_path = f'../frontend/public/data/{page_id}'
         
         # src/page/<page_id> 폴더 삭제
         if os.path.exists(base_path):

@@ -93,7 +93,7 @@ def ensure_page_directory(page_id):
     """
     base_path = f'../data/input/{page_id}'
     input_path = os.path.join(base_path, 'input')
-    upload_path = f'../frontend/public/page/{page_id}/input'
+    upload_path = f'../frontend/public/data/{page_id}/input'
     
     os.makedirs(base_path, exist_ok=True)
     os.makedirs(input_path, exist_ok=True)

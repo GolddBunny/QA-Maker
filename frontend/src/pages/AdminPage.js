@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 
-const BASE_URL = 'http://localhost:5001';
+const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 const PROCESS_URL = `${BASE_URL}/process-documents`;
 const UPDATE_URL = `${BASE_URL}/update`;
@@ -248,11 +248,6 @@ const AdminPage = () => {
         </div>
             
         <div className="button-group">
-          {/* <button 
-            className="update-btn" 
-            onClick={handleUpdate}
-          >update
-          </button> */}
           <button 
               className="apply-btn"
               onClick={isNewPage ? handleApply : handleUpdate}

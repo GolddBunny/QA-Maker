@@ -4,10 +4,12 @@ import "../styles/ChatPage.css";
 import NetworkChart from "../components/charts/NetworkChart";
 import ChatMessage from "../components/chat/ChatMessage";
 import ChatInput from "../components/chat/ChatInput";
+import { usePageContext } from "../utils/PageContext";
 
 /* 채팅 페이지 */
 
 function ChatPage() {
+    const { currentPageId } = usePageContext();
     const [qaList, setQaList] = useState([]);
     const [newQuestion, setNewQuestion] = useState("");
     const [showGraph, setShowGraph] = useState(false);
@@ -24,6 +26,8 @@ function ChatPage() {
 
     // 페이지 로드 시 초기 질문 처리
     useEffect(() => {
+        console.log("현재 페이지 ID:", currentPageId);
+
         const params = new URLSearchParams(location.search);
         const initialQuestion = params.get("question");
     
@@ -58,7 +62,7 @@ function ChatPage() {
                     "Accept": "application/json"
                 },
                 body: JSON.stringify({
-                    //page_id: currentPageId,
+                    page_id: currentPageId,
                     message: questionText,
                     resMethod: "local",
                     resType: "text"
@@ -143,6 +147,7 @@ function ChatPage() {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
+                    page_id: currentPageId,
                     entities: entities,
                     relationships: relationships
                 })
