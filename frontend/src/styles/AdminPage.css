@@ -9,6 +9,10 @@
   align-items: center;
 }
 
+.admin-container.sidebar-open {
+  margin-left: 270px; /* 사이드바 크기만큼 밀기 */
+}
+
 /* 제목 스타일 */
 .admin-title, h3 {
   font-size: 18px;

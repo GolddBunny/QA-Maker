@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import "../../styles/Sidebar.css";
+import { usePageContext } from '../../utils/PageContext';
 
 function Sidebar({ isSidebarOpen, toggleSidebar }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [pages, setPages] = useState([]);
+    const { setCurrentPageId } = usePageContext(); 
 
     useEffect(() => {
         // 로컬 스토리지에서 페이지 목록 불러오기
@@ -14,7 +16,8 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
     }, []);
 
     const handlePageClick = (pageId) => {
-        //이 페이지에 해당하는 parquet 파일로 바꿔야함.
+        setCurrentPageId(pageId);
+        console.log(pageId);
     };
 
     return (

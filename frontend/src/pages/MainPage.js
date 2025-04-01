@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/App.css";
 import Sidebar from "../components/navigation/Sidebar";
+import { usePageContext } from '../utils/PageContext';
 
 function MainPage() {
+  const { setCurrentPageId } = usePageContext(); 
   const [message, setMessage] = useState('');
   const [isRecentQuestionsVisible, setIsRecentQuestionsVisible] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
