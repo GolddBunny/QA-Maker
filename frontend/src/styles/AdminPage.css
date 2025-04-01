@@ -1,0 +1,160 @@
+/* 전체 페이지 스타일 */
+.admin-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 제목 스타일 */
+.admin-title, h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+.input-container {
+  position: relative;
+  margin-top:15px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  padding-right: 50px;
+  border-radius: 25px;
+  font-size: 16px;
+  text-align: center;
+}
+
+/* 버튼 스타일 */
+.check-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  right: 20px; /* 오른쪽에 배치 */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.check-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* 업로드된 목록 */
+.list-container {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.list-container div {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+/* 문서 업로드 영역 */
+.upload-section {
+  width: 100%;
+  max-width: 600px;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  height: 100px;
+  max-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.upload-icon {
+  width: 30px;
+  margin-bottom: 10px;
+}
+
+/* 버튼 그룹 */
+.button-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  justify-content: center;
+  width: 100%;
+}
+
+.button-group button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+
+.update-btn {
+  background-color: #e2e2e2;
+  color: rgb(0, 0, 0);
+}
+
+.update-btn:hover {
+  background-color: #d4d4d4;
+}
+
+.apply-btn {
+  background-color: #e2e2e2;
+  color: rgb(0, 0, 0);
+}
+
+.apply-btn:hover {
+  background-color: #d4d4d4;
+}
+
+
+.upload-section {
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.upload-section.drag-over {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-color: #007bff;
+}
+
+.upload-section p {
+  margin-top: 10px;
+  color: #666;
+}
+
+.upload-icon {
+  width: 50px;
+  height: 50px;
+  opacity: 0.5;
+}
+
+.upload-section:hover .upload-icon {
+  opacity: 0.7;
+}

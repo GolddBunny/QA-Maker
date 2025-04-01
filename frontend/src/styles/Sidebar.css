@@ -1,0 +1,165 @@
+
+/* 햄버거 아이콘 */
+.hamburger-icon {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 1100;
+  }
+  
+  .bar {
+    width: 27px;
+    height: 4px;
+    background-color: rgb(61, 61, 61);
+    border-radius: 3px;
+  }
+  
+  /* 사이드바 */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px; /* 사이드바 기본 위치 */
+    width: 250px;
+    height: 100vh;
+    background-color: #bac8c0;
+    transition: left 0.3s ease;
+    z-index: 1000;
+    padding-top: 60px;
+  }
+  
+  .sidebar.open {
+    left: 0; /* 사이드바가 열리면 왼쪽으로 위치 변경 */
+  }
+  
+  .sidebar a {
+    display: block;
+    padding: 15px;
+    text-decoration: none;
+    color: rgb(37, 55, 44);
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid rgba(37, 55, 44, 0.3); /* 하단에 구분선 추가 */
+    
+  }
+  
+  .sidebar a.active {
+    background-color: #6d9982;
+    color: rgb(230, 230, 230);
+  }
+  
+  /* 사이드바 안의 링크 */
+  .sidebar a:hover {
+    background-color: #6d9982;
+  }
+
+  /* 페이지 목록 스타일 */
+.page-list {
+    margin: 10px 0;
+}
+
+/* 개별 페이지 아이템 스타일 */
+.page-item {
+    padding: 12px 20px;
+    margin: 5px 0;
+    color: #25372c;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.page-item:hover {
+    background-color: #6d9982;
+    color: #e6e6e6;
+}
+
+.page-item.active {
+    background-color: #6d9982;
+    color: #e6e6e6;
+}
+
+/* 입력 칸 스타일 */
+.new-page-input {
+    width: calc(100% - 50px);
+    margin: 10px;
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #bac8c0;
+    border-radius: 8px;
+    background-color: #f0f4f2;
+    color: #25372c;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.new-page-input:focus {
+    border-color: #6d9982;
+    box-shadow: 0 0 3px #6d9982;
+}
+
+/* 버튼 스타일 */
+.new-page-btn {
+    display: block;
+    width: calc(100% - 100px);
+    margin: 5px auto;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    color: hsl(0, 0%, 31%);
+    background-color: #f0f4f2;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+.new-page-btn:hover {
+    background-color: #6d9982;
+    color: rgb(231, 231, 231);
+}
+
+.new-page-btn:active {
+    transform: scale(0.98);
+}
+
+/* 모달 스타일 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal button {
+    margin: 5px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #6d9982;
+    color: #fff;
+    cursor: pointer;
+}
+
+.modal button:hover {
+    background-color: #547d64;
+}

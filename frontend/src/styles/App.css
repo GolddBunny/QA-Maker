@@ -1,0 +1,176 @@
+body {
+  font-family: 'Arial', sans-serif;
+  text-align: center;
+  background-color: #ffffff;
+  margin: 0;
+  padding: 0;
+  transition: margin-left 0.3s ease;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  margin-top: 300px;
+  transition: margin-left 0.3s ease;
+}
+
+/* 사이드바가 열렸을 때 */
+.container.sidebar-open {
+  margin-left: 250px; /* 사이드바 크기만큼 밀기 */
+}
+
+h1 {
+  font-size: 45px;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.subtitle {
+  color: #3d3d3d;
+  font-size: 18px;
+  width: 620px;
+  height: 18px;
+  margin-bottom: 15px;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 15px;
+  display: inline-block;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  width: 670px;
+  height: 30px;
+  background: #fff;
+  border-radius: 30px;
+  border: 3px solid #000000;
+  padding: 8px;
+}
+
+.search-container input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 0px;
+  margin-top: 3px;
+  margin-left: 3px;
+  font-size: 16px;
+  vertical-align: middle;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  margin: 1px;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* plus 버튼 회전 효과 */
+.icon.rotate {
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+/* 선택박스 스타일 */
+.select-box {
+  position: absolute;
+  background: #fff;
+  border: 2px solid #838383;
+  border-radius: 5px;
+  margin-bottom: 100px;
+  padding: 5px;
+  width: 50px;
+}
+
+.recent-questions {
+  width: 600px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 6px;
+  position: relative;
+}
+
+.toggle-recent {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 17px;
+}
+
+.toggle-recent img {
+  width: 15px;
+  height: 15px;
+  margin-bottom: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.recent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.view-all {
+  text-decoration: none;
+  color: #000000;
+  font-size: 17px;
+}
+
+.question-list {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scroll-behavior: smooth;
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+/* 최근 질문 박스 */
+.question {
+  width: 150px;
+  height: 100px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  font-size: 16px;
+  text-align: left;
+  padding: 15px;
+  flex-shrink: 0;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow: hidden;
+}
+
+/* 스크롤바 */
+.question-list::-webkit-scrollbar {
+  height: 8px;
+}
+
+.question-list::-webkit-scrollbar-thumb {
+  background: #d6d6d6;
+  border-radius: 10px;
+}

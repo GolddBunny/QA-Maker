@@ -1,0 +1,631 @@
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+1
+컴퓨터네트워크- 네트워크기술
+이웅희교수
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+2
+01 라우팅기능
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+라우팅기능(1)
+▪라우팅시스템은데이터를최종목적지까지올바른경로로중개하는교환기능을제공
+▪라우팅시스템
+▪전송선로를이용해데이터를전송할때는전용회선을이용하거나교환회선을이용할수있음
+▪전용회선방식에서는송신호스트와수신호스트가전용으로할당된통신선로로데이터를전송
+▪교환회선방식에서는전송선로하나를다수의호스트가공유
+3
+컴퓨터네트워크
+ronting
+: Voute를찾는과정
+a
+-g만연결된방식(나만사용가능⇒비용∞)
+여러길을공유
+길음정해놓고시작
+β,데이터들은길을따라
+망
+- 유선
+내부망은모두유선
+폰
+무번
+pL
+.
+유선
+- 가상회선
+V패킷에따라길이다름
+- 데이러그램
+고
+데이러를쪼개놓은단위
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+라우팅기능(2)
+▪회선교환
+▪통신하고자하는호스트가데이터를전송하기전에연결경로를미리
+설정하는방식
+▪회선교환시스템에서는하나의연결에대하여전송되는모든데이터가
+동일한경로로라우팅됨
+▪메시지교환
+▪데이터를전송하기전에경로를설정하지않고, 대신
+전송하는메시지의헤더마다목적지주소를표시하는방식
+▪Store and Forward
+4
+컴퓨터네트워크
+cunder
+reeiven
+pDelay
+프
+올때는delay없음
+.
+길임
+effing
+미미길이setting
+다음부턴데이터I
+한번에
+보내는것
+되었기때문에역방향으로만전달
+전달해주면
+많은데이터를
+단검: 길을Eexting하면
+독점을해버림
+-
+(쉴때도못씀의비호)
+⇒안씀
+총째로다음
+5
+거에만
+넘겨줌
+단점
+⇒너무오래걸림
+, 성능↓
+다받고
+그잘안씀
+통으로전달
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+라우팅기능(3)
+▪회선교환시스템은고정대역으로할당된연결을설정하여데이터전송을시작
+▪패킷교환시스템은컴퓨터네트워크환경에서주로이용
+▪데이터를미리패킷단위로나누어전송하므로패킷을기준으로라우팅이이루어짐
+▪패킷교환에는모든패킷의경로를일정하게유지시키는가상회선방식과패킷들이각각의경로로전송되는
+데이터그램방식이있음
+5
+컴퓨터네트워크
+A길의너비가결정되어이
+주교씀은
+" 김을유지하는것은동일(회선교환따름
+)
+패킷으로끊어보냄
+고정희선잘안씀
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+라우팅기능(4)
+▪패킷교환
+▪회선교환과메시지교환의장점을모두이용
+▪인터넷에서사용하는패킷교환시스템의장점은전송대역의효율적이용, 호스트의무제한수용, 패킷에우선순위
+부여라는세가지로요약
+▪데이터를패킷교환방식으로전송하는네트워크는가상회선과데이터그램이라는두가지전송방식을지원
+6
+컴퓨터네트워크
+^
+B 7쪽개서보내면
+A " r r
+39 B
+C
+D
+α
+C 8⑦⑥05 @ D
+길을고정X
+⇒우선순위름정할수있음
+왜킷별로길을
+판상해전달의데이터그램방식
+e
+사상회선방식
+α
+번보내고리번보낼때다른길로보낼수있다. 냐길이정해지지
+않음]
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+패킷교환(1)
+▪가상회선
+▪일반적으로가상회선방식은연결형서비스를지원하기위한기능으로, 미리설정된논리적인연결을통해전송되는
+모든패킷의경로가동일
+7
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+패킷교환(2)
+▪데이터그램
+▪패킷교환방식에서비연결형서비스를이용해패킷을독립적으로전송하는것
+8
+컴퓨터네트워크
+효음성↑
+성능↓
+북잡도시:매번길을판단해야함
+2가장먼거
+보낸순으로도착안할
+수도있은⇒순M 2
+겁팩요
+"
+대로
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+프레임릴레이
+▪이전의통신환경에비해물리적전송오류의가능성이줄어듦
+▪낭비요소를제거해데이터전송속도를향상시키기위해프레임릴레이방식이고안
+▪동일한속도의전송매체로고속데이터전송을지원할수있도록고안된기술이프레임릴레이
+▪송신호스트가데이터패킷을보내고, 수신호스트가긍정응답패킷으로회신하는과정을패킷교환방식과프레임
+릴레이방식에각각적용한예
+9
+컴퓨터네트워크
+프레임릴레이보다왜킷을많이씀
+⇒확인메서지필요성⑪
+전달해줘
+매번확인함⇒오류나면오류난중간에서보낼수있는장점
+AA
+…
+⇒이방식을더많이씀
+확인
+at
+R
+속가
+확인메시지X \
+∞A^
+∞
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+10
+02 네트워크의분류
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+네트워크의분류
+▪컴퓨터네트워크를분류하는가장간단한기준은네트워크의크기
+▪매우빠른전송속도를지원하는시스템버스를이용해다수의프로세서를연결하는다중처리시스템이해당
+▪컴퓨터시스템의내부와컴퓨터네트워크의차이는전송매체의성능
+▪네트워크는물리적으로일정거리이상떨어진위치에서독립적으로실행할수있는호스트간의데이터
+송수신기능지원
+▪호스트사이의연결거리를기준으로네트워크를LAN, MAN, WAN으로구분
+▪근거리통신망(Local Area Network)
+▪대도시통신망(Metropolitan Area Network)
+▪광역통신망(Wide Area Network)
+11
+컴퓨터네트워크
+rnz.
+PAN ≥
+: 대학, 건물, 기관, 회사
+CPU
+내부
+도시
+사
+2 통신
+돼간
+RAMI
+I ㄻ
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+LAN
+▪LAN
+▪단일건물이나학교같은가까운거리에위치하는호스트로구성된네트워크
+▪LAN은MAN이나WAN 환경보다호스트간의간격이가깝기때문에데이터를브로드캐스팅방식으로전송
+▪LAN에서는보통수십Mbps~수Gbps의전송속도를지원
+▪LAN 환경에서호스트를연결하는방식을구성형태에따라버스형, 링형으로구분
+12
+컴퓨터네트워크
+topology
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+LAN Topology (1)
+▪버스형
+▪LAN 환경에서가장많이사용하는네트워크연결형태는버스형과링형
+▪버스형은공유버스하나에여러호스트를직접연결
+▪버스형에서는전송데이터가모든호스트에브로드캐스팅되므로라우팅기능이필요없음
+▪둘이상의호스트에서데이터를동시에전송하려고하면공유버스에서데이터충돌이발생
+▪이더넷은충돌이발생하는것을허용하는대신, 충돌후에문제를해결하는사후해결방식에해당
+13
+컴퓨터네트워크
+통신은
+다른호스트는나항테
+전기적신호로보냄
+_ α
+게니면부시함
+↴
+Q컴퓨터내부에서의길
+↴
+↴
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+LAN Topology (2)
+▪링형
+▪전송호스트의연결이순환구조인링형태
+▪데이터는시계나반시계방향으로전송될수있지만, 미리정해진한쪽방향으로만전송
+▪링형도둘이상의호스트에서데이터를동시에전송하면충돌이발생할수있으므로이문제를고려해야함
+▪링형에서는토큰이라는제어프레임을사용해충돌가능성을원천적으로차단
+14
+컴퓨터네트워크
+→호큰을가진호스트만전달가능
+⇒토큰링( 컴퓨터
+시스템내부에서사)
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+MAN
+▪MAN은LAN보다큰지역을지원
+▪사용하는하드웨어와소프트웨어는LAN과비슷하지만, 연결규모가더큼
+▪MAN은근처에위치한여러건물이나한도시에서의네트워크연결로구성가능
+▪MAN을위한국제표준안은DQDB(Distributed Queue Dual Bus)
+▪DQDB에는그림의화살표처럼2개의단방향선로가존재하며, 이전송선로를통해모든호스트가연결
+15
+컴퓨터네트워크
+도시
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+WAN
+▪WAN은국가이상의넓은지역을지원하는네트워크구조
+▪거리가먼WAN에서는브로드캐스팅방식을지원하기어렵고, 또한전송매체의길이가길어지는환경을
+고려해야함
+▪점대점으로연결된WAN 환경에서는전송과더불어라우팅기능이반드시필요
+▪WAN에서는전송매체를이용해호스트를일대일로연결하는방식으로네트워크를확장
+▪WAN에서는호스트사이의거리가멀어연결의수가증가할수록전송매체를많이사용해비용이많이듦
+16
+컴퓨터네트워크
+: 사방으로퍼짐
+부난
+처럼
+큰길이굵직하게연결
+서울
+대전
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+17
+03 인터네트워킹
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+인터네트워킹(1)
+▪의미
+▪라우팅장비는네트워크내부에서경로선택기능을수행하는데, 둘이상의서로다른네트워크를연결하는기능을
+인터네트워킹이라함
+18
+컴퓨터네트워크
+길설껑을도와주는장비
+blayer
+2
+ㅣ
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+인터네트워킹(2)
+▪네트워크장비는수행기능에따라리피터, 브리지, 라우터로구분
+▪리피터
+▪물리계층의기능을지원
+▪양쪽단의물리적인특성이같으면한쪽단에서들어온비트신호를증폭해다른단으로단순히전달하는역할을함
+▪브리지
+▪물리계층을포함하여데이터링크계층의기능을지원
+▪한쪽단에서들어온프레임의MAC 계층헤더를다른단의MAC 계층헤더로변형해전송할수있어종류가다른LAN을연결할
+수있음
+▪라우터
+▪물리계층, 데이터링크계층, 네트워크계층의기능을지원
+▪네트워크계층의라우팅기능을수행할수있으므로여러포트를사용해다수의LAN을연결하는구조를지원
+19
+컴퓨터네트워크
+: 길맞기1
+, 김연결
+σ
+Layer 은주소가없어서일밝기×
+Lager
+1
+. 2
+MAC주모
+PIP
+Layer
+1
+, 2 , 3
+IP주소
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+브리지(1)
+▪브리지의좌우에위치하는LAN은종류가같을수도, 다를수도있음
+▪양쪽LAN이모두이더넷을사용하면프레임헤더를해석하는간단한작업을통해쉽게중개할수있지만
+종류가다르면프레임변환등의복잡한과정이필요
+▪그림은데이터링크계층의기능을수행하는일반브리지의역할을보여줌
+▪양쪽LAN의종류가달라한쪽LAN의헤더를제거하고다른쪽LAN의헤더를붙여주는과정
+20
+컴퓨터네트워크
+M로다는통신망H용Cex
+- wifis 65 )
+-layer 1,2
+만
+지원
+∅∞
+↓
+∞
+wifi
+4G
+⒕
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+브리지(2)
+▪트랜스페런트브리지
+▪트랜스페런트브리지는라우팅기능이투명하게보이기때문에라우팅작업이사용자의부담없이이루어짐
+▪브리지사용자는전송하는프레임헤더에라우팅정보를추가하지않아도되며, 필요한라우팅과정은브리지가
+자동으로수행
+▪브리지에연결된임의의LAN으로부터프레임이도착했을때, 브리지가수행하는동작
+▪첫째, 해당프레임의수신호스트가송신호스트와동일한방향에위치한경우에는프레임을중개하는과정이필요없기때문에
+무시해도됨
+▪둘째, 프레임의수신호스트가송신호스트와다른방향에위치한경우에는수신호스트가있는방향으로프레임을중개해야함
+21
+컴퓨터네트워크
+종류1 " transparent
+2) source
+routing
+'
+투명한
+특징: 신경쓸게많이없음
+뒤에그림에서
+이색으로예시들어준
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+브리지(3)
+▪브리지B1과B2를사용하는환경에서브리지B1에는LAN을3개(LAN1, LAN2, LAN3) 연결하고, 브리지
+B2에는LAN을2개(LAN3, LAN4) 연결한예
+22
+컴퓨터네트워크
+Local Networe
+θ
+주소록
+n .같웨아에머에에결로건달하.
+④대
+G"
+.oOe
+sport번호
+동일network에있으므로
+아무반응X
+. 전달X
+↳
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+라우팅테이블
+▪트랜스페런트브리지가제대로동작하려면라우팅테이블정보가정확해야함
+▪라우팅테이블은LAN이동작하면서자동으로생성, 초기화과정에서flooding 사용
+▪데이터전달과정에서얻은프레임의송신호스트주소와포트번호의정보를라우팅테이블에반영
+▪네트워크의동작과정에서라우팅정보를얻는방식을역방향학습(Backward Learning) 알고리즘이라고함
+▪브리지B1과B2의라우팅테이블에호스트c의이동을반영한그림
+23
+컴퓨터네트워크
+①전달( axe)
+π
+②응답
+( e→a )
+sy
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+스패닝트리
+▪네트워크에이중경로가존재하면잘못된라우팅정보를얻게됨
+▪네트워크의설계과정에서순환구조가불가피하게만들어지면네트워크의논리적인연결상태를비순환형태로
+간주함으로써, 역방향학습알고리즘이올바르게동작하도록해야함
+▪네트워크의비순환구조를스패닝트리라하고, 이를지원하는알고리즘을스패닝트리알고리즘이라함
+▪최상위브리지를루트로설정하고, 다른브리지에이르는최단경로트리구성
+24
+컴퓨터네트워크
+<순환경도)
+"최난경로
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+소스라우팅브리지
+▪트랜스페런트브리지는공유버스에서구현되는CSMA/CD 방식과토큰버스방식에서사용
+▪사용자입장에서보면간편하지만, 효율적이지못하다는단점도있음
+▪일반적으로소스라우팅브리지는링구조의네트워크에서사용
+25
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+IP 인터네트워킹
+▪인터넷환경에서IP 프로토콜을사용해IP 인터네트워킹을지원하려면그림처럼송수신호스트간의여러
+네트워크인터페이스를거쳐패킷을전달할수있어야함
+▪인터넷에연결된모든시스템은공통으로IP 프로토콜을지원해야하며, 하위의데이터링크계층에는다양한
+종류가존재
+▪라우터에는양쪽MAC 계층의프레임구조에차이가있을때이를변환하는기능이필요
+▪그림처럼라우터A는입력된이더넷헤더를PPP 헤더로변환하고, 라우터B는PPP 헤더를ATM 헤더로변환
+26
+컴퓨터네트워크
+Oomacmu.
+¤
+어런라우터ㆍ건달할'리량
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+인터넷라우팅(1)
+▪고정경로배정
+▪간단한구현만으로도효과적인라우팅이가능한방법으로, 송수신호스트사이에고정불변의경로를배정
+▪전송경로가고정되므로트래픽변화에따른동적경로배정이불가능하다는단점이있음
+▪각라우터가관리하는라우팅정보는그림처럼결정
+▪경로배정은네트워크를연결하는선로의전송용량이나네트워크간의데이터전송량을측정해이루어짐
+27
+컴퓨터네트워크
+리우터는근본적으로
+들어갔다나오는그림
+←
+α
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+인터넷라우팅(2)
+▪적응경로배정
+▪고정경로배정방식에서라우팅테이블의경로정보변경은네트워크구성이변경된경우에만가능
+▪인터넷에서사용되는라우터는적응경로배정방식을채택
+▪적응경로배정에서는네트워크연결상태가변하면이를패킷의전달경로에반영하는데, 결정에영향을주는요소는
+크게두가지
+▪특정네트워크나라우터가정상적으로동작하지않는경우
+▪네트워크의특정위치에서혼잡이발생하는경우
+▪적응경로배정은경로를결정하는과정이복잡해지면이를처리하는라우터의부담이증가
+▪인터넷처럼복잡하고거대한네트워크에서인터넷자체의트래픽증가에많은영향을줌
+▪인터넷에서라우팅정보의수집은비실시간적으로제한된형태로적용됨
+28
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+인터넷라우팅(3)
+▪자율시스템
+▪자율시스템은다수의라우터로구성할수있으며, 라우터들은서로공통의라우팅프로토콜을사용해정보를교환
+▪자율시스템은동일한라우팅특성에의해동작하는논리적인단일구성체
+▪자율시스템내부에서사용하는공통프로토콜을내부라우팅프로토콜이라하며, 라우터들끼리라우팅정보를
+교환하는용도로사용
+▪자율시스템들간에사용하는라우팅프로토콜을일반적으로외부라우팅프로토콜이라함
+29
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+30
+04 서비스품질
+컴퓨터네트워크
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+서비스품질
+▪의미
+▪네트워크에서서비스품질이라는용어는보통데이터를어느정도로신뢰성있게전송하는지를의미
+▪전송과정에서의데이터변형, 데이터분실, 전송지연, 지연값의일관성(지터) 등을기준으로전송품질을판단
+▪서비스클래스는사용자에게제공되는네트워크서비스를등급에따라분류하는것
+▪인터넷환경에서전송서비스의품질문제를다루는QoS(Quality of Service)는네트워크설계과정의중요한고려
+대상
+▪QoS 기준은보통연결형서비스를위한것이지만, 비연결형서비스에도부분적으로적용
+▪QoS 서비스를지원할때전송계층에필요한기능이구현
+▪하위의네트워크계층이기능의일부를수행할수있으면전송계층의역할이그만큼줄어듬
+31
+컴퓨터네트워크
+숙도를중요한지표로따짐
+<신뢰성은무조건지켜야할거고]
+→layer 4 에많이퍼져있음
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+QoS 개요
+▪연결설정지연
+▪연결설정을위한request 프리미티브발생과confirm 프리미티브도착사이의경과시간
+▪시간이짧을수록서비스품질이좋으며, 네트워크혼잡도등의영향을많이받음
+▪연결설정실패확률
+▪임의의최대연결설정지연시간을기준으로연결설정이이루어지지않을확률
+▪전송률
+▪임의의시간구간에서초당전송할수있는바이트수
+▪전송지연
+▪송신호스트가전송한데이터가수신호스트에도착할때까지경과한시간
+▪전송오류율
+▪임의의시간구간에서전송된총데이터수와오류발생데이터수의비율
+▪우선순위
+▪다른데이터전송보다먼저처리함을의미
+▪우선순위는연결설정단위로이루어질수도있고, 패킷단위로이루어질수도있음
+32
+컴퓨터네트워크
+" 연결실정에소와되는시간.오래걸리지않은
+I -n.
+8Gbps = IGB/s
+throughput
+^
+Gbps
+GB/, CGigabytel
+MIbD9
+내가개일업특한시간부터받는데때까지
+성공습: 991 % 면오류음
+=
+1 1%
+priority
+coabps : 5
+10Gbps: 한
+ㆍ우선순위두면더많은데이터
+전송
+.
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+인터넷에서의QoS
+▪QoS에서는전송데이터를특징에따라여러종류로분류
+▪영상데이터등은대용량의실시간전송이필요하지만, 전송오류문제에는상대적으로관대
+▪일반컴퓨터데이터는실시간기능은필요없지만, 전송오류에매우민감함
+▪IP 프로토콜에는특정패킷의우선순위를조절하는기능이존재하지않으므로모든패킷을동일한기준으로
+처리한다는단점이있음
+▪IP 프로토콜에서QoS를지원하려면각패킷을서로다른QoS 기준으로구분할수있어야하고, 라우터에서
+이를처리해야함
+33
+컴퓨터네트워크
+- 에서미급이사용
+s laper 4 ,
+application layer n
+라우팅은layern
+, 2
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+34
+컴퓨터네트워크
+THANKS!
+Any questions?
+
+Prof. Woonghee Lee
+https://sites.google.com/view/inc-lab
+Copyright ⓒWoonghee Lee All Rights Reserved.
+References
+▪IT CookBook, 쉽게배우는데이터통신과컴퓨터네트워크(3판) / 박기현저/ 한빛아카데미
+35
+컴퓨터네트워크

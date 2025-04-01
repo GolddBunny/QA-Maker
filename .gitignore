@@ -1,0 +1,75 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# 프론트엔드 관련 (React)
+# dependencies
+/frontend/node_modules
+/frontend/.pnp
+/frontend/.pnp.js
+
+# testing
+/frontend/coverage
+
+# production
+/frontend/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 백엔드 관련 (Flask)
+# 가상환경
+/backend/venv
+/backend/.venv
+/venv
+/.venv
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 환경 변수
+.env
+.flaskenv
+.env.local
+
+# 데이터 처리 중간 파일
+/data/processed/*
+/data/graphs/*
+!/data/processed/.gitkeep
+!/data/graphs/.gitkeep
+
+# Parquet 파일 (대용량 데이터)
+/data/parquet/output/*
+/data/parquet/update_output/*
+!/data/parquet/output/.gitkeep
+!/data/parquet/update_output/.gitkeep
+
+# 임시 파일
+*.swp
+*.swo
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 로그 파일
+*.log
+
+# 운영체제 파일
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 프로젝트 특정 디렉토리
+.output/
+.git/
+frontend/.git/
