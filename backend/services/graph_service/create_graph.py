@@ -15,12 +15,13 @@ sys.path.append(str(backend_dir))
 from utils.graphml2json import convert_graphml_to_json
 
 # 엔티티와 관계 데이터를 기반으로 그래프를 생성하는 함수
-def create_graph(entities_list, relationships_list, entities_file, relationships_file):
+def create_graph(entities_list, relationships_list, entities_file, relationships_file, communities_file):
     G = nx.DiGraph()
 
     # Parquet 파일에서 데이터 읽기
     entities_df = pd.read_parquet(entities_file)
     relationships_df = pd.read_parquet(relationships_file)
+    communities_df = pd.read_parquet(communities_file)
 
     # 추가할 엔티티 ID 세트 생성 (중복 방지)
     all_entity_ids = set(entities_list)
@@ -64,7 +65,30 @@ def create_graph(entities_list, relationships_list, entities_file, relationships
         description = entity_row["description"]
         entity_type = entity_row["type"]
         degree = entity_row["degree"]
-        cluster = entity_row["frequency"]
+        #cluster = entity_row["frequency"]
+        # community 값 찾기
+        # community 값 찾기
+        cluster = -1  # 기본값
+
+        # 커뮤니티 데이터에서 클러스터 찾기
+        for _, community_row in communities_df.iterrows():
+            try:
+                # entity_ids가 문자열로 저장되어 있을 가능성 처리
+                entity_ids = community_row["entity_ids"]
+                
+                # 문자열인 경우 파싱 시도
+                if isinstance(entity_ids, str):
+                    entity_ids = eval(entity_ids)  # 문자열을 리스트로 변환
+
+                # human_readable_id가 entity_ids에 있는지 확인
+                if entity_id in entity_ids:
+                    cluster = community_row["community"]
+                    break
+            except Exception as e:
+                print(f"Error parsing entity_ids: {e}")
+
+        if cluster == -1:
+            print(f"Warning: Community for entity_id not found. {human_readable_id} ")
 
         # 노드 추가
         G.add_node(title,
@@ -135,10 +159,10 @@ def generate_and_save_graph(entities_list, relationships_list, page_id,
 
     entities_file = os.path.join(base_output_folder, "entities.parquet")
     relationships_file = os.path.join(base_output_folder, "relationships.parquet")
-
+    communities_file = os.path.join(base_output_folder, "communities.parquet")
 
     graph = create_graph(entities_list, relationships_list, 
-                         entities_file, relationships_file)
+                         entities_file, relationships_file, communities_file)
 
     snapshot_graphml(graph, graphml_path)
     

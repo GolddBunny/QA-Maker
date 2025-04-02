@@ -219,7 +219,7 @@ function ChatPage() {
 
             {showGraph && graphData && (
                 <div className="graph-container">
-                    <button className="close-graph-button" onClick={handleCloseGraph}>×</button>
+                    <button className="close-graph" onClick={handleCloseGraph}>닫기</button>
                     <NetworkChart data={graphData} />
                 </div>
             )}

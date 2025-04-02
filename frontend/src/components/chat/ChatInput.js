@@ -21,7 +21,7 @@ const ChatInput = ({ newQuestion, setNewQuestion, handleSendQuestion, isLoading 
                 disabled={!newQuestion.trim() || isLoading} 
                 type="button"
             >
-                보내기
+                전송
             </button>
         </div>
     );

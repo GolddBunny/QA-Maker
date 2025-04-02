@@ -30,7 +30,8 @@ def run_query():
     print(f'resMethod: {resMethod}')
     print(f'resType: {resType}')
 
-    message += " 영어로 답변하지 말고 반드시 한국어로 답변해줘. 답변하고 그 다음 줄에 다음 형식으로 데이터를 모두 빠짐없이 출력해줘: \n" \
+    message += " 영어로 답변하지 말고 반드시 한국어로 답변해주세요. 답변하고 그 다음 줄에 다음 형식으로 데이터를 모두 빠짐없이 출력해주세요: \n" \
+            "질문과 직접 관련된 id부터 순서대로 출력해 주세요. 관련이 적은 id는 뒤쪽에 배치되도록 출력해주세요.\n" \
             "[Entities: id, id, ...]\n" \
             "[Relationships: id, id, ...]\n" 
     python_command = [
