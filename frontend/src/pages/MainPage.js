@@ -5,7 +5,7 @@ import Sidebar from "../components/navigation/Sidebar";
 import { usePageContext } from '../utils/PageContext';
 
 function MainPage() {
-  const { setCurrentPageId } = usePageContext(); 
+  const { currentPageId, setCurrentPageId } = usePageContext(); 
   const [message, setMessage] = useState('');
   const [isRecentQuestionsVisible, setIsRecentQuestionsVisible] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -14,6 +14,23 @@ function MainPage() {
   
   const navigate = useNavigate(); // 페이지 이동을 위한 useNavigate
   const location = useLocation();
+
+  useEffect(() => {
+    // 로컬 스토리지에서 페이지 목록 불러오기
+    const savedPages = JSON.parse(localStorage.getItem('pages')) || [];
+
+    // "기본 페이지"를 찾기
+    const defaultPage = savedPages.find(page => page.name === "기본 페이지");
+
+    // "기본 페이지"가 존재하면 해당 ID를 기본 페이지 ID로 설정
+    if (defaultPage) {
+        setCurrentPageId(defaultPage.id);
+        localStorage.setItem('currentPageId', defaultPage.id);
+        console.log("기본 페이지 ID 설정:", defaultPage.id);
+    } else {
+        console.log("기본 페이지를 찾을 수 없습니다.");
+    }
+  }, [setCurrentPageId]);
 
   const toggleRecentQuestions = () => {
     setIsRecentQuestionsVisible(!isRecentQuestionsVisible);

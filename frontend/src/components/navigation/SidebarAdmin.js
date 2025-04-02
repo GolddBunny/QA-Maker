@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import "../../styles/Sidebar.css";
+import { usePageContext } from "../../utils/PageContext";
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -12,6 +13,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedPageId, setSelectedPageId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const {currentPageId, setCurrentPageId} = usePageContext();
 
     useEffect(() => {
         // 로컬 스토리지에서 저장된 페이지 목록 불러오기
@@ -40,6 +42,8 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                         
                         savedPages = [defaultPage];
                         localStorage.setItem('pages', JSON.stringify(savedPages));
+
+                        setCurrentPageId(defaultPageId);
                         localStorage.setItem('currentPageId', defaultPageId);
                         setPages(savedPages);
                         
@@ -60,6 +64,14 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
             initDefaultPage();
         } else {
             setPages(savedPages);
+            const storedCurrentPageId = localStorage.getItem('currentPageId');
+            if (storedCurrentPageId) {
+                setCurrentPageId(storedCurrentPageId);
+            } else if (savedPages.length > 0) {
+                // 저장된 currentPageId가 없는 경우 첫 번째 페이지를 현재 페이지로 설정
+                setCurrentPageId(savedPages[0].id);
+                localStorage.setItem('currentPageId', savedPages[0].id);
+            }
         }
     }, [navigate]);
 
