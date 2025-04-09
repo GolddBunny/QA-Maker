@@ -9,6 +9,7 @@ document_bp = Blueprint('document', __name__)
 
 @document_bp.route('/upload-documents/<page_id>', methods=['POST'])
 def upload_documents(page_id):
+    """document 업로드"""
     base_path, input_path, upload_path = ensure_page_directory(page_id)
 
     if 'files' not in request.files:
@@ -37,6 +38,7 @@ def upload_documents(page_id):
 
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):
+    """document 처리"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
 
@@ -65,6 +67,7 @@ def process_documents(page_id):
 
 @document_bp.route('/update/<page_id>', methods=['POST'])
 def update(page_id):
+    """document 업데이트"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
 
@@ -88,9 +91,7 @@ def update(page_id):
 
 # 공통 디렉토리 유틸리티 함수
 def ensure_page_directory(page_id):
-    """
-    Create necessary directories for a new page
-    """
+    """페이지 디렉토리 확인"""
     base_path = f'../data/input/{page_id}'
     input_path = os.path.join(base_path, 'input')
     upload_path = f'../frontend/public/data/{page_id}/input'

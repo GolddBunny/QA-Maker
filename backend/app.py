@@ -5,6 +5,8 @@ from flask_cors import CORS
 from routes.query_routes import query_bp
 from routes.document_routes import document_bp
 from routes.page_routes import page_bp
+from routes.crawling_routes import crawling_bp
+from routes.urlLoad_routes import url_load_bp
 
 def create_app():
     """Flask 애플리케이션 생성 및 설정"""
@@ -15,9 +17,10 @@ def create_app():
     app.register_blueprint(query_bp)
     app.register_blueprint(document_bp)
     app.register_blueprint(page_bp)
-
+    app.register_blueprint(crawling_bp)
+    app.register_blueprint(url_load_bp)
     return app
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000)  # 포트 5001로 변경 취소
+    app.run(host='0.0.0.0', port=5000)  

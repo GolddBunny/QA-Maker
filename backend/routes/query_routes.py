@@ -30,10 +30,13 @@ def run_query():
     print(f'resMethod: {resMethod}')
     print(f'resType: {resType}')
 
-    message += " 영어로 답변하지 말고 반드시 한국어로 답변해주세요. 답변하고 그 다음 줄에 다음 형식으로 데이터를 모두 빠짐없이 출력해주세요: \n" \
+    message += " '---Analyst Reports---'와 '---Goal---' 사이에 있는 {report_data}의 내용을 [ReportData: 내용] 형식으로 모두 빠짐없이 출력해주세요." \
+    "영어로 답변하지 말고 반드시 한국어로 답변해주세요. 답변하고 그 다음 줄에 다음 형식으로 데이터를 모두 빠짐없이 출력해주세요: \n" \
             "질문과 직접 관련된 id부터 순서대로 출력해 주세요. 관련이 적은 id는 뒤쪽에 배치되도록 출력해주세요.\n" \
             "[Entities: id, id, ...]\n" \
-            "[Relationships: id, id, ...]\n" 
+            "[Relationships: id, id, ...]\n" \
+            # "그리고 '---Analyst Reports---'와 '---Goal---' 사이에 있는 {report_data}의 내용을 [ReportData: 내용] 형식으로 모두 빠짐없이 출력해주세요."
+            
     python_command = [
         'graphrag',
         'query',
@@ -75,9 +78,12 @@ def run_query():
 
     entities_match = re.search(r'Entities:\s*(?:\[(.*?)\]|([^\]]+))', output)
     relationships_match = re.search(r'Relationships:\s*(?:\[(.*?)\]|([^\]]+))', output)
+    # {report_data} 추출
+    # report_data_match = re.search(r'\[ReportData:\s*(.*?)\]', output, re.DOTALL)
 
     entities_list = []
     relationships_list = []
+    report_data = ""
 
     if entities_match:
         entities_data = entities_match.group(1) if entities_match.group(1) else entities_match.group(2)
@@ -87,11 +93,17 @@ def run_query():
         relationships_data = relationships_match.group(1) if relationships_match.group(1) else relationships_match.group(2)
         relationships_list = list(map(int, [r.strip() for r in relationships_data.split(',') if r.strip() not in ('+more', '-')])) if relationships_data.strip() else []
 
+    # {report_data} 값 추출
+    # if report_data_match:
+    #     report_data = report_data_match.group(1).strip()
+    #     print(f"추출된 report_data: {report_data}")
+
     answer = re.sub(r'.*SUCCESS: (Local|Global) Search Response:\s*', '', output, flags=re.DOTALL)
     answer = re.sub(r'\[\s*(Entities|Relationships|Communities)\s*\]', '', answer, flags=re.DOTALL)
     answer = re.sub(r'\[Entities:.*?\]', '', answer)  # Entities 부분 제거
     answer = re.sub(r'\[Relationships:.*?\]', '', answer)  # Relationships 부분 제거
     answer = re.sub(r'\[Communities:.*?\]', '', answer)  # Communities 부분 제거
+    # answer = re.sub(r'\[ReportData:.*?\]', '', answer, flags=re.DOTALL)  # ReportData 부분 제거
     answer = re.sub(r'\[Data:.*?\]\s*|\[데이터:.*?\]\s*|\*.*?\*\s*|#', '', answer)  
 
     #기존 답변 반환
@@ -102,7 +114,8 @@ def run_query():
     return jsonify({
         'result': answer,
         'entities': entities_list,
-        'relationships': relationships_list
+        'relationships': relationships_list,
+        # 'report_data': report_data
     })
 
 
