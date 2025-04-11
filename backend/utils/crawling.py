@@ -5,7 +5,7 @@ import random
 import re
 from urllib.parse import urlparse, urljoin
 from datetime import datetime
-from documents import DocumentProcessor
+#from documents import DocumentProcessor
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,8 +13,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-# 저장 경로 설정 - 상대 경로로 변경
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "@crawling")
+# 저장 경로 설정
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "crawling")
 
 # User-Agent 목록
 USER_AGENTS = [
@@ -44,16 +44,16 @@ class Crawler:
         
         # 크롤링 결과 저장할 폴더 경로 생성
         self.output_dir = os.path.join(BASE_DIR, folder_name)
-        self.attachment_dir = os.path.join(self.output_dir, "attachments")
+        #self.attachment_dir = os.path.join(self.output_dir, "attachments")
         
         # 폴더 생성
         os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(self.attachment_dir, exist_ok=True)
+        #os.makedirs(self.attachment_dir, exist_ok=True)
         
         print(f"크롤링 결과 저장 경로: {self.output_dir}")
-        print(f"첨부 파일 저장 경로: {self.attachment_dir}")
+        #print(f"첨부 파일 저장 경로: {self.attachment_dir}")
         
-        self.document_processor = DocumentProcessor(self.output_dir, self.attachment_dir)
+        #self.document_processor = DocumentProcessor(self.output_dir, self.attachment_dir)
         
         # Selenium 설정
         chrome_options = Options()
@@ -460,15 +460,15 @@ class Crawler:
                 # 링크 추출
                 links, doc_links = self.extract_links(soup, current_url)
                 
-                # 문서 파일 다운로드 처리
-                for i, doc_url in enumerate(doc_links):
-                    if doc_url not in self.visited_urls:
-                        doc_progress = f"{progress} 문서 파일 [{i+1}/{len(doc_links)}]"
-                        print(f"{doc_progress} 발견: {doc_url}")
-                        file_path = self.document_processor.download_document(doc_url)
-                        if file_path:
-                            self.saved_attachments.append(file_path)
-                        time.sleep(self.delay)
+                # # 문서 파일 다운로드 처리
+                # for i, doc_url in enumerate(doc_links):
+                #     if doc_url not in self.visited_urls:
+                #         doc_progress = f"{progress} 문서 파일 [{i+1}/{len(doc_links)}]"
+                #         print(f"{doc_progress} 발견: {doc_url}")
+                #         file_path = self.document_processor.download_document(doc_url)
+                #         if file_path:
+                #             self.saved_attachments.append(file_path)
+                #         time.sleep(self.delay)
                 
                 # 페이지네이션 확인 - 현재 페이지에서 다음 페이지가 있는지 검사
                 is_pagination_page = False
@@ -520,14 +520,14 @@ class Crawler:
                         new_links, new_doc_links = self.extract_links(soup, next_url)
                         
                         # 문서 파일 처리
-                        for i, doc_url in enumerate(new_doc_links):
-                            if doc_url not in self.visited_urls:
-                                doc_progress = f"{progress} 문서 파일 [{i+1}/{len(new_doc_links)}]"
-                                # print(f"{doc_progress} 발견: {doc_url}")
-                                file_path = self.document_processor.download_document(doc_url)
-                                if file_path:
-                                    self.saved_attachments.append(file_path)
-                                time.sleep(self.delay)
+                        # for i, doc_url in enumerate(new_doc_links):
+                        #     if doc_url not in self.visited_urls:
+                        #         doc_progress = f"{progress} 문서 파일 [{i+1}/{len(new_doc_links)}]"
+                        #         # print(f"{doc_progress} 발견: {doc_url}")
+                        #         file_path = self.document_processor.download_document(doc_url)
+                        #         if file_path:
+                        #             self.saved_attachments.append(file_path)
+                        #         time.sleep(self.delay)
                         
                         # 새 링크 큐에 추가
                         for link in new_links:
@@ -555,7 +555,7 @@ class Crawler:
         
         return self.saved_files, self.saved_attachments
 
-def crawl_main(url, max_pages=1): # 최대 페이지 수 지정
+def crawl_main(url, max_pages=2): # 최대 페이지 수 지정
     crawler = Crawler(max_pages=max_pages, url=url)
     
     try:
