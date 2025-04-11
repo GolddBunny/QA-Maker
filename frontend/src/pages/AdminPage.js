@@ -7,6 +7,8 @@ const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 const PROCESS_URL = `${BASE_URL}/process-documents`;
 const UPDATE_URL = `${BASE_URL}/update`;
+const APPLY_URL = `${BASE_URL}/apply`;
+const URL_URL = `${BASE_URL}`;
 
 const allowedFileTypes = ['application/pdf', 'text/plain', 'text/csv', 'application/json', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
 
@@ -47,6 +49,8 @@ const AdminPage = () => {
         setHasDocuments(savedDocs.length > 0);
         
         setIsNewPage(savedDocs.length === 0);
+      
+        fetchSavedUrls(savedPageId); // URL 목록 불러오기
       }
     }, [pageId]);
 
@@ -55,12 +59,16 @@ const AdminPage = () => {
     };
     
     const handleDragOver = (e) => {
+      if (isLoading) return;
+
       e.preventDefault();
       setIsDragOver(true);
     };
 
     const handleDragLeave = () => {
-        setIsDragOver(false);
+      if (isLoading) return;
+
+      setIsDragOver(false);
     };
 
     const handleFileDrop =async(e) => {
@@ -80,6 +88,7 @@ const AdminPage = () => {
               alert(".pdf, .txt, .csv, .json, .xlsx 파일만 업로드할 수 있습니다.");
               return;
           }
+
           // 이미 업로드한 문서가 있는지 확인
           const existingDocs = uploadedDocs.map(doc => doc.toLowerCase());
           const newFiles = filteredFiles.filter(file => !existingDocs.includes(file.name.toLowerCase()));
@@ -120,10 +129,152 @@ const AdminPage = () => {
         }
     };
 
-    const handleUpdate = async() => {
+    // URL 목록 불러오기
+    const fetchSavedUrls = async (pageId) => {
+      try {
+        const response = await fetch(`${URL_URL}/get-urls/${pageId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setUploadedUrls(data.urls || []);
+        } else {
+          console.error('URL 목록 불러오기 실패:', data.error);
+        }
+      } catch (error) {
+        console.error('URL 목록 불러오기 오류:', error);
+      }
+    };
+    
+    // URL 유효성 검사
+    const isValidUrl = (url) => {
+      try {
+        new URL(url);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    };
+    
+    // URL 저장
+    const handleUrlUpload = async () => {
+      if (urlInput.trim() === '') {
+        return;
+      }
+      
+      // URL 유효성 검사
+      if (!isValidUrl(urlInput)) {
+        alert('유효한 URL을 입력해주세요');
+        return;
+      }
+      setIsLoading(true);
+      
+      try {
+        // URL 저장 및 크롤링 즉시 실행
+        const response = await fetch(`${URL_URL}/add-url/${currentPageId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: urlInput
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('URL 저장 완료:', data);
+          
+          // 처리 완료된 URL을 업로드된 목록에 추가
+          setUploadedUrls([...uploadedUrls, urlInput]);
+          setUrlInput('');
+          alert("URL이 등록되었습니다.");
+        } else {
+          throw new Error('URL 저장 실패: ' + data.error);
+        }
+      } catch (error) {
+        console.error('URL 추가 오류:', error);
+        alert('오류 발생: ' + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
+    // 문서 처리 함수
+    const handleProcessDocuments = async () => {
+      if (!currentPageId) {
+        alert("먼저 페이지를 생성해주세요.");
+        return;
+      }
       if (uploadedDocs.length === 0) {
         alert("먼저 문서를 업로드해주세요.");
+        return;
+      }
+      setIsLoading(true);
+
+      try {
+        // 문서 처리 요청
+        const response = await fetch(`${PROCESS_URL}/${currentPageId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('문서 처리 완료');
+            setIsNewPage(false);
+        } else {
+            console.error('문서 처리 실패:', data.error);
+            alert('문서 처리에 실패했습니다.');
+        }
+      } catch (error) {
+          console.error('문서 처리 중 오류:', error);
+          alert('문서 처리 중 오류가 발생했습니다.');
+      } finally {
+          setIsLoading(false);
+      }
+    };
+
+    const handleApply = async () => {
+      if (!currentPageId) {
+        alert("먼저 페이지를 생성해주세요.");
+        return;
+      }
+      if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
+        alert("먼저 문서나 URL을 업로드해주세요.");
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${APPLY_URL}/${currentPageId}`, {
+          method: 'POST'
+        });
+    
+        const data = await response.json();
+    
+        if (data.success) {
+          alert("문서 인덱싱 완료");
+          setIsNewPage(false);
+        } else {
+          alert(`문서 인덱싱 실패: ${data.error}`);
+        }
+      } catch (err) {
+        console.error('인덱싱 요청 중 오류:', err);
+        alert("문서 인덱싱 중 오류가 발생했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const handleUpdate = async() => {
+      if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
+        alert("먼저 문서나 URL을 업로드해주세요.");
         return;
       }
 
@@ -150,112 +301,104 @@ const AdminPage = () => {
       }
     }
 
-    const handleApply = async () => {
-      if (!currentPageId) {
-        alert("먼저 페이지를 생성해주세요.");
-        return;
-      }
-      if (uploadedDocs.length === 0) {
-        alert("먼저 문서를 업로드해주세요.");
-        return;
-      }
-      setIsLoading(true);
-
-      try {
-        // 문서 처리 요청
-        const response = await fetch(`${PROCESS_URL}/${currentPageId}`, {
-            method: 'POST'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            alert('적용 완료');
-            setIsNewPage(false);
-        } else {
-            console.error('문서 처리 실패:', data.error);
-            alert('문서 처리에 실패했습니다.');
-        }
-      } catch (error) {
-          console.error('문서 처리 중 오류:', error);
-          alert('문서 처리 중 오류가 발생했습니다.');
-      } finally {
-          setIsLoading(false);
-      }
-    };
-          
     return (
-    <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1>
+      <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+        <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1>
         <SidebarAdmin isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
         <div className="input-container">
-            <input 
-            type="text" 
-            value={keyword} 
+          <input
+            type="text"
+            value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             className="input-field"
             placeholder="URL이나 문서를 대표하는 키워드를 입력하세요"
-            />
-            <button className="check-btn">
-              <img src="/assets/check.png" alt="check" className="check-icon" />
-          </button>
+            disabled={isLoading}
+          />
+          <button 
+            className="url-check-btn" 
+            disabled={isLoading}
+          >
+            {isLoading ? '처리 중' : '키워드 등록'}
+        </button>
         </div>
         
         <h3>업로드된 URL</h3>
         <div className="list-container">
-        {uploadedUrls.map((url, index) => (
+        {uploadedUrls.length > 0 ? (
+          uploadedUrls.map((url, index) => (
             <div key={index}>{url}</div>
-        ))}
+          ))
+        ) : (
+          <div>업로드된 URL이 없습니다.</div>
+        )}
         </div>
-
+        
         <h3>업로드된 문서</h3>
         <div className="list-container">
         {uploadedDocs.map((doc, index) => (
             <div key={index}>{doc}</div>
         ))}
         </div>
-      
+        
         <h3>URL 업로드</h3>
         <div className="input-container">
-          <input 
+          <input
             type="text"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="https://example.com"
             className="input-field"
+            disabled={isLoading}
           />
-          <button className="check-btn">
-              <img src="/assets/check.png" alt="check" className="check-icon" />
+          <button 
+            className="url-check-btn" 
+            onClick={handleUrlUpload}
+            disabled={isLoading}
+          >
+            {isLoading ? '처리 중' : 'URL 등록'}
+        </button>
+        </div>
+        
+        <h3>문서 업로드</h3>
+        <div className="upload-container">
+          <div
+            className={`upload-section ${isDragOver ? 'drag-over' : ''} ${isLoading ? 'disabled' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleFileDrop}
+            onClick={() => !isLoading && fileInputRef.current.click()}
+            >
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              multiple
+              accept=".pdf, .txt, .csv, .json, .xlsx"
+              onChange={handleFileDrop}
+              disabled={isLoading}
+            />
+            <p>{isLoading ? '처리 중...' : (isDragOver ? '여기에 파일을 놓으세요' : '파일을 여기로 드래그하거나 클릭하세요')}</p>
+          </div>
+          <button
+            className="process-btn"
+            onClick={handleProcessDocuments}
+            disabled={isLoading}
+          >
+            {isLoading ? '처리 중' : '문서 등록'}
           </button>
         </div>
-      
-        <h3>문서 업로드</h3>
-        <div 
-          className={`upload-section ${isDragOver ? 'drag-over' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleFileDrop}
-          onClick={() => fileInputRef.current.click()}
-        >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            style={{ display: 'none' }}
-            multiple 
-            accept=".pdf, .txt, .csv, .json, .xlsx"
-            onChange={handleFileDrop}
-          />
-          <p>{isDragOver ? '여기에 파일을 놓으세요' : '파일을 여기로 드래그하거나 클릭하세요'}</p>
-        </div>
-            
+        
         <div className="button-group">
           <button 
-              className="apply-btn"
-              onClick={isNewPage ? handleApply : handleUpdate}
-          > {isNewPage ? 'Apply' : 'Update'}
+            className="apply-btn"
+            onClick={isNewPage ? handleApply : handleUpdate}
+            disabled={isLoading}
+          > 
+            {isLoading ? '처리 중' : (isNewPage ? 'Apply' : 'Update')}
           </button>
         </div>
-    </div>
-  );
+      </div>
+    );
 };
 
 export default AdminPage;
