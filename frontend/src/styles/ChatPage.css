@@ -361,3 +361,8 @@
 .close-graph:hover {
   background-color: #ff7875;
 }
+
+.chat-container.sidebar-open {
+  margin-left: 250px; /* 사이드바가 열릴 때 채팅 영역 이동 */
+  width: calc(100% - 250px);
+}

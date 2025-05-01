@@ -15,7 +15,6 @@ const allowedFileTypes = ['application/pdf', 'text/plain', 'text/csv', 'applicat
 const AdminPage = () => {
     const navigate = useNavigate();
     const { pageId } = useParams();  // URL에서 페이지 ID 가져오기
-    const [keyword, setKeyword] = useState("");
     const [urlInput, setUrlInput] = useState("");
     const [uploadedUrls, setUploadedUrls] = useState([]);
     const [uploadedDocs, setUploadedDocs] = useState([]);
@@ -305,23 +304,6 @@ const AdminPage = () => {
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1>
         <SidebarAdmin isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="input-container">
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            className="input-field"
-            placeholder="URL이나 문서를 대표하는 키워드를 입력하세요"
-            disabled={isLoading}
-          />
-          <button 
-            className="url-check-btn" 
-            disabled={isLoading}
-          >
-            {isLoading ? '처리 중' : '키워드 등록'}
-        </button>
-        </div>
-        
         <h3>업로드된 URL</h3>
         <div className="list-container">
         {uploadedUrls.length > 0 ? (
