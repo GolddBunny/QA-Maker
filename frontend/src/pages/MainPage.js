@@ -136,7 +136,6 @@ function MainPage() {
         
         {isDropdownVisible && (
           <div className="select-box">
-            <div className="select-box-title">검색 유형</div>
             <button 
               className={`option-btn ${searchType === 'url' ? 'active' : ''}`}
               onClick={handleUrlOptionClick}
