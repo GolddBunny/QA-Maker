@@ -87,12 +87,13 @@ def run_query():
 
     if entities_match:
         entities_data = entities_match.group(1) if entities_match.group(1) else entities_match.group(2)
-        entities_list = list(map(int, [e.strip() for e in entities_data.split(',') if e.strip() not in ('+more', '-')])) if entities_data.strip() else []
-
+        entities_list = list(map(int, [e.strip() for e in entities_data.split(',') if e.strip() and e.strip() not in ('+more', '-')])) if entities_data.strip() else []
+    
     if relationships_match:
         relationships_data = relationships_match.group(1) if relationships_match.group(1) else relationships_match.group(2)
         relationships_list = list(map(int, [r.strip() for r in relationships_data.split(',') if r.strip() not in ('+more', '-')])) if relationships_data.strip() else []
-
+    #print("index entities_list: ", entities_list, 
+            #"index relationships_list: ", relationships_list)
     # {report_data} 값 추출
     # if report_data_match:
     #     report_data = report_data_match.group(1).strip()
@@ -128,7 +129,9 @@ def generate_graph():
     try:
         entities_list = list(map(int, entities_str.split(',')))
         relationships_list = list(map(int, relationships_str.split(',')))
-        
+        print("entities_list: ", entities_list, 
+              "relationships_list: ", relationships_list)
+
         # 서브 그래프 생성
         generate_and_save_graph(entities_list, relationships_list, page_id)
         return jsonify({'success': True})

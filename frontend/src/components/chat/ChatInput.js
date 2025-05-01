@@ -4,9 +4,11 @@ const ChatInput = ({ newQuestion, setNewQuestion, handleSendQuestion, isLoading 
     return (
         <div className="input-container">
             <textarea 
-                className="input-box" 
-                placeholder="질문을 입력하세요..." 
-                value={newQuestion} 
+                id="chat-input"              // id 속성
+                name="chat-input"            // name 속성
+                className="input-box"
+                placeholder="질문을 입력하세요..."
+                value={newQuestion}
                 onChange={(e) => setNewQuestion(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -16,9 +18,9 @@ const ChatInput = ({ newQuestion, setNewQuestion, handleSendQuestion, isLoading 
                 }}
             />
             <button 
-                className="send-button" 
+                className="send-button"
                 onClick={handleSendQuestion}
-                disabled={!newQuestion.trim() || isLoading} 
+                disabled={!newQuestion.trim() || isLoading}
                 type="button"
             >
                 전송
@@ -27,4 +29,4 @@ const ChatInput = ({ newQuestion, setNewQuestion, handleSendQuestion, isLoading 
     );
 };
 
-export default ChatInput; 
+export default ChatInput;
