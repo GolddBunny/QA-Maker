@@ -20,11 +20,17 @@ const AdminPage = () => {
     const [uploadedDocs, setUploadedDocs] = useState([]);
     const [currentPageId, setCurrentPageId] = useState(null);
     const [isNewPage, setIsNewPage] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isUrlLoading, setIsUrlLoading] = useState(false);
+    const [isFileLoading, setIsFileLoading] = useState(false);
+    const [isProcessLoading, setIsProcessLoading] = useState(false);
+    const [isApplyLoading, setIsApplyLoading] = useState(false);
     const [hasDocuments, setHasDocuments] = useState(false);
     const fileInputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // 작업 처리 중인지 확인 상태
+    const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
 
     useEffect(() => {
       let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
@@ -58,24 +64,24 @@ const AdminPage = () => {
     };
     
     const handleDragOver = (e) => {
-      if (isLoading) return;
+      if (isAnyProcessing) return;
 
       e.preventDefault();
       setIsDragOver(true);
     };
 
     const handleDragLeave = () => {
-      if (isLoading) return;
+      if (isAnyProcessing) return;
 
       setIsDragOver(false);
     };
 
-    const handleFileDrop =async(e) => {
+    const handleFileDrop = async(e) => {
         e.preventDefault();
         setIsDragOver(false);
 
-        if (isLoading) return;
-        setIsLoading(true);
+        if (isAnyProcessing) return;
+        setIsFileLoading(true);
 
         try {
           const files = Array.from(e.dataTransfer ? e.dataTransfer.files : e.target.files);
@@ -124,7 +130,7 @@ const AdminPage = () => {
             console.error('파일 업로드 오류:', error);
             alert('파일 업로드 중 오류가 발생했습니다.');
         } finally {
-            setIsLoading(false);
+            setIsFileLoading(false);
         }
     };
 
@@ -166,12 +172,14 @@ const AdminPage = () => {
         return;
       }
       
+      if (isAnyProcessing) return;
+      
       // URL 유효성 검사
       if (!isValidUrl(urlInput)) {
         alert('유효한 URL을 입력해주세요');
         return;
       }
-      setIsLoading(true);
+      setIsUrlLoading(true);
       
       try {
         // URL 저장 및 크롤링 즉시 실행
@@ -201,7 +209,7 @@ const AdminPage = () => {
         console.error('URL 추가 오류:', error);
         alert('오류 발생: ' + error.message);
       } finally {
-        setIsLoading(false);
+        setIsUrlLoading(false);
       }
     };
 
@@ -215,7 +223,10 @@ const AdminPage = () => {
         alert("먼저 문서를 업로드해주세요.");
         return;
       }
-      setIsLoading(true);
+      
+      if (isAnyProcessing) return;
+      
+      setIsProcessLoading(true);
 
       try {
         // 문서 처리 요청
@@ -236,7 +247,7 @@ const AdminPage = () => {
           console.error('문서 처리 중 오류:', error);
           alert('문서 처리 중 오류가 발생했습니다.');
       } finally {
-          setIsLoading(false);
+          setIsProcessLoading(false);
       }
     };
 
@@ -249,7 +260,10 @@ const AdminPage = () => {
         alert("먼저 문서나 URL을 업로드해주세요.");
         return;
       }
-      setIsLoading(true);
+      
+      if (isAnyProcessing) return;
+      
+      setIsApplyLoading(true);
       try {
         const response = await fetch(`${APPLY_URL}/${currentPageId}`, {
           method: 'POST'
@@ -267,7 +281,7 @@ const AdminPage = () => {
         console.error('인덱싱 요청 중 오류:', err);
         alert("문서 인덱싱 중 오류가 발생했습니다.");
       } finally {
-        setIsLoading(false);
+        setIsApplyLoading(false);
       }
     };
 
@@ -277,7 +291,9 @@ const AdminPage = () => {
         return;
       }
 
-      setIsLoading(true);
+      if (isAnyProcessing) return;
+      
+      setIsApplyLoading(true);
 
       try {
         const response = await fetch(`${UPDATE_URL}/${currentPageId}`, {
@@ -296,87 +312,106 @@ const AdminPage = () => {
         console.error('error in try-catch for updating:', error);
         alert('업데이트 중 오류 발생');
       } finally {
-        setIsLoading(false);
+        setIsApplyLoading(false);
       }
-    }
+    };
 
     return (
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1>
         <SidebarAdmin isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <h3>업로드된 URL</h3>
-        <div className="list-container">
-        {uploadedUrls.length > 0 ? (
-          uploadedUrls.map((url, index) => (
-            <div key={index}>{url}</div>
-          ))
-        ) : (
-          <div>업로드된 URL이 없습니다.</div>
-        )}
-        </div>
         
-        <h3>업로드된 문서</h3>
-        <div className="list-container">
-        {uploadedDocs.map((doc, index) => (
-            <div key={index}>{doc}</div>
-        ))}
-        </div>
+        <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1>
         
-        <h3>URL 업로드</h3>
-        <div className="input-container">
-          <input
-            type="text"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            placeholder="https://example.com"
-            className="input-field"
-            disabled={isLoading}
-          />
-          <button 
-            className="url-check-btn" 
-            onClick={handleUrlUpload}
-            disabled={isLoading}
-          >
-            {isLoading ? '처리 중' : 'URL 등록'}
-        </button>
-        </div>
-        
-        <h3>문서 업로드</h3>
-        <div className="upload-container">
-          <div
-            className={`upload-section ${isDragOver ? 'drag-over' : ''} ${isLoading ? 'disabled' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleFileDrop}
-            onClick={() => !isLoading && fileInputRef.current.click()}
-            >
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              multiple
-              accept=".pdf, .txt, .csv, .json, .xlsx"
-              onChange={handleFileDrop}
-              disabled={isLoading}
-            />
-            <p>{isLoading ? '처리 중...' : (isDragOver ? '여기에 파일을 놓으세요' : '파일을 여기로 드래그하거나 클릭하세요')}</p>
+        <div className="admin-content">
+          {/* 왼쪽 URL 섹션 */}
+          <div className="url-section">
+            <h2>URL 관리</h2>
+            
+            <h3>업로드된 URL</h3>
+            <div className="list-container">
+              {uploadedUrls.length > 0 ? (
+                uploadedUrls.map((url, index) => (
+                  <div key={index}>{url}</div>
+                ))
+              ) : (
+                <div className="empty-message">업로드된 URL이 없습니다.</div>
+              )}
+            </div>
+            
+            <h3>URL 업로드</h3>
+            <div className="input-container">
+              <input
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com"
+                className="input-field"
+                disabled={isAnyProcessing}
+              />
+              <button 
+                className="url-check-btn" 
+                onClick={handleUrlUpload}
+                disabled={isAnyProcessing}
+              >
+                {isUrlLoading ? '처리 중' : 'URL 등록'}
+              </button>
+            </div>
           </div>
-          <button
-            className="process-btn"
-            onClick={handleProcessDocuments}
-            disabled={isLoading}
-          >
-            {isLoading ? '처리 중' : '문서 등록'}
-          </button>
+          
+          {/* 오른쪽 문서 섹션 */}
+          <div className="docs-section">
+            <h2>문서 관리</h2>
+            
+            <h3>업로드된 문서</h3>
+            <div className="list-container">
+              {uploadedDocs.length > 0 ? (
+                uploadedDocs.map((doc, index) => (
+                  <div key={index}>{doc}</div>
+                ))
+              ) : (
+                <div className="empty-message">업로드된 문서가 없습니다.</div>
+              )}
+            </div>
+            
+            <h3>문서 업로드</h3>
+            <div className="upload-container">
+              <div
+                className={`upload-section ${isDragOver ? 'drag-over' : ''} ${isAnyProcessing ? 'disabled' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleFileDrop}
+                onClick={() => !isAnyProcessing && fileInputRef.current.click()}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  multiple
+                  accept=".pdf, .txt, .csv, .json, .xlsx"
+                  onChange={handleFileDrop}
+                  disabled={isAnyProcessing}
+                />
+                <p>{isFileLoading ? '처리 중...' : (isDragOver ? '여기에 파일을 놓으세요' : '파일을 여기로 드래그하거나 클릭하세요')}</p>
+              </div>
+              <button
+                className="process-btn"
+                onClick={handleProcessDocuments}
+                disabled={isAnyProcessing}
+              >
+                {isProcessLoading ? '처리 중' : '문서 등록'}
+              </button>
+            </div>
+          </div>
         </div>
         
+        {/* 적용 버튼 */}
         <div className="button-group">
           <button 
             className="apply-btn"
             onClick={isNewPage ? handleApply : handleUpdate}
-            disabled={isLoading}
+            disabled={isAnyProcessing}
           > 
-            {isLoading ? '처리 중' : (isNewPage ? 'Apply' : 'Update')}
+            {isApplyLoading ? '처리 중' : (isNewPage ? 'Apply' : 'Update')}
           </button>
         </div>
       </div>

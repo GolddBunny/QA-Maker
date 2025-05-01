@@ -175,8 +175,7 @@
 }
 
 .page-item.active {
-  background-color: #e6f7ff;
-  border-left: 3px solid #1890ff;
+  background-color: #f7f7f7;
 }
 
 /* 모달 스타일 */
