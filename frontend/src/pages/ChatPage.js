@@ -73,15 +73,19 @@ function ChatPage() {
         }
     };
     
-    // 질문 전송 함수
+    // 질문 전송 함수 (병렬 요청 방식)
     const sendQuestion = async (questionText) => {
         setIsLoading(true);
         setServerResponseReceived(false);
 
         const newQaEntry = { 
             question: questionText,
-            answer: "답변을 불러오는 중...", 
+            answer: "답변을 불러오는 중...",
+            localAnswer: "로컬 답변을 불러오는 중...",
+            globalAnswer: "글로벌 답변을 불러오는 중...",
             confidence: null,
+            localConfidence: null,
+            globalConfidence: null,
             actionButtonVisible: false, // 그래프 버튼 숨김
             relatedQuestionsVisible: false, // 관련 질문 숨김
         };
@@ -89,9 +93,10 @@ function ChatPage() {
         // 새 질문-답변 추가
         setQaList((prevQaList) => [...prevQaList, newQaEntry]);
         setNewQuestion(""); // 질문 입력란 초기화
-
-        try {
-            const response = await fetch("http://localhost:5000/run-query", {
+        
+        // 각 방식별 서버 요청 함수
+        const fetchLocalResponse = () => {
+            return fetch("http://localhost:5000/run-query", {
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json",
@@ -103,41 +108,64 @@ function ChatPage() {
                     resMethod: "local",
                     resType: "text"
                 })
+            }).then(response => response.json());
+        };
+        
+        const fetchGlobalResponse = () => {
+            return fetch("http://localhost:5000/run-query", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    page_id: currentPageId,
+                    message: questionText,
+                    resMethod: "global",
+                    resType: "text"
+                })
+            }).then(response => response.json());
+        };
+
+        try {
+            // 두 요청을 병렬로 실행
+            const [localData, globalData] = await Promise.all([
+                fetchLocalResponse(),
+                fetchGlobalResponse()
+            ]);
+            
+            // 각 응답 확인 및 통합 처리
+            const localAnswer = localData.result || "서버에서 로컬 응답을 받지 못했습니다.";
+            const globalAnswer = globalData.result || "서버에서 글로벌 응답을 받지 못했습니다.";
+            
+            // 엔티티와 관계는 로컬 데이터에서 가져옴
+            const newEntities = localData.entities ? localData.entities.join(',') : "";
+            const newRelationships = localData.relationships ? localData.relationships.join(',') : "";
+            
+            // 응답 업데이트
+            updateLastAnswer(localAnswer, globalAnswer, newEntities, newRelationships);
+            setEntities(newEntities);
+            setRelationships(newRelationships);
+            setServerResponseReceived(true);
+            
+            // 기존 그래프 데이터 캐시 초기화
+            graphDataCacheRef.current = {};
+            
+            // 그래프 및 관련 질문 보이기
+            setQaList(prevQaList => {
+                const updatedList = [...prevQaList];
+                updatedList[updatedList.length - 1].actionButtonVisible = true;
+                updatedList[updatedList.length - 1].relatedQuestionsVisible = true;
+                return updatedList;
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                const answer = data.result || "서버에서 응답을 받지 못했습니다.";
-                const newEntities = data.entities.join(',');
-                const newRelationships = data.relationships.join(',');
-                
-                updateLastAnswer(answer, newEntities, newRelationships);
-                setEntities(newEntities);
-                setRelationships(newRelationships);
-                setServerResponseReceived(true);
-
-                // 기존 그래프 데이터 캐시 초기화
-                graphDataCacheRef.current = {};
-
-                // 그래프 및 관련 질문 보이기
-                setQaList(prevQaList => {
-                    const updatedList = [...prevQaList];
-                    updatedList[updatedList.length - 1].actionButtonVisible = true;
-                    updatedList[updatedList.length - 1].relatedQuestionsVisible = true;
-                    return updatedList;
-                });
-                
-                // 대화 히스토리에 저장
-                saveToQAHistory(questionText, answer, newEntities, newRelationships);
-
-            } else {
-                updateLastAnswer(`서버 오류: ${data.error || '알 수 없는 오류'}`);
-                setServerResponseReceived(false);
-            }
+            
+            // 대화 히스토리에 저장
+            saveToQAHistory(questionText, localAnswer, globalAnswer, newEntities, newRelationships);
+            
         } catch (error) {
             console.error("네트워크 오류:", error);
-            updateLastAnswer("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
+            const errorMessage = "네트워크 오류가 발생했습니다. 다시 시도해주세요.";
+            updateLastAnswer(errorMessage, errorMessage, "", "");
             setServerResponseReceived(false);
         } finally {
             setIsLoading(false);
@@ -145,7 +173,7 @@ function ChatPage() {
     };
 
     // QA 히스토리에 저장하는 함수
-    const saveToQAHistory = (question, answer, entities, relationships) => {
+    const saveToQAHistory = (question, localAnswer, globalAnswer, entities, relationships) => {
         const params = new URLSearchParams(location.search);
         const qaId = params.get("qaId");
         
@@ -155,13 +183,17 @@ function ChatPage() {
         // 새 대화 항목
         const newConversation = {
             question,
-            answer,
+            answer: localAnswer, // 기본 답변은 로컬 답변으로 설정
+            localAnswer,
+            globalAnswer,
             timestamp,
             entities,
             relationships,
             actionButtonVisible: true,
             relatedQuestionsVisible: true,
-            confidence: 99
+            confidence: 99,
+            localConfidence: 99,
+            globalConfidence: 90
         };
         
         if (qaId) {
@@ -193,7 +225,7 @@ function ChatPage() {
     };
 
     // 최신 질문의 답변 업데이트
-    const updateLastAnswer = (answer, newEntities, newRelationships) => {
+    const updateLastAnswer = (localAnswer, globalAnswer, newEntities, newRelationships) => {
         setQaList((prevQaList) => {
             if (prevQaList.length === 0) return prevQaList;
 
@@ -201,8 +233,12 @@ function ChatPage() {
             const lastIndex = newList.length - 1;
             newList[lastIndex] = {
                 ...newList[lastIndex],
-                answer: answer || "답변을 불러오는 중...",
-                confidence: 99,  // 정확도 나중에 설정해주기
+                answer: localAnswer || "답변을 불러오는 중...", // 기본 답변은 로컬 답변으로 설정
+                localAnswer: localAnswer || "로컬 답변을 불러오는 중...",
+                globalAnswer: globalAnswer || "글로벌 답변을 불러오는 중...",
+                confidence: 99,
+                localConfidence: 99,
+                globalConfidence: 90,
                 entities: newEntities,
                 relationships: newRelationships
             };
