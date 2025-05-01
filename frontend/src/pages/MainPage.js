@@ -46,20 +46,10 @@ function MainPage() {
     e?.preventDefault();
     if (!message.trim() && !selectedFile) return;
     
-    // 파일과 질문을 함께 전달
-    const searchParams = new URLSearchParams();
-    if (message.trim()) {
-      searchParams.append('question', message.trim());
-    }
-    if (selectedFile) {
-      // 파일 정보를 세션 스토리지에 저장하거나 
-      // FormData를 사용하여 파일을 서버로 전송하는 로직을 여기에 추가할 수 있습니다.
-      // 여기서는 간단하게 파일명을 URL 파라미터로 전달합니다.
-      searchParams.append('file', selectedFile.name);
-    }
-    
-    navigate(`/chat?${searchParams.toString()}`);
-  };
+    e?.preventDefault();
+     if (!message.trim()) return;
+     navigate(`/chat?question=${encodeURIComponent(message.trim())}`);
+   };
   
   // Enter 키 처리 함수
   const handleKeyPress = (e) => {
