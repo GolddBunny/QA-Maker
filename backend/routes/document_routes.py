@@ -45,6 +45,25 @@ def process_documents(page_id):
         convert2txt(upload_path, input_path)    # 문서 -> txt 변경
         print("모든 파일 .txt로 변환 완료")
 
+        return jsonify({
+            'success': True,
+            'message': '문서 변환 완료'
+        })
+
+    except Exception as e:
+        print("Flask 서버 오류:", str(e))
+        return jsonify({
+            'success': False, 
+            'error': str(e)
+        }), 500
+
+
+@document_bp.route('/apply/<page_id>', methods=['POST'])
+def apply_documents(page_id):
+    """GraphRAG 인덱싱 처리"""
+    try:
+        base_path, input_path, upload_path = ensure_page_directory(page_id)
+
         # graphrag index 명령어 실행
         start_time = time.time()
         process = subprocess.run(['graphrag', 'index', '--root', base_path])

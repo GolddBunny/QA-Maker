@@ -73,7 +73,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                 localStorage.setItem('currentPageId', savedPages[0].id);
             }
         }
-    }, [navigate]);
+    }, [navigate, setCurrentPageId]);
 
     const handleAddPage = async() => {
         console.log('새 페이지 추가 버튼이 클릭되었습니다.');
@@ -103,6 +103,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                     
                     // 새 페이지로 이동
                     localStorage.setItem('currentPageId', newPageId);
+                    setCurrentPageId(newPageId);
                     navigate(`/admin/${newPageId}`);
                 } else {
                     console.error('페이지 초기화 실패:', data.error);
@@ -149,10 +150,13 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                 if (localStorage.getItem('currentPageId') === selectedPageId) {
                     const nextPage = updatedPages[0] || null;
                     if (nextPage) {
+                        setCurrentPageId(nextPage.id);
+
                         localStorage.setItem('currentPageId', nextPage.id);
                         navigate(`/admin/${nextPage.id}`);
                     } else {
                         localStorage.removeItem('currentPageId');
+                        setCurrentPageId(null);
                         navigate('/admin');
                     }
                 }
@@ -173,6 +177,9 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
         setShowDeleteModal(false);
     }
 
+    // 선택된 페이지 정보 가져오기
+    const selectedPage = pages.find(page => page.id === selectedPageId);
+
     return (
         <div>
             <div className={`hamburger-icon ${isSidebarOpen ? 'rotate' : ''}`} onClick={toggleSidebar}>
@@ -182,6 +189,10 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
             </div>
 
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+                <div className="sidebar-header">
+                    <h3>페이지 목록</h3>
+                </div>
+
                 <input
                     type="text"
                     placeholder="새 페이지 이름"
@@ -207,18 +218,20 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                             </div>
                         ))
                     ) : (
-                        <div>페이지가 없습니다.</div>
+                        <div className="no-pages-message">페이지가 없습니다.</div>
                     )}
                 </div>
             </div>
             {showDeleteModal && (
                 <div className="modal">
-                    
-                    <div className="modal-buttons">
-                        <button onClick={handleDeletePage} disabled={isLoading}>
-                            {isLoading ? '삭제 중...' : '삭제'}
-                        </button>
-                        <button onClick={closeModal} disabled={isLoading}>취소</button>
+                    <div className="modal-content">
+                        <h3>페이지 삭제</h3>
+                        <div className="modal-buttons">
+                            <button onClick={handleDeletePage} disabled={isLoading}>
+                                {isLoading ? '삭제 중...' : '삭제'}
+                            </button>
+                            <button onClick={closeModal} disabled={isLoading}>취소</button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -1,176 +1,224 @@
+.sidebar {
+  position: fixed;
+  top: 0px;
+  left: -300px;
+  width: 300px;
+  height: 100%;
+  background-color: #ffffff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease;
+  z-index: 100;
+  overflow-y: auto;
+  padding: 5px 0;
+}
 
-/* 햄버거 아이콘 */
+.sidebar.open {
+  left: 0;
+}
+
+/* 햄버거 아이콘 스타일 */
 .hamburger-icon {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    z-index: 1100;
-  }
-  
-  .bar {
-    width: 27px;
-    height: 4px;
-    background-color: rgb(61, 61, 61);
-    border-radius: 3px;
-  }
-  
-  /* 사이드바 */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: -250px; /* 사이드바 기본 위치 */
-    width: 250px;
-    height: 100vh;
-    background-color: #bac8c0;
-    transition: left 0.3s ease;
-    z-index: 1000;
-    padding-top: 60px;
-  }
-  
-  .sidebar.open {
-    left: 0; /* 사이드바가 열리면 왼쪽으로 위치 변경 */
-  }
-  
-  .sidebar a {
-    display: block;
-    padding: 15px;
-    text-decoration: none;
-    color: rgb(37, 55, 44);
-    font-size: 18px;
-    font-weight: bold;
-    border-bottom: 2px solid rgba(37, 55, 44, 0.3); /* 하단에 구분선 추가 */
-    
-  }
-  
-  .sidebar a.active {
-    background-color: #6d9982;
-    color: rgb(230, 230, 230);
-  }
-  
-  /* 사이드바 안의 링크 */
-  .sidebar a:hover {
-    background-color: #6d9982;
-  }
-
-  /* 페이지 목록 스타일 */
-.page-list {
-    margin: 10px 0;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 30px;
+  height: 20px;
+  cursor: pointer;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
 }
 
-/* 개별 페이지 아이템 스타일 */
-.page-item {
-    padding: 12px 20px;
-    margin: 5px 0;
-    color: #25372c;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+.hamburger-icon.rotate {
+  transform: rotate(90deg);
 }
 
-.page-item:hover {
-    background-color: #6d9982;
-    color: #e6e6e6;
+.hamburger-icon .bar {
+  width: 90%;
+  height: 3px;
+  background-color: #333;
+  border-radius: 3px;
+  transition: all 0.3s ease;
 }
 
-.page-item.active {
-    background-color: #6d9982;
-    color: #e6e6e6;
+.sidebar-header {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eaeaea;
 }
 
-/* 입력 칸 스타일 */
+.sidebar-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0px;
+  padding: 15px 0px;
+}
+
+.qa-history-list {
+  margin-top: -2px;
+  padding: 0px 10px;
+}
+
+.qa-history-item {
+  padding: 0px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.qa-history-item:hover {
+  background-color: #f7f7f7;
+}
+
+.qa-history-item.active {
+  background-color: #f0f0f0;
+}
+
+.qa-item-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.qa-history-content {
+  display: flex;
+  font-size: 15px;
+  flex-direction: column;
+}
+
+.qa-history-question {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.qa-history-date {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 23px;
+}
+
+.no-history-message {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.delete-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: none;
+  color: #999;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+  padding: 0;
+}
+
+.delete-button:hover {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+/* 관리자 페이지 */
 .new-page-input {
-    width: calc(100% - 50px);
-    margin: 10px;
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #bac8c0;
-    border-radius: 8px;
-    background-color: #f0f4f2;
-    color: #25372c;
-    outline: none;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  width: 82%;
+  padding: 10px;
+  margin: 15px auto;
+  display: block;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-.new-page-input:focus {
-    border-color: #6d9982;
-    box-shadow: 0 0 3px #6d9982;
-}
-
-/* 버튼 스타일 */
 .new-page-btn {
-    display: block;
-    width: calc(100% - 100px);
-    margin: 5px auto;
-    padding: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    color: hsl(0, 0%, 31%);
-    background-color: #f0f4f2;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  padding: 10px;
+  margin: 0 auto 15px;
+  display: block;
+  background-color: #70b8f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .new-page-btn:hover {
-    background-color: #6d9982;
-    color: rgb(231, 231, 231);
+  background-color: #63a4da;
 }
 
-.new-page-btn:active {
-    transform: scale(0.98);
+.new-page-btn:disabled {
+  background-color: #d9d9d9;
+  cursor: not-allowed;
+}
+
+.page-list {
+  padding: 0 10px;
+}
+
+.page-item {
+  padding: 15px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.page-item:hover {
+  background-color: #f7f7f7;
+}
+
+.page-item.active {
+  background-color: #f7f7f7;
 }
 
 /* 모달 스타일 */
 .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
 }
 
 .modal-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.modal button {
-    margin: 5px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 5px;
-    background-color: #6d9982;
-    color: #fff;
-    cursor: pointer;
-}
-
-.modal button:hover {
-    background-color: #547d64;
-}
-
-.modal-header {
   background-color: white;
-  color: rgb(46, 46, 46);
-  font-size: 20px;
-  font-weight: bold;
-  padding: 8px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-  border-radius: 10px;
+  padding: 20px;
+  border-radius: 5px;
+  width: 300px;
+  max-width: 80%;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.modal-buttons button:last-child {
+  background-color: #d9d9d9;
 }

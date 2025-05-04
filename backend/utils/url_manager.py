@@ -2,31 +2,59 @@ import os
 import json
 
 class URLManager:
-    def __init__(self, file_path='data/urls.json'):
-        self.file_path = file_path
-        # 디렉토리 존재 확인 및 생성
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    
-    def save_urls(self, urls):
-        # 주어진 URL 리스트를 저장 urls (list): 저장할 URL 목록
-        # 중복 제거
-        unique_urls = list(set(urls))
+    def __init__(self):
+        # data/urls.json 경로 설정
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.file_path = os.path.join(base_dir, "data", "urls", "urls.json")
         
-        # JSON 파일로 저장
-        with open(self.file_path, 'w', encoding='utf-8') as f:
-            json.dump(unique_urls, f, ensure_ascii=False, indent=4)
+        # 디렉토리 존재 확인 및 생성
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        
+        # 파일이 존재하지 않으면 빈 딕셔너리로 초기화
+        if not os.path.exists(self.file_path):
+            self.save_all_urls({})
     
-    def load_urls(self):
-        # 저장된 URL 리스트 로드 list: 저장된 URL 목록
+    def save_all_urls(self, urls_dict):
+        with open(self.file_path, 'w', encoding='utf-8') as f:
+            json.dump(urls_dict, f, ensure_ascii=False, indent=4)
+    
+    def load_all_urls(self):
         try:
             with open(self.file_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except FileNotFoundError:
-            return []
+            return {}
     
-    def add_urls(self, new_urls):
-        # 새로운 URL들을 기존 목록에 추가 new_urls (list): 추가할 URL 목록
-        existing_urls = self.load_urls()
-        updated_urls = list(set(existing_urls + new_urls)) # 중복 제거
-        self.save_urls(updated_urls)
-        return updated_urls 
+    def load_urls(self, page_id):
+        urls_dict = self.load_all_urls()
+        return urls_dict.get(page_id, [])
+    
+    def save_urls(self, page_id, urls):
+        # 중복 제거
+        unique_urls = list(set(urls))
+        
+        # 전체 URL 딕셔너리를 로드하고 업데이트
+        urls_dict = self.load_all_urls()
+        urls_dict[page_id] = unique_urls
+        
+        # 업데이트된 딕셔너리를 저장
+        self.save_all_urls(urls_dict)
+    
+    def add_url(self, page_id, new_url):
+        urls = self.load_urls(page_id)
+        
+        # URL이 이미 목록에 있는지 확인
+        if new_url not in urls:
+            urls.append(new_url)
+            self.save_urls(page_id, urls)
+        
+        return urls
+    
+    def add_urls(self, page_id, new_urls):
+        urls = self.load_urls(page_id)
+        updated_urls = list(set(urls + new_urls))  # 중복 제거
+        self.save_urls(page_id, updated_urls)
+        return updated_urls
+    
+    def get_all_page_ids(self):
+        return list(self.load_all_urls().keys())

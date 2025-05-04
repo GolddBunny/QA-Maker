@@ -61,6 +61,7 @@ h1 {
   vertical-align: middle;
 }
 
+/* 버튼 */
 .icon-btn {
   background: transparent;
   border: none;
@@ -75,7 +76,12 @@ h1 {
   object-fit: contain;
 }
 
-/* plus 버튼 회전 효과 */
+.icon :hover {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* + 버튼 회전 */
 .icon.rotate {
   transform: rotate(45deg);
   transition: transform 0.2s ease;
@@ -84,93 +90,118 @@ h1 {
 /* 선택박스 스타일 */
 .select-box {
   position: absolute;
-  background: #fff;
-  border: 2px solid #838383;
-  border-radius: 5px;
-  margin-bottom: 100px;
-  padding: 5px;
-  width: 50px;
+  top: 310px;
+  margin-left: -68px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  width: 90px;
+  z-index: 100;
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
 }
 
-.recent-questions {
-  width: 600px;
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 6px;
-  position: relative;
-}
-
-.toggle-recent {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  font-size: 17px;
-}
-
-.toggle-recent img {
-  width: 15px;
-  height: 15px;
-  margin-bottom: 2px;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-
-.recent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 17px;
-  cursor: pointer;
-}
-
-.view-all {
-  text-decoration: none;
-  color: #000000;
-  font-size: 17px;
-}
-
-.question-list {
-  display: flex;
-  flex-direction: row;
-  gap: 15px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  scroll-behavior: smooth;
+/* 삼각형 화살표 추가 */
+.select-box:after {
+  content: '';
   position: absolute;
-  top: 50px;
-  left: 0;
+  bottom: -10px;
+  left: 75px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* 커스텀 선택 옵션 버튼 */
+.option-btn {
+  display: block;
   width: 100%;
-  background: white;
-  padding: 10px;
-  border-radius: 10px;
-  z-index: 10;
+  padding: 10px 15px;
+  margin: 6px 0;
+  text-align: left;
+  border: none;
+  border-radius: 8px;
+  background-color: #f8f8f8;
+  color: #333;
+  font-size: 14px;
+  font-family: 'Arial', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.option-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.option-btn.active {
+  background-color: #e6f7ff;
+}
+
+/* 옵션 아이콘 */
+.option-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  opacity: 0.7;
+}
+
+/* 선택 박스 제목 */
+.select-box-title {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+/* 선택된 파일 표시 영역 스타일 */
+.selected-file-container {
+  width: 180px;
+  margin-top: 10px;
+  padding: 0;
+}
+
+.selected-file {
+  display: flex;
+  background-color: #f2f7fd;
+  border: 1px solid #d1e5fa;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.file-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+.file-name {
+  flex-grow: 1;
+  font-size: 14px;
+  color: black;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* 최근 질문 박스 */
-.question {
-  width: 150px;
-  height: 100px;
-  background: #e3f2fd;
-  border-radius: 8px;
-  font-size: 16px;
-  text-align: left;
-  padding: 15px;
-  flex-shrink: 0;
-  word-wrap: break-word;
-  white-space: normal;
-  overflow: hidden;
+.file-cancel {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 5px;
 }
 
-/* 스크롤바 */
-.question-list::-webkit-scrollbar {
-  height: 8px;
-}
-
-.question-list::-webkit-scrollbar-thumb {
-  background: #d6d6d6;
-  border-radius: 10px;
+.file-cancel:hover {
+  color: #ff4d4d;
 }
