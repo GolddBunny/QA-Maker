@@ -103,9 +103,9 @@ function ChatPage() {
                     "Accept": "application/json"
                 },
                 body: JSON.stringify({
-                    page_id: currentPageId,
+                    page_id: 1743412670027,
                     message: questionText,
-                    resMethod: "local",
+                    resMethod: "global",
                     resType: "text"
                 })
             }).then(response => response.json());
