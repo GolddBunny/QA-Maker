@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from utils.url_manager import URLManager
+from backend.utils.past.url_manager import URLManager
 
 url_load_bp = Blueprint('url_load', __name__)
 url_manager = URLManager()

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 import time
 from utils.crawling import crawl_main
-from utils.url_manager import URLManager
+from backend.utils.past.url_manager import URLManager
 
 crawling_bp = Blueprint('crawling', __name__)
 url_manager = URLManager()
