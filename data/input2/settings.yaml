@@ -61,8 +61,8 @@ input:
   base_dir: "input"
 
 chunks:
-  size: 800
-  overlap: 150
+  size: 1500
+  overlap: 300
   group_by_columns: [id]
 
 ### Output settings ###
@@ -86,7 +86,7 @@ output:
 extract_graph:
   model_id: default_chat_model
   prompt: "prompts/extract_graph.txt"
-  entity_types: [organization,person,geo,event,date,room,phone]
+  entity_types: [organization,person,geo,event,date,room,phone,subject,subject_type,subject_code]
   max_gleanings: 1
 
 summarize_descriptions:
@@ -96,12 +96,12 @@ summarize_descriptions:
 
 extract_graph_nlp:
   text_analyzer:
-    # extractor_type: regex_english # [regex_english, syntactic_parser, cfg]
-    extractor_type: syntactic_parser  # regex_english에서 변경
-    model_name: ko_core_news_md       # 한국어 SpaCy 모델 사용
-    max_word_length: 20               # 한국어 단어는 더 길 수 있으므로 조정
-    word_delimiter: " "               # 한국어 띄어쓰기에 맞춤
-    include_name_entities: True
+    extractor_type: regex_english # [regex_english, syntactic_parser, cfg]
+    # extractor_type: syntactic_parser  # regex_english에서 변경
+    # model_name: ko_core_news_md       # 한국어 SpaCy 모델 사용
+    # max_word_length: 20               # 한국어 단어는 더 길 수 있으므로 조정
+    # word_delimiter: " "               # 한국어 띄어쓰기에 맞춤
+    # include_name_entities: True
 
 extract_claims:
   enabled: false
@@ -138,12 +138,30 @@ local_search:
   chat_model_id: default_chat_model
   embedding_model_id: default_embedding_model
   prompt: "prompts/local_search_system_prompt.txt"
+  text_unit_prop: 0.5
+  community_prop: 0.1
+  conversation_history_max_turns: 5
+  conversation_history_user_turns_only: True
+  top_k_mapped_entities: 10
+  top_k_relationships: 10
+  include_entity_rank: True
+  include_relationship_weight: True
+  include_community_rank: False
+  embedding_vectorstore_key: EntityVectorStoreKey.ID  # set this to EntityVectorStoreKey.TITLE if the vectorstore uses entity title as ids
+  max_tokens: 12_000  # change this based on the token limit you have on your model (if you are using a model with 8k limit, a good setting could be 5000)
 
 global_search:
   chat_model_id: default_chat_model
   map_prompt: "prompts/global_search_map_system_prompt.txt"
   reduce_prompt: "prompts/global_search_reduce_system_prompt.txt"
   knowledge_prompt: "prompts/global_search_knowledge_system_prompt.txt"
+  use_community_summary: False  # False means using full community reports. True means using community short summaries.
+  shuffle_data: True
+  include_community_rank: True
+  include_community_weight: True
+  community_weight_name: "occurrence weight"
+  normalize_community_weight: True
+  max_tokens: 12_000  # change this based on the token limit you have on your model (if you are using a model with 8k limit, a good setting could be 5000)
 
 drift_search:
   chat_model_id: default_chat_model

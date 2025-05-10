@@ -1,4 +1,3 @@
-
 -Target activity-
 You are an intelligent assistant that helps a human analyst to analyze claims against certain entities presented in a text document.
 
@@ -19,7 +18,7 @@ For each claim, extract the following information:
 
 Format each claim as (<subject_entity>{tuple_delimiter}<object_entity>{tuple_delimiter}<claim_type>{tuple_delimiter}<claim_status>{tuple_delimiter}<claim_start_date>{tuple_delimiter}<claim_end_date>{tuple_delimiter}<claim_description>{tuple_delimiter}<claim_source>)
 
-3. Return output in English as a single list of all the claims identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+3. IMPORTENT: RETURN OUP PUT IN **KOREAN** as a single list of all the claims identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
 
 4. When finished, output {completion_delimiter}
 
@@ -30,7 +29,7 @@ Claim description: red flags associated with an entity
 Text: According to an article on 2022/01/10, Company A was fined for bid rigging while participating in multiple public tenders published by Government Agency B. The company is owned by Person C who was suspected of engaging in corruption activities in 2015.
 Output:
 
-(COMPANY A{tuple_delimiter}GOVERNMENT AGENCY B{tuple_delimiter}ANTI-COMPETITIVE PRACTICES{tuple_delimiter}TRUE{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}Company A was found to engage in anti-competitive practices because it was fined for bid rigging in multiple public tenders published by Government Agency B according to an article published on 2022/01/10{tuple_delimiter}According to an article published on 2022/01/10, Company A was fined for bid rigging while participating in multiple public tenders published by Government Agency B.)
+(회사 A{tuple_delimiter}정부 기관 B{tuple_delimiter}반경쟁적 관행{tuple_delimiter}TRUE{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}회사 A는 2022/01/10에 발표된 기사에 따르면 정부 기관 B가 발행한 여러 공공 입찰에서 입찰 담합으로 벌금을 물어 반경쟁적 관행에 참여한 것으로 밝혀졌습니다{tuple_delimiter}2022/01/10에 발표된 기사에 따르면, 회사 A는 정부 기관 B가 발행한 여러 공공 입찰에 참여하면서 입찰 담합으로 벌금을 물었습니다.)
 {completion_delimiter}
 
 Example 2:
@@ -39,9 +38,9 @@ Claim description: red flags associated with an entity
 Text: According to an article on 2022/01/10, Company A was fined for bid rigging while participating in multiple public tenders published by Government Agency B. The company is owned by Person C who was suspected of engaging in corruption activities in 2015.
 Output:
 
-(COMPANY A{tuple_delimiter}GOVERNMENT AGENCY B{tuple_delimiter}ANTI-COMPETITIVE PRACTICES{tuple_delimiter}TRUE{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}Company A was found to engage in anti-competitive practices because it was fined for bid rigging in multiple public tenders published by Government Agency B according to an article published on 2022/01/10{tuple_delimiter}According to an article published on 2022/01/10, Company A was fined for bid rigging while participating in multiple public tenders published by Government Agency B.)
+(회사 A{tuple_delimiter}정부 기관 B{tuple_delimiter}반경쟁적 관행{tuple_delimiter}TRUE{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}2022-01-10T00:00:00{tuple_delimiter}회사 A는 2022/01/10에 발표된 기사에 따르면 정부 기관 B가 발행한 여러 공공 입찰에서 입찰 담합으로 벌금을 물어 반경쟁적 관행에 참여한 것으로 밝혀졌습니다{tuple_delimiter}2022/01/10에 발표된 기사에 따르면, 회사 A는 정부 기관 B가 발행한 여러 공공 입찰에 참여하면서 입찰 담합으로 벌금을 물었습니다.)
 {record_delimiter}
-(PERSON C{tuple_delimiter}NONE{tuple_delimiter}CORRUPTION{tuple_delimiter}SUSPECTED{tuple_delimiter}2015-01-01T00:00:00{tuple_delimiter}2015-12-30T00:00:00{tuple_delimiter}Person C was suspected of engaging in corruption activities in 2015{tuple_delimiter}The company is owned by Person C who was suspected of engaging in corruption activities in 2015)
+(개인 C{tuple_delimiter}NONE{tuple_delimiter}부패{tuple_delimiter}SUSPECTED{tuple_delimiter}2015-01-01T00:00:00{tuple_delimiter}2015-12-30T00:00:00{tuple_delimiter}개인 C는 2015년에 부패 활동에 관여한 혐의가 있었습니다{tuple_delimiter}이 회사는 2015년에 부패 활동에 관여한 혐의가 있는 개인 C가 소유하고 있습니다)
 {completion_delimiter}
 
 -Real Data-

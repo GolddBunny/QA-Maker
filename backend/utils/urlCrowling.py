@@ -1,16 +1,17 @@
-from bs4 import BeautifulSoup
-import os
-import time
-import random
-import re
-import json
-import logging
-from urllib.parse import urlparse, urljoin, parse_qs
+from bs4 import BeautifulSoup   # html 파싱 + 데이터 추출 : find_all(조건에 맞는 모든 태그 찾기), select(css 선택자 사용)
+import os                       # 파일 시스템 사용
+import time                     
+import random                   
+import re                       # 정규 표현식 처리 : sub(문자열 치환)
+import json                     
+import logging                  
+import base64                   # base64 인코딩/디코딩 처리
+from urllib.parse import urlparse, urljoin, parse_qs    # url 파싱 + 분석/조합/쿼리파라미터처리 : urlparse(url 분석), urljoin(url 조합), parse_qs(쿼리 파라미터 추출)
 from datetime import datetime
 from typing import Set, List, Dict, Tuple, Optional, Any
-from concurrent.futures import ThreadPoolExecutor
-import requests
-from selenium import webdriver
+from concurrent.futures import ThreadPoolExecutor, as_completed       # 비동기 작업 처리 : ThreadPoolExecutor(스레드 풀 관리). 병렬 작업 처리
+import requests                                         # 정적 웹페이지 크롤링: 웹 요청 처리(get, post) + 웹 페이지 다운로드(text, json)
+from selenium import webdriver                          # 동적 웹페이지 크롤링: 웹 브라우저 자동화(자바스크립트 실행). WebDriverWait(특정 요소가 나타날 때까지 대기)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -29,7 +30,8 @@ logging.basicConfig(
 logger = logging.getLogger("scope_crawler")
 
 # 상수 정의
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "@input")
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "crawling")
+
 # 유저 에이전트 정의
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -41,7 +43,7 @@ DOC_EXTENSIONS = ['.pdf', '.docx', '.doc', '.hwp', '.txt', '.xls', '.xlsx', '.pp
 # 제외할 url 패턴
 EXCLUDE_PATTERNS = [
     '/login', '/logout', '/search?', 'javascript:', '#', 'mailto:', 'tel:',
-    '/api/', '/rss/', 'comment', 'download.do', 'print.do', 'popup', 'redirect', 'captcha', 'admin', 'synapView.do?', '/synapView.do?', '/synap', '/synap/view.do', '/synap/view.do?'
+    '/api/', '/rss/', 'comment', 'print.do', 'popup', 'redirect', 'captcha', 'admin', 'synapView.do?', '/synapView.do?', '/synap', '/synap/view.do', '/synap/view.do?'
 ]
 # 페이지네이션 감지를 위한 CSS 식별자
 PAGINATION_SELECTORS = [
@@ -63,12 +65,12 @@ PAGE_NUMBER_PATTERNS = [
 ATTACHMENT_CLASSES = [
     'attachment', 'attachments', 'file-download', 'download-file', 
     'document-link', 'file-list', 'view-file', 'board-file',
-    'filearea', 'file-area', 'download-area', 'download-box'
+    'filearea', 'file-area', 'download-area', 'download-box', 'download'
 ]
 # 다운로드 URL 패턴
 DOWNLOAD_PATTERNS = [
     '/download', '/file', '/attach', 'fileDown', 'getFile', 
-    'downloadFile', 'downFile', 'fileview'
+    'downloadFile', 'downFile', 'fileview', 'download', 'download.do'
 ]
 
 class ScopeLimitedCrawler:
@@ -170,7 +172,7 @@ class ScopeLimitedCrawler:
                 logger.error(f"웹드라이버 종료 중 오류 발생: {e}")
 
     def normalize_url(self, url: str) -> str:
-        """URL 정규화하여 프래그먼트와 후행 슬래시 제거"""
+        """URL 정규화하여 프래그먼트와 후행 슬래시 제거, 페이지네이션 고려"""
         # 프래그먼트 제거
         if '#' in url:
             url = url.split('#')[0]
@@ -179,11 +181,57 @@ class ScopeLimitedCrawler:
         if not (url.startswith('http://') or url.startswith('https://')):
             url = 'https://' + url
         
-        # 도메인 루트가 아닌 경우, 후행 슬래시 제거
+        # URL 파싱
         parsed = urlparse(url)
+        path = parsed.path
+        query_params = parse_qs(parsed.query)
+        
+        # 기본 URL (경로까지)
+        base_url = f"{parsed.scheme}://{parsed.netloc}{path}"
+        
+        # 도메인 루트인 경우 그대로 반환
         if parsed.path == '/':
             return url
-        return url.rstrip('/')
+            
+        # 직접적인 페이지 파라미터가 있는 경우, 간소화된 URL 반환
+        if 'page' in query_params:
+            page_num = query_params['page'][0]
+            # page=1인 경우 쿼리 파라미터 제거 (기본 URL만 반환)
+            if page_num == '1':
+                return base_url
+            return f"{base_url}?page={page_num}"
+        
+        # enc 파라미터에서 페이지 번호 추출 시도
+        if 'enc' in query_params:
+            enc_value = query_params['enc'][0]
+            try:
+                # Base64 디코딩 시도
+                decoded = base64.b64decode(enc_value).decode('utf-8')
+                
+                # 페이지 번호 추출을 위한 정규식
+                page_match = re.search(r'page%3D(\d+)', decoded)
+                if page_match:
+                    page_num = page_match.group(1)
+                    # page=1인 경우 쿼리 파라미터 제거 (기본 URL만 반환)
+                    if page_num == '1':
+                        return base_url
+                    return f"{base_url}?page={page_num}"
+            except Exception as e:
+                logger.debug(f"Base64 디코딩 실패: {e}")
+                # 디코딩 실패 시 계속 진행
+                pass
+        
+        # 다른 일반적인 페이지네이션 파라미터 확인
+        for page_param in ['pageNo', 'pageIndex', 'p', 'pg', 'pageNum']:
+            if page_param in query_params:
+                page_num = query_params[page_param][0]
+                # page 번호가 1인 경우 쿼리 파라미터 제거 (기본 URL만 반환)
+                if page_num == '1':
+                    return base_url
+                return f"{base_url}?page={page_num}"  # 표준화된 형식으로 변환
+        
+        # 후행 슬래시 제거하여 반환
+        return base_url.rstrip('/')
 
     def is_in_scope(self, url: str) -> bool:
         """URL이 정의된 크롤링 범위 내에 있는지 확인"""
@@ -263,9 +311,10 @@ class ScopeLimitedCrawler:
                 else:
                     full_url = urljoin(base_url, href)
                 
+                # 모든 URL을 정규화하여 중복 방지
                 full_url = self.normalize_url(full_url)
                 
-                # 이미 제외된 URL인지 빠르게 확인 (추가)
+                # 이미 제외된 URL인지 빠르게 확인
                 if full_url in self.excluded_urls:
                     continue
                 
@@ -316,9 +365,12 @@ class ScopeLimitedCrawler:
 
                         if self.is_valid_file_url(href, base_url):
                             if href.startswith('/'):
-                                doc_links.add(f"https://{self.base_domain}{href}")
+                                full_url = f"https://{self.base_domain}{href}"
                             else:
-                                doc_links.add(urljoin(base_url, href))
+                                full_url = urljoin(base_url, href)
+                            
+                            # 문서 URL도 정규화하여 추가
+                            doc_links.add(self.normalize_url(full_url))
             
             # 2. 파일 관련 속성 확인
             file_related_elements = soup.find_all(
@@ -332,18 +384,24 @@ class ScopeLimitedCrawler:
                     href = link['href']
                     if self.is_valid_file_url(href, base_url):
                         if href.startswith('/'):
-                            doc_links.add(f"https://{self.base_domain}{href}")
+                            full_url = f"https://{self.base_domain}{href}"
                         else:
-                            doc_links.add(urljoin(base_url, href))
+                            full_url = urljoin(base_url, href)
+                            
+                        # 문서 URL도 정규화하여 추가
+                        doc_links.add(self.normalize_url(full_url))
             
             # 3. 파일 확장자 직접 검색
             for link in soup.find_all('a', href=True):
                 href = link['href']
                 if self.is_valid_file_url(href, base_url):
                     if href.startswith('/'):
-                        doc_links.add(f"https://{self.base_domain}{href}")
+                        full_url = f"https://{self.base_domain}{href}"
                     else:
-                        doc_links.add(urljoin(base_url, href))
+                        full_url = urljoin(base_url, href)
+                        
+                    # 문서 URL도 정규화하여 추가
+                    doc_links.add(self.normalize_url(full_url))
                     
             return doc_links
             
@@ -351,7 +409,7 @@ class ScopeLimitedCrawler:
             logger.error(f"첨부파일 추출 중 오류 발생: {e}")
             return set()
 
-    def fetch_page(self, url: str) -> Tuple[bool, Any, str]:
+    def fetch_page(self, url: str, max_retries: int = 2) -> Tuple[bool, Any, str]:
         """설정에 따라 requests 또는 selenium을 사용하여 페이지 내용을 가져옴."""
         url = self.normalize_url(url)
         
@@ -360,54 +418,85 @@ class ScopeLimitedCrawler:
             logger.debug(f"JavaScript URL 감지: {url}")
             return False, None, url
         
-        # 먼저 requests 사용 시도 (활성화된 경우)
-        if self.use_requests:
-            try:
-                response = self.session.get(url, timeout=self.timeout)
-                response.raise_for_status()
-                
-                # 자바스크립트가 많은 페이지인지 확인
-                soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # 페이지가 자바스크립트를 필요로 하는 것 같으면 Selenium으로 전환
-                noscript_content = soup.find('noscript')
-                js_required = noscript_content and len(noscript_content.text) > 100
-                
-                if not js_required:
-                    return True, soup, response.url
-                    
-            except Exception as e:
-                logger.debug(f"Requests 가져오기 실패, Selenium으로 전환: {e}")
-                # Selenium으로 대체 
+        # 재시도 횟수 설정
+        retries = 0
         
-        # requests가 실패하거나 자바스크립트가 필요한 경우 Selenium 사용    
-        try:
-            self._init_selenium()
-            
-            # 최대 2번 재시도 
-            for attempt in range(2):
-                try:
-                    self.driver.get(url)
-                    
-                    # 페이지 로드 대기
-                    WebDriverWait(self.driver, self.timeout).until(
-                        EC.presence_of_element_located((By.TAG_NAME, 'body'))
-                    )
-                    
-                    html_content = self.driver.page_source
-                    current_url = self.driver.current_url
-                    
-                    soup = BeautifulSoup(html_content, 'html.parser')
-                    return True, soup, current_url
-                except TimeoutException:
-                    if attempt < 1:  # 첫 번째 시도가 실패한 경우에만 재시도
-                        logger.warning(f"페이지 로딩 타임아웃, 재시도 중: {url}")
-                        continue
-                    raise
+        while retries <= max_retries:
+            try:
+                # 먼저 requests 사용 시도 (활성화된 경우)
+                if self.use_requests:
+                    try:
+                        # User-Agent 랜덤화 (캐싱 우회 및 차단 방지)
+                        if retries > 0:
+                            self.session.headers.update({"User-Agent": random.choice(USER_AGENTS)})
+                            
+                        response = self.session.get(url, timeout=self.timeout)
+                        response.raise_for_status()
+                        
+                        # 자바스크립트가 많은 페이지인지 확인
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        
+                        # 페이지가 자바스크립트를 필요로 하는 것 같으면 Selenium으로 전환
+                        noscript_content = soup.find('noscript')
+                        js_required = noscript_content and len(noscript_content.text) > 100
+                        
+                        if not js_required:
+                            return True, soup, response.url
+                            
+                    except Exception as e:
+                        logger.debug(f"Requests 가져오기 실패({retries}/{max_retries}), 재시도 또는 Selenium으로 전환: {e}")
+                        # 다음 시도에서 Selenium으로 대체 
                 
-        except Exception as e:
-            logger.error(f"Selenium으로 페이지 가져오기 중 오류 발생: {e}")
-            return False, None, url
+                # requests가 실패하거나 자바스크립트가 필요한 경우 Selenium 사용    
+                try:
+                    self._init_selenium()
+                    
+                    # 최대 2번 재시도 
+                    for attempt in range(2):
+                        try:
+                            self.driver.get(url)
+                            
+                            # 페이지 로드 대기
+                            WebDriverWait(self.driver, self.timeout).until(
+                                EC.presence_of_element_located((By.TAG_NAME, 'body'))
+                            )
+                            
+                            html_content = self.driver.page_source
+                            current_url = self.driver.current_url
+                            
+                            soup = BeautifulSoup(html_content, 'html.parser')
+                            return True, soup, current_url
+                        except TimeoutException:
+                            if attempt < 1:  # 첫 번째 시도가 실패한 경우에만 재시도
+                                logger.warning(f"페이지 로딩 타임아웃, 재시도 중: {url}")
+                                continue
+                            raise
+                
+                # 예외 처리 및 재시도        
+                except Exception as e:
+                    retries += 1
+                    if retries <= max_retries:
+                        logger.warning(f"페이지 가져오기 실패({retries}/{max_retries}), 재시도: {url}, 오류: {e}")
+                        # 재시도 간 지연
+                        time.sleep(self.delay * (1 + retries))
+                        # 다음 반복에서 재시도
+                        continue
+                    else:
+                        logger.error(f"최대 재시도 횟수 초과, 페이지 가져오기 실패: {url}, 오류: {e}")
+                        return False, None, url
+            
+            except Exception as e:
+                retries += 1
+                if retries <= max_retries:
+                    logger.warning(f"예기치 않은 오류({retries}/{max_retries}), 재시도: {url}, 오류: {e}")
+                    time.sleep(self.delay * (1 + retries))
+                    continue
+                else:
+                    logger.error(f"최대 재시도 횟수 초과, 처리 실패: {url}, 오류: {e}")
+                    return False, None, url
+        
+        # 모든 시도 실패 시
+        return False, None, url
 
     def detect_pagination(self, soup: Optional[BeautifulSoup] = None) -> Tuple[bool, Optional[Any]]:
         """페이지에서 페이지네이션 요소 감지"""
@@ -448,6 +537,9 @@ class ScopeLimitedCrawler:
         """페이지네이션을 처리하여 모든 페이지 URL 반환"""
         pagination_urls = []
         
+        # 현재 URL 정규화
+        current_url = self.normalize_url(current_url)
+        
         # 1. 페이지네이션 요소 감지
         has_pagination, pagination_element = self.detect_pagination(soup)
         
@@ -478,7 +570,10 @@ class ScopeLimitedCrawler:
                         # 일반 링크
                         full_url = urljoin(current_url, href)
                         if self.is_in_scope(full_url):
-                            direct_links.append(self.normalize_url(full_url))
+                            # URL 정규화 적용
+                            normalized_url = self.normalize_url(full_url)
+                            if normalized_url not in direct_links and normalized_url != current_url:
+                                direct_links.append(normalized_url)
         
         # 페이지네이션 정보 로깅
         total_pages = len(direct_links) + len(js_links)
@@ -497,7 +592,7 @@ class ScopeLimitedCrawler:
             # JavaScript 페이지 처리
             page_soup, page_url = self.handle_javascript_pagination(current_url, js_link)
             if page_soup and page_url:
-                # 페이지네이션 URL 저장
+                # 페이지네이션 URL 저장 (정규화 적용)
                 normalized_url = self.normalize_url(page_url)
                 if normalized_url not in pagination_urls and normalized_url != current_url:
                     pagination_urls.append(normalized_url)
@@ -508,7 +603,8 @@ class ScopeLimitedCrawler:
                 
                 # 문서 URL 저장
                 for doc_url in docs:
-                    if doc_url not in self.visited_urls:
+                    doc_url = self.normalize_url(doc_url)  # 문서 URL도 정규화
+                    if doc_url not in self.visited_urls and doc_url not in self.all_doc_urls:
                         self.all_doc_urls.add(doc_url)
                         logger.info(f"[{len(self.visited_urls)}/{self.max_pages}] Document found: {doc_url}")
                 
@@ -708,6 +804,9 @@ class ScopeLimitedCrawler:
     def get_pagination_urls(self, soup: Optional[BeautifulSoup] = None, current_url: str = "") -> Set[str]:
         """페이지에서 모든 페이지네이션 URL 가져오기"""
         pagination_urls = set()
+        
+        # 현재 URL 정규화
+        current_url = self.normalize_url(current_url)
         pagination_urls.add(current_url)
         
         try:
@@ -726,7 +825,9 @@ class ScopeLimitedCrawler:
                         if href and href != '#' and not href.startswith('javascript:'):
                             full_url = urljoin(current_url, href)
                             if self.is_in_scope(full_url):
-                                pagination_urls.add(self.normalize_url(full_url))
+                                # URL 정규화 적용
+                                normalized_url = self.normalize_url(full_url)
+                                pagination_urls.add(normalized_url)
                                 
                 # 다음 버튼 확인
                 next_buttons = soup.select('a.next, a.nextpage, a[rel="next"]')
@@ -736,7 +837,9 @@ class ScopeLimitedCrawler:
                         if href and href != '#' and not href.startswith('javascript:'):
                             full_url = urljoin(current_url, href)
                             if self.is_in_scope(full_url):
-                                pagination_urls.add(self.normalize_url(full_url))
+                                # URL 정규화 적용
+                                normalized_url = self.normalize_url(full_url)
+                                pagination_urls.add(normalized_url)
             else:
                 # Selenium으로 추출
                 self._init_selenium()
@@ -762,7 +865,9 @@ class ScopeLimitedCrawler:
                         href = link.get_attribute('href')
                         if href and href != '#' and not href.startswith('javascript:'):
                             if self.is_in_scope(href):
-                                pagination_urls.add(self.normalize_url(href))
+                                # URL 정규화 적용
+                                normalized_url = self.normalize_url(href)
+                                pagination_urls.add(normalized_url)
                     except Exception:
                         continue
                 
@@ -786,7 +891,9 @@ class ScopeLimitedCrawler:
                             href = elements[0].get_attribute('href')
                             if href and href != '#' and not href.startswith('javascript:'):
                                 if self.is_in_scope(href):
-                                    pagination_urls.add(self.normalize_url(href))
+                                    # URL 정규화 적용
+                                    normalized_url = self.normalize_url(href)
+                                    pagination_urls.add(normalized_url)
                             break
                     except Exception:
                         continue
@@ -808,6 +915,10 @@ class ScopeLimitedCrawler:
             발견된 URL과 메타데이터가 포함된 딕셔너리
         """
         start_time = time.time()
+        
+        # 시작 URL 정규화
+        start_url = self.normalize_url(start_url)
+        
         parsed_url = urlparse(start_url)
         self.base_domain = parsed_url.netloc
         
@@ -832,17 +943,17 @@ class ScopeLimitedCrawler:
         all_page_urls = set()
         self.all_doc_urls = set()  # 모든 문서 URL 추적
         queue = [start_url]
-        visited = set()
+        self.visited_urls = set()  # 방문한 URL 집합 초기화
         current_page = 0
         
         # 파일 이름 생성을 위한 타임스탬프와 범위 이름 생성
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M')
         scope_name = '_'.join(self.scope_patterns) if self.scope_patterns else 'full_domain'
         
         # 도메인 디렉토리 생성
         domain_name = self.base_domain.replace('.', '_')
-        domain_base_dir = os.path.join(BASE_DIR, f"{domain_name}_{scope_name}")
-        domain_dir = os.path.join(domain_base_dir, timestamp)
+        domain_base_dir = os.path.join(BASE_DIR, f"{timestamp}_{domain_name}_{scope_name}")
+        domain_dir = domain_base_dir
         os.makedirs(domain_dir, exist_ok=True)
         
         logger.info(f"URL 발견 시작: {start_url}")
@@ -850,140 +961,103 @@ class ScopeLimitedCrawler:
         logger.info(f"범위 패턴: {self.scope_patterns}")
         logger.info(f"최대 페이지: {self.max_pages}")
         
+        # 체크포인트 파일 경로
+        checkpoint_file = os.path.join(domain_dir, "checkpoint.json")
+        
+        # 체크포인트가 있으면 복원
+        if os.path.exists(checkpoint_file):
+            try:
+                with open(checkpoint_file, 'r', encoding='utf-8') as f:
+                    checkpoint_data = json.load(f)
+                    all_page_urls = set(checkpoint_data.get('all_page_urls', []))
+                    self.all_doc_urls = set(checkpoint_data.get('all_doc_urls', []))
+                    self.visited_urls = set(checkpoint_data.get('visited_urls', []))
+                    queue = checkpoint_data.get('queue', [])
+                    current_page = checkpoint_data.get('current_page', 0)
+                    processed_sitemaps = set(checkpoint_data.get('processed_sitemaps', []))
+                    logger.info(f"체크포인트 복원: {len(self.visited_urls)}개 URL 방문, {len(queue)}개 URL 대기 중")
+            except Exception as e:
+                logger.error(f"체크포인트 복원 실패: {e}")
+        
         try:
-            # 시작 URL 수집
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                # 제어된 크롤링을 위한 단일 작업자 사용
+            # 병렬 처리를 위한 설정
+            max_workers = min(10, os.cpu_count() or 4)  # CPU 코어 수에 따라 워커 수 조정 or 4
+            
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # 병렬 크롤링
                 while queue and current_page < self.max_pages:
-                    try:
-                        current_url = queue.pop(0)
-
-                        # 중복 방문 및 순환 감지
-                        if current_url in visited:
-                            continue
+                    # 배치 크기 설정 (병렬 처리할 URL 수)
+                    batch_size = min(max_workers, len(queue), self.max_pages - current_page)
+                    
+                    # 배치 처리할 URL 목록
+                    batch_urls = []
+                    for _ in range(batch_size):
+                        if queue:
+                            url = queue.pop(0)
+                            url = self.normalize_url(url)
+                            
+                            # 이미 방문했거나 범위 밖인 URL 건너뛰기
+                            if url in self.visited_urls or not self.is_in_scope(url):
+                                continue
+                                
+                            # 배치에 URL 추가
+                            batch_urls.append(url)
+                            self.visited_urls.add(url)  # 큐에서 중복 처리 방지를 위해 미리 방문으로 표시
+                    
+                    if not batch_urls:
+                        continue
                         
-                        # URL 형식 확인
-                        if not (current_url.startswith('http://') or current_url.startswith('https://')):
-                            continue
-                            
-                        # URL이 범위 내에 있는지 확인
-                        if not self.is_in_scope(current_url):
-                            continue
-                        
-                        # URL 처리 디버깅 로그 추가
-                        logger.debug(f"URL 체크: {current_url}, 범위 내: {self.is_in_scope(current_url)}")
-                        
-                        # 루프 감지 - 큐의 처음 몇 개 항목과 현재 URL 비교
-                        loop_detected = False
-                        check_count = min(5, len(queue))
-                        for i in range(check_count):
-                            if queue[i] == current_url:
-                                logger.warning(f"URL 루프 감지: {current_url}, 건너뜀")
-                                loop_detected = True
-                                break
-                        
-                        if loop_detected:
-                            continue
-                        
-                        # 사이트맵 URL인지 확인하고 아직 처리하지 않았는지 확인
-                        if self.is_sitemap_url(current_url) and current_url not in processed_sitemaps:
-                            progress = f"[{current_page}/{self.max_pages}]"
-                            logger.info(f"{progress} 사이트맵 발견: {current_url}")
-                            processed_sitemaps.add(current_url)
-                            
-                            # 사이트맵에서 모든 링크 추출
-                            sitemap_links = self.handle_sitemap(current_url)
-                            logger.info(f"사이트맵에서 추출한 링크 수: {len(sitemap_links)}")
-                            
-                            # 우선순위: 새 링크를 큐의 앞에 추가
-                            new_links = [link for link in sitemap_links 
-                                        if link not in visited and link not in queue and link != current_url]
-                            
-                            if new_links:
-                                logger.info(f"{progress} {len(new_links)}개 사이트맵 링크를 큐에 추가")
-                                # 우선 처리를 위해 큐의 시작 부분에 삽입
-                                queue = new_links + queue 
-                            
-                            # 사이트맵을 방문한 것으로 표시
-                            visited.add(current_url)
-                            all_page_urls.add(current_url)
-                            
-                            # 다음 URL로 계속
-                            time.sleep(self.delay)
-                            continue
-                            
-                        # 진행 상황 추적        
-                        current_page += 1
-                        progress = f"[{current_page}/{self.max_pages}]"
-                        logger.info(f"{progress} 발견: {current_url}")
-                        
-                        # 페이지 가져오기
-                        success, content, current_url = self.fetch_page(current_url)
-                        
-                        if not success:
-                            visited.add(current_url)  # 재시도 방지용 방문 표시 
-                            continue
-                        
-                        # 방문으로 표시하고 결과에 추가 
-                        visited.add(current_url)
-                        all_page_urls.add(current_url)
-                        
-                        # BeautifulSoup 사용 시 링크 가져오기
-                        if isinstance(content, BeautifulSoup):
-                            soup = content
-                            links, documents = self.extract_links(soup, current_url)
-                            
-                            # 문서 URL 저장
-                            for doc_url in documents:
-                                if doc_url not in self.all_doc_urls:
-                                    self.all_doc_urls.add(doc_url)
-                                    logger.info(f"{progress} Document found: {doc_url}")
-                            
-                            # 페이지네이션 처리
-                            pagination_urls = self.handle_pagination(soup, current_url)
-                            
-                            # 일반 링크를 큐에 추가
-                            for link in links:
-                                if link not in visited and link not in queue:
-                                    queue.append(link)
-                            
-                            # 페이지네이션 URL도 큐에 추가
-                            for page_url in pagination_urls:
-                                if page_url not in visited and page_url not in queue:
-                                    queue.append(page_url)
-                        
-                        else:
-                            # Selenium 결과 사용
-                            self._init_selenium()
-                            html_content = self.driver.page_source
-                            soup = BeautifulSoup(html_content, 'html.parser')
-                            
-                            links, documents = self.extract_links(soup, current_url)
-                            
-                            # 문서 URL 저장
-                            for doc_url in documents:
-                                if doc_url not in self.all_doc_urls:
-                                    self.all_doc_urls.add(doc_url)
-                                    logger.info(f"{progress} Document found: {doc_url}")
-                            
-                            # 페이지네이션 처리
-                            pagination_urls = self.handle_pagination(soup, current_url)
-                            
-                            # 일반 링크를 큐에 추가
-                            for link in links:
-                                if link not in visited and link not in queue:
-                                    queue.append(link)
-                            
-                            # 페이지네이션 URL도 큐에 추가
-                            for page_url in pagination_urls:
-                                if page_url not in visited and page_url not in queue:
-                                    queue.append(page_url)
-                        
-                        # 요청 간 지연 추가
-                        time.sleep(self.delay)
-                        
-                    except Exception as e:
-                        logger.error(f"{progress} Error processing URL: {current_url}, Error: {e}")
+                    # 진행 상황 추적
+                    current_page += len(batch_urls)
+                    progress = f"[{current_page}/{self.max_pages}]"
+                    logger.info(f"{progress} 배치 처리 중: {len(batch_urls)}개 URL")
+                    
+                    # URL 병렬 처리
+                    future_to_url = {executor.submit(self._process_url, url): url for url in batch_urls}
+                    
+                    for future in as_completed(future_to_url):
+                        url = future_to_url[future]
+                        try:
+                            result = future.result()
+                            if result:
+                                page_links, doc_links, pagination_links = result
+                                
+                                # 페이지 URL 저장
+                                all_page_urls.add(url)
+                                
+                                # 문서 URL 저장
+                                for doc_url in doc_links:
+                                    if doc_url not in self.all_doc_urls:
+                                        self.all_doc_urls.add(doc_url)
+                                        logger.info(f"{progress} Document found: {doc_url}")
+                                
+                                # 새 URL을 큐에 추가 (중복 URL 방지를 위해 정규화 적용)
+                                for link in page_links + pagination_links:
+                                    normalized_link = self.normalize_url(link)
+                                    if normalized_link not in self.visited_urls and normalized_link not in queue:
+                                        queue.append(normalized_link)
+                        except Exception as e:
+                            logger.error(f"{progress} URL 처리 실패: {url}, 오류: {e}")
+                    
+                    # 주기적으로 체크포인트 저장 (50개 URL마다)
+                    if current_page % 50 == 0:
+                        try:
+                            checkpoint_data = {
+                                'all_page_urls': list(all_page_urls),
+                                'all_doc_urls': list(self.all_doc_urls),
+                                'visited_urls': list(self.visited_urls),
+                                'queue': queue,
+                                'current_page': current_page,
+                                'processed_sitemaps': list(processed_sitemaps)
+                            }
+                            with open(checkpoint_file, 'w', encoding='utf-8') as f:
+                                json.dump(checkpoint_data, f, ensure_ascii=False)
+                            logger.info(f"{progress} 체크포인트 저장 완료")
+                        except Exception as e:
+                            logger.error(f"체크포인트 저장 실패: {e}")
+                    
+                    # 요청 간 지연 추가 (배치 간 지연)
+                    time.sleep(self.delay)
             
             # 실행 시간 계산
             execution_time = time.time() - start_time
@@ -1018,6 +1092,13 @@ class ScopeLimitedCrawler:
         finally:
             # 드라이버 종료 
             self.close_driver()
+            
+            # 체크포인트 파일 삭제 (정상 완료 시)
+            if os.path.exists(checkpoint_file):
+                try:
+                    os.remove(checkpoint_file)
+                except:
+                    pass
 
     def _save_results(self, page_urls, doc_urls, domain_dir, timestamp, start_url, scope_name, execution_time):
         """크롤러 결과를 파일에 저장"""
@@ -1029,8 +1110,6 @@ class ScopeLimitedCrawler:
         self._save_urls_to_file(doc_urls, doc_urls_file)
         
         # 메타데이터와 함께 JSON 결과 저장
-        patterns_analysis = self.analyze_url_patterns(page_urls)
-        
         json_data = {
             "timestamp": timestamp,
             "execution_time_seconds": execution_time,
@@ -1041,8 +1120,7 @@ class ScopeLimitedCrawler:
             "total_pages_discovered": len(page_urls),
             "total_documents_discovered": len(doc_urls),
             "page_urls": list(page_urls),
-            "document_urls": list(doc_urls),
-            "url_patterns": patterns_analysis
+            "document_urls": list(doc_urls)
         }
         
         json_file = os.path.join(domain_dir, f"crawl_results_{timestamp}.json")
@@ -1054,8 +1132,7 @@ class ScopeLimitedCrawler:
             "doc_urls": doc_urls,
             "results_dir": domain_dir,
             "json_file": json_file,
-            "execution_time": execution_time,
-            "patterns_analysis": patterns_analysis
+            "execution_time": execution_time
         }
 
     def _save_urls_to_file(self, urls: Set[str], filepath: str) -> None:
@@ -1065,80 +1142,6 @@ class ScopeLimitedCrawler:
                 f.write(f"{url}\n")
         logger.info(f"URL 목록 저장: {filepath}")
     
-    def analyze_url_patterns(self, urls: Set[str]) -> Dict[str, Any]:
-        """발견된 URL의 패턴 분석"""
-        patterns = {}
-        domains = {}
-        path_segments = {}
-        query_params = {}
-        
-        for url in urls:
-            parsed = urlparse(url)
-            domain = parsed.netloc
-            
-            # 도메인 카운트
-            domains[domain] = domains.get(domain, 0) + 1
-            
-            # 경로 패턴 추출
-            path = parsed.path
-            path_parts = path.strip('/').split('/')
-            
-            # 숫자를 패턴으로 변환
-            pattern_parts = []
-            for part in path_parts:
-                if not part:
-                    continue
-                if part.isdigit():
-                    pattern_parts.append('{id}')
-                elif re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', part):
-                    pattern_parts.append('{uuid}')
-                elif re.match(r'^(19|20)\d\d[01]\d[0-3]\d$', part):
-                    pattern_parts.append('{date}')
-                else:
-                    pattern_parts.append(part)
-            
-            if pattern_parts:
-                pattern = '/' + '/'.join(pattern_parts)
-                patterns[pattern] = patterns.get(pattern, 0) + 1
-            
-            # 경로 세그먼트 분석
-            for i, part in enumerate(path_parts):
-                if not part:
-                    continue
-                
-                segment_key = f"segment_{i+1}"
-                if segment_key not in path_segments:
-                    path_segments[segment_key] = {}
-                
-                path_segments[segment_key][part] = path_segments[segment_key].get(part, 0) + 1
-            
-            # 쿼리 매개변수 분석
-            if parsed.query:
-                query_parts = parsed.query.split('&')
-                for part in query_parts:
-                    if '=' in part:
-                        param_name = part.split('=')[0]
-                        query_params[param_name] = query_params.get(param_name, 0) + 1
-        
-        # 결과 정렬
-        sorted_domains = sorted(domains.items(), key=lambda x: x[1], reverse=True)
-        sorted_patterns = sorted(patterns.items(), key=lambda x: x[1], reverse=True)
-        
-        # 경로 세그먼트 데이터 정렬
-        sorted_segments = {}
-        for segment, values in path_segments.items():
-            sorted_segments[segment] = sorted(values.items(), key=lambda x: x[1], reverse=True)[:10]
-        
-        # 쿼리 매개변수 정렬
-        sorted_params = sorted(query_params.items(), key=lambda x: x[1], reverse=True)
-        
-        return {
-            "domains": sorted_domains,
-            "patterns": sorted_patterns[:30],
-            "segments": sorted_segments,
-            "query_params": sorted_params[:20]
-        }
-    
     def is_sitemap_url(self, url: str) -> bool:
         """URL이 사이트맵 페이지인지 확인"""
         lower_url = url.lower()
@@ -1147,6 +1150,9 @@ class ScopeLimitedCrawler:
     def handle_sitemap(self, url: str) -> Set[str]:
         """사이트맵 페이지에서 모든 링크를 추출하여 집합으로 반환"""
         sitemap_links = set()
+        
+        # URL 정규화
+        url = self.normalize_url(url)
         
         # 사이트맵 페이지 가져오기
         success, content, current_url = self.fetch_page(url)
@@ -1194,6 +1200,7 @@ class ScopeLimitedCrawler:
                             logger.debug(f"사이트맵 링크 변환: {href} -> {full_url}")
                             
                             if self.is_in_scope(full_url) and not self.should_exclude_url(full_url):
+                                # URL 정규화 적용
                                 normalized_url = self.normalize_url(full_url)
                                 sitemap_links.add(normalized_url)
             
@@ -1206,6 +1213,8 @@ class ScopeLimitedCrawler:
                     href = link.get('href')
                     if href:
                         xml_url = urljoin(url, href)
+                        # XML 사이트맵 URL도 정규화
+                        xml_url = self.normalize_url(xml_url)
                         xml_links = self.parse_xml_sitemap(xml_url)
                         sitemap_links.update(xml_links)
                         
@@ -1219,6 +1228,9 @@ class ScopeLimitedCrawler:
         """XML 사이트맵을 파싱하고 모든 URL 추출"""
         xml_links = set()
         
+        # URL 정규화
+        url = self.normalize_url(url)
+        
         try:
             response = self.session.get(url, timeout=self.timeout)
             if response.status_code == 200:
@@ -1228,7 +1240,9 @@ class ScopeLimitedCrawler:
                 for tag in url_tags:
                     link = tag.text.strip()
                     if self.is_in_scope(link) and not self.should_exclude_url(link):
-                        xml_links.add(self.normalize_url(link))
+                        # URL 정규화 적용
+                        normalized_url = self.normalize_url(link)
+                        xml_links.add(normalized_url)
                         
                 logger.info(f"XML 사이트맵에서 {len(xml_links)}개 링크 추출: {url}")
             
@@ -1238,51 +1252,85 @@ class ScopeLimitedCrawler:
             logger.error(f"XML 사이트맵 파싱 중 오류 발생 {url}: {e}")
             return xml_links
 
+    def _process_url(self, url: str) -> Optional[Tuple[List[str], List[str], List[str]]]:
+        """URL을 처리하고 발견된 링크, 문서 URL, 페이지네이션 URL을 반환합니다.
+        병렬 처리를 위해 독립적인 메서드로 구현됨.
+        
+        Args:
+            url: 처리할 URL
+            
+        Returns:
+            (일반 링크 목록, 문서 링크 목록, 페이지네이션 링크 목록) 튜플 또는 None (오류 시)
+        """
+        try:
+            # 사이트맵 URL 처리
+            if self.is_sitemap_url(url):
+                sitemap_links = self.handle_sitemap(url)
+                return list(sitemap_links), [], []
+            
+            # 페이지 가져오기
+            success, content, current_url = self.fetch_page(url)
+            
+            if not success:
+                return None
+            
+            # 정규화된 URL로 업데이트
+            url = self.normalize_url(current_url)
+            
+            # BeautifulSoup으로 페이지 파싱
+            if isinstance(content, BeautifulSoup):
+                soup = content
+            else:
+                # Selenium 결과 사용
+                self._init_selenium()
+                html_content = self.driver.page_source
+                soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # 링크 추출
+            links, documents = self.extract_links(soup, url)
+            
+            # 페이지네이션 처리
+            pagination_urls = self.handle_pagination(soup, url)
+            
+            return list(links), list(documents), list(pagination_urls)
+            
+        except Exception as e:
+            logger.error(f"URL 처리 중 오류 발생: {url}, {e}")
+            return None
 
-def parse_arguments():
-    """명령줄 인수 구문 분석"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="범위 제한 웹 크롤러")
-    
-    parser.add_argument('--start-url', '-u', type=str, required=True, help='크롤링 시작 URL')
-    
-    parser.add_argument('--scope', '-s', type=str, nargs='+', help='크롤링 범위 제한 (예: "cse" "department")')
-    
-    parser.add_argument('--max-pages', '-m', type=int, default=1000, help='크롤링할 최대 페이지 수 (기본: 1000)')
-    
-    parser.add_argument('--delay', '-d', type=float, default=1.0, help='요청 간 지연 시간 (기본: 1초)')
-    
-    parser.add_argument('--timeout', '-t', type=int, default=20, help='페이지 로드 타임아웃 (기본: 20초)')
-    
-    parser.add_argument('--use-requests', '-r', action='store_true', help='가능한 경우 더 빠른 크롤링을 위해 requests 라이브러리 사용')
-    
-    parser.add_argument('--verbose', '-v', action='store_true', help='자세한 로깅 활성화')
-    
-    return parser.parse_args()
 
-
-def main():
-    """명령줄에서 크롤러 실행"""
-    args = parse_arguments()
+def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_requests=True, verbose=False):
+    """매개변수로 크롤러 실행
     
+    Args:
+        start_url (str): 크롤링 시작 URL
+        scope (List[str], optional): 크롤링 범위 제한 (예: ["cse", "department"])
+        max_pages (int, optional): 크롤링할 최대 페이지 수. 기본값은 1000
+        delay (float, optional): 요청 간 지연 시간(초). 기본값은 1.0초
+        timeout (int, optional): 페이지 로딩 시간 제한(초). 기본값은 20초
+        use_requests (bool, optional): 간단한 페이지는 requests 사용 여부. 기본값은 True
+        verbose (bool, optional): 자세한 로깅 활성화 여부. 기본값은 False
+    
+    Returns:
+        Dict[str, Any]: 크롤링 결과와 메타데이터
+    """
     # 로깅 레벨 구성
-    if args.verbose:
+    if verbose:
         logger.setLevel(logging.DEBUG)
         
-    logger.info(f"URL 크롤러 시작: {args.start_url}")
-    logger.info(f"범위 패턴: {args.scope}")
+    logger.info(f"URL 크롤러 시작: {start_url}")
+    logger.info(f"범위 패턴: {scope}")
     
     # 크롤러 생성 및 실행
     crawler = ScopeLimitedCrawler(
-        max_pages=args.max_pages, 
-        delay=args.delay, 
-        timeout=args.timeout,
-        use_requests=args.use_requests
+        max_pages=max_pages, 
+        delay=delay, 
+        timeout=timeout,
+        use_requests=use_requests
     )
     
     try:
-        results = crawler.discover_urls(args.start_url, args.scope)
+        results = crawler.discover_urls(start_url, scope)
         
         if results:
             logger.info("\n크롤링 요약:")
@@ -1290,11 +1338,15 @@ def main():
             logger.info(f"발견된 문서: {len(results['doc_urls'])}개")
             logger.info(f"결과 저장 위치: {results['results_dir']}")
             logger.info(f"실행 시간: {results.get('execution_time', 0):.1f}초")
+        
+        return results
 
     except KeyboardInterrupt:
         logger.info("사용자에 의해 크롤링 중단됨")
+        return None
     except Exception as e:
         logger.error(f"크롤링 실패: {e}")
+        return {"error": str(e)}
     finally:
         # 드라이버 종료
         crawler.close_driver()
@@ -1302,9 +1354,15 @@ def main():
 
 if __name__ == "__main__":
     try:
-        # 사용 예시:
-        # python utils/urlCrowling.py --start-url https://hansung.ac.kr/sites/CSE/index.do --scope cse CSE --max-pages 1000 --delay 1 --timeout 20 --use-requests --verbose
-        main()
+        main(
+            start_url="https://hansung.ac.kr/sites/CSE/index.do",
+            scope=["cse", "CSE"],
+            max_pages=1000,
+            delay=1.0,
+            timeout=20,
+            use_requests=True,
+            verbose=True
+        )
     except KeyboardInterrupt:
         print("\n크롤링 중단됨")
     except Exception as e:

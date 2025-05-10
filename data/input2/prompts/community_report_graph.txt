@@ -14,7 +14,7 @@ The report should include the following sections:
 - RATING EXPLANATION: Give a single sentence explanation of the IMPACT severity rating.
 - DETAILED FINDINGS: A list of 5-10 key insights about the community. Each insight should have a short summary followed by multiple paragraphs of explanatory text grounded according to the grounding rules below. Be comprehensive.
 
-Return output as a well-formed JSON-formatted string with the following format:
+IMPORTENT: RETURN OUP PUT IN **KOREAN** as a well-formed JSON-formatted string with the following format:
     {{
         "title": <report_title>,
         "summary": <executive_summary>,
@@ -70,27 +70,27 @@ id,source,target,description
 
 Output:
 {{
-    "title": "Verdant Oasis Plaza and Unity March",
-    "summary": "The community revolves around the Verdant Oasis Plaza, which is the location of the Unity March. The plaza has relationships with the Harmony Assembly, Unity March, and Tribune Spotlight, all of which are associated with the march event.",
+    "title": "베르단트 오아시스 플라자와 유니티 행진",
+    "summary": "이 커뮤니티는 유니티 행진이 열리는 장소인 베르단트 오아시스 플라자를 중심으로 형성됩니다. 이 광장은 하모니 어셈블리, 유니티 행진, 트리뷴 스포트라이트 등과 관계를 맺고 있으며, 모두 행진 행사와 연관되어 있습니다.",
     "rating": 5.0,
-    "rating_explanation": "The impact severity rating is moderate due to the potential for unrest or conflict during the Unity March.",
+    "rating_explanation": "영향 심각도 등급은 유니티 행진 중 불안이나 충돌의 가능성으로 인해 중간 정도입니다.",
     "findings": [
-        {{
-            "summary": "Verdant Oasis Plaza as the central location",
-            "explanation": "Verdant Oasis Plaza is the central entity in this community, serving as the location for the Unity March. This plaza is the common link between all other entities, suggesting its significance in the community. The plaza's association with the march could potentially lead to issues such as public disorder or conflict, depending on the nature of the march and the reactions it provokes. [Data: Entities (5), Relationships (37, 38, 39, 40, 41,+more)]"
-        }},
-        {{
-            "summary": "Harmony Assembly's role in the community",
-            "explanation": "Harmony Assembly is another key entity in this community, being the organizer of the march at Verdant Oasis Plaza. The nature of Harmony Assembly and its march could be a potential source of threat, depending on their objectives and the reactions they provoke. The relationship between Harmony Assembly and the plaza is crucial in understanding the dynamics of this community. [Data: Entities(6), Relationships (38, 43)]"
-        }},
-        {{
-            "summary": "Unity March as a significant event",
-            "explanation": "The Unity March is a significant event taking place at Verdant Oasis Plaza. This event is a key factor in the community's dynamics and could be a potential source of threat, depending on the nature of the march and the reactions it provokes. The relationship between the march and the plaza is crucial in understanding the dynamics of this community. [Data: Relationships (39)]"
-        }},
-        {{
-            "summary": "Role of Tribune Spotlight",
-            "explanation": "Tribune Spotlight is reporting on the Unity March taking place in Verdant Oasis Plaza. This suggests that the event has attracted media attention, which could amplify its impact on the community. The role of Tribune Spotlight could be significant in shaping public perception of the event and the entities involved. [Data: Relationships (40)]"
-        }}
+        {
+            "summary": "중심 위치로서의 베르단트 오아시스 플라자",
+            "explanation": "베르단트 오아시스 플라자는 이 커뮤니티의 중심 엔티티로, 유니티 행진이 열리는 장소입니다. 이 광장은 다른 모든 엔티티와의 공통 연결점으로, 커뮤니티 내에서의 중요성을 나타냅니다. 행진의 성격과 그것이 유발하는 반응에 따라 광장과 행진의 연관성은 공공 무질서나 갈등과 같은 문제로 이어질 수 있습니다. [데이터: 엔티티 (5), 관계 (37, 38, 39, 40, 41,+추가)]"
+        },
+        {
+            "summary": "커뮤니티에서의 하모니 어셈블리의 역할",
+            "explanation": "하모니 어셈블리는 이 커뮤니티의 또 다른 핵심 엔티티로, 베르단트 오아시스 플라자에서 행진을 조직하는 주체입니다. 하모니 어셈블리와 그들의 행진의 성격은 그들의 목표와 그들이 유발하는 반응에 따라 잠재적인 위협의 원천이 될 수 있습니다. 하모니 어셈블리와 광장 사이의 관계는 이 커뮤니티의 역학을 이해하는 데 중요합니다. [데이터: 엔티티(6), 관계 (38, 43)]"
+        },
+        {
+            "summary": "중요한 행사로서의 유니티 행진",
+            "explanation": "유니티 행진은 베르단트 오아시스 플라자에서 열리는 중요한 행사입니다. 이 행사는 커뮤니티 역학의 핵심 요소이며, 행진의 성격과 그것이 유발하는 반응에 따라 잠재적인 위협의 원천이 될 수 있습니다. 행진과 광장 사이의 관계는 이 커뮤니티의 역학을 이해하는 데 중요합니다. [데이터: 관계 (39)]"
+        },
+        {
+            "summary": "트리뷴 스포트라이트의 역할",
+            "explanation": "트리뷴 스포트라이트는 베르단트 오아시스 플라자에서 열리는 유니티 행진에 대해 보도하고 있습니다. 이는 이 행사가 언론의 관심을 끌었으며, 이로 인해 커뮤니티에 미치는 영향이 확대될 수 있음을 시사합니다. 트리뷴 스포트라이트의 역할은 행사와 관련 엔티티에 대한 대중의 인식을 형성하는 데 중요할 수 있습니다. [데이터: 관계 (40)]"
+        }
     ]
 }}
 
@@ -110,7 +110,7 @@ The report should include the following sections:
 - RATING EXPLANATION: Give a single sentence explanation of the IMPACT severity rating.
 - DETAILED FINDINGS: A list of 5-10 key insights about the community. Each insight should have a short summary followed by multiple paragraphs of explanatory text grounded according to the grounding rules below. Be comprehensive.
 
-Return output as a well-formed JSON-formatted string with the following format:
+IMPORTENT: RETURN OUP PUT IN **KOREAN** as a well-formed JSON-formatted string with the following format:
     {{
         "title": <report_title>,
         "summary": <executive_summary>,
