@@ -6,6 +6,18 @@ from services.document_service.convert2txt import convert2txt
 
 document_bp = Blueprint('document', __name__)
 
+@document_bp.route('/has-output/<page_id>', methods=['GET'])
+def has_output_folder(page_id):
+    """output 폴더 존재 여부 확인"""
+    base_path = f'../data/input/{page_id}'
+    output_path = os.path.join(base_path, 'output')
+    
+    has_output = os.path.exists(output_path) and len(os.listdir(output_path)) > 0
+
+    return jsonify({
+        'success': True,
+        'has_output': has_output
+    })
 
 @document_bp.route('/upload-documents/<page_id>', methods=['POST'])
 def upload_documents(page_id):
