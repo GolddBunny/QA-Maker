@@ -10,7 +10,13 @@ const UPDATE_URL = `${BASE_URL}/update`;
 const APPLY_URL = `${BASE_URL}/apply`;
 const URL_URL = `${BASE_URL}`;
 
-const allowedFileTypes = ['application/pdf', 'text/plain', 'text/csv', 'application/json', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+const allowedFileTypes = [
+  'application/pdf',
+  'text/plain',
+  'application/octet-stream', //hwp
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/msword' // .doc
+];
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -56,6 +62,7 @@ const AdminPage = () => {
         setIsNewPage(savedDocs.length === 0);
       
         fetchSavedUrls(savedPageId); // URL 목록 불러오기
+        checkOutputFolder(savedPageId);
       }
     }, [pageId]);
 
@@ -87,10 +94,14 @@ const AdminPage = () => {
           const files = Array.from(e.dataTransfer ? e.dataTransfer.files : e.target.files);
           
           // 파일 확장자 필터링
-          const filteredFiles = files.filter(file => allowedFileTypes.includes(file.type));
+          const filteredFiles = files.filter(file => {
+            const isAllowedType = allowedFileTypes.includes(file.type);
+            const isHwpFile = file.name.toLowerCase().endsWith('.hwp');
+            return isAllowedType || isHwpFile;
+          });
 
           if (filteredFiles.length === 0) {
-              alert(".pdf, .txt, .csv, .json, .xlsx 파일만 업로드할 수 있습니다.");
+              alert(".pdf, .hwp, .docx, .txt 파일만 업로드할 수 있습니다.");
               return;
           }
 
@@ -104,7 +115,7 @@ const AdminPage = () => {
           }
 
           const formData = new FormData();
-          files.forEach(file => {
+          newFiles.forEach(file => {
               formData.append('files', file);
           });
 
@@ -238,7 +249,6 @@ const AdminPage = () => {
         
         if (data.success) {
             alert('문서 처리 완료');
-            setIsNewPage(false);
         } else {
             console.error('문서 처리 실패:', data.error);
             alert('문서 처리에 실패했습니다.');
@@ -248,6 +258,22 @@ const AdminPage = () => {
           alert('문서 처리 중 오류가 발생했습니다.');
       } finally {
           setIsProcessLoading(false);
+      }
+    };
+
+    const checkOutputFolder = async (pageId) => {
+      try {
+        const response = await fetch(`${BASE_URL}/has-output/${pageId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setIsNewPage(!data.has_output);  // 있으면 Update, 없으면 Apply
+        } else {
+          console.warn("서버가 output 폴더 상태를 반환하지 않음.");
+        }
+      } catch (err) {
+        console.error("Output 폴더 확인 실패:", err);
+        // 이전 상태 유지 (setIsNewPage 호출 안 함)
       }
     };
 
