@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import "../../styles/Sidebar.css";
 import { usePageContext } from "../../utils/PageContext";
-
 const BASE_URL = 'http://localhost:5000';
 
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
@@ -182,45 +181,64 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
 
     return (
         <div>
-            <div className={`hamburger-icon ${isSidebarOpen ? 'rotate' : ''}`} onClick={toggleSidebar}>
-                <span className="bar"></span>
-                <span className="bar"></span>
-                <span className="bar"></span>
+            {!isSidebarOpen && (
+                <div className="sidebar-toggle-button" onClick={toggleSidebar}>
+                    <img
+                    src="/assets/sidebar_right.png"
+                    alt="사이드바 열기"
+                    className="sidebar-toggle-icon"
+                    />
+                </div>
+                )}
+            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+            {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
+            {isSidebarOpen && (
+                <div className="sidebar-close-button" onClick={toggleSidebar}>
+                <img
+                    src="/assets/sidebar_left.png"
+                    alt="사이드바 닫기"
+                    className="sidebar-toggle-icon"
+                />
+                </div>
+            )}
+            <div className="new-page-title"><strong>새 도메인 페이지 추가하기</strong></div>
+
+            <div className="new-page-container">
+                <input
+                type="text"
+                placeholder="도메인 이름을 정해주세요"
+                value={newPageName}
+                onChange={(e) => setNewPageName(e.target.value)}
+                className="new-page-input"
+                disabled={isLoading}
+                />
+                <button
+                onClick={handleAddPage}
+                className="add-page-btn"
+                disabled={isLoading || !newPageName.trim()}
+                >
+                추가
+                </button>
             </div>
 
-            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-                <div className="sidebar-header">
-                    <h3>페이지 목록</h3>
-                </div>
+            <div className="page-list-title">도메인 페이지 목록</div>
 
-                <input
-                    type="text"
-                    placeholder="새 페이지 이름"
-                    value={newPageName}
-                    onChange={(e) => setNewPageName(e.target.value)} // 입력값 상태 처리
-                    className="new-page-input"
-                    disabled={isLoading}
-                />
-                <button onClick={handleAddPage} className="new-page-btn" disabled={isLoading || !newPageName.trim()}>
-                    {isLoading ? '처리 중...' : '새 페이지 추가하기'}
-                </button>
-
-                <div className="page-list">
-                    {pages.length > 0 ? (
-                        pages.map((page) => (
-                            <div
-                                key={page.id}
-                                className={`page-item ${location.pathname === `/admin/${page.id}` ? 'active' : ''}`}
-                                onClick={() => handlePageClick(page.id)}
-                                onContextMenu={(e) => handleRightClick(e, page.id)} // 우클릭 이벤트 추가
-                            >
-                                {page.name}
-                            </div>
-                        ))
-                    ) : (
-                        <div className="no-pages-message">페이지가 없습니다.</div>
-                    )}
-                </div>
+            <div className="page-list">
+                {pages.length > 0 ? (
+                pages.map((page) => (
+                    <div
+                    key={page.id}
+                    className={`page-item ${location.pathname === `/admin/${page.id}` ? 'active' : ''}`}
+                    onClick={() => handlePageClick(page.id)}
+                    onContextMenu={(e) => handleRightClick(e, page.id)}
+                    >
+                    <strong>{page.name}</strong>
+                    </div>
+                ))
+                ) : (
+                <div className="no-pages-message">페이지가 없습니다.</div>
+                )}
+            </div>
             </div>
             {showDeleteModal && (
                 <div className="modal">

@@ -2,10 +2,11 @@ import os
 import re
 import time
 import subprocess
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, json, jsonify, request
 from services.graph_service.create_graph import generate_and_save_graph
-
+import pandas as pd
 query_bp = Blueprint('query', __name__)
+BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
 
 
 @query_bp.route('/run-query', methods=['POST'])
@@ -137,3 +138,48 @@ def generate_graph():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500 
+
+
+@query_bp.route('/admin/all-graph', methods=['POST'])
+def all_graph():
+    page_id = request.json.get('page_id', '')
+
+    try:
+        # 절대 경로로 안전하게 설정
+        base_path = os.path.join(BASE_PATH, str(page_id), "output")
+        print("base_path:", base_path)
+
+        entities_parquet = os.path.join(base_path, "entities.parquet")
+        relationships_parquet = os.path.join(base_path, "relationships.parquet")
+
+        entities_df = pd.read_parquet(entities_parquet)
+        relationships_df = pd.read_parquet(relationships_parquet)
+
+        # GraphML / JSON 절대 경로
+        graphml_path = os.path.abspath(os.path.join(BASE_PATH, "../../../data/graphs", str(page_id), "all_graph.graphml"))
+        json_path = os.path.abspath(os.path.join(BASE_PATH, "../../../frontend/public/json", str(page_id), "admin_graphml_data.json"))
+
+        print(f"graphml_path exists: {os.path.exists(os.path.dirname(graphml_path))}")
+        print(f"json_path exists: {os.path.exists(os.path.dirname(json_path))}")
+
+        os.makedirs(os.path.dirname(graphml_path), exist_ok=True)
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+
+        # 그래프 생성 및 저장
+        generate_and_save_graph(
+            entities_df['human_readable_id'].astype(int).tolist(),
+            relationships_df['human_readable_id'].astype(int).tolist(),
+            page_id,
+            graphml_path=graphml_path,
+            json_path=json_path
+        )
+
+        # 저장된 JSON 파일을 읽어서 응답
+        with open(json_path, 'r', encoding='utf-8') as f:
+            graph_data = json.load(f)
+
+        return jsonify(graph_data)
+
+    except Exception as e:
+        print(f"[Graph 생성 에러]: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
