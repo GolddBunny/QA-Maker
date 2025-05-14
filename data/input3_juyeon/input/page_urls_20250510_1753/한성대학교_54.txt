@@ -1,0 +1,58 @@
+Title: 한성대학교
+
+URL Source: https://hansung.ac.kr/bbs/CSE/1248/artclList.do
+
+Markdown Content:
+한성대학교
+===============  
+
+    
+
+분류
+--
+
+*   [전체](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [공지사항](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [취업 및 연수](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [기타](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+
+[RSS 2.0](https://hansung.ac.kr/bbs/CSE/1248/rssList.do?row=50) 총 **58** 개의 게시물이 있습니다.
+
+게시물 검색
+
+ 
+
+         
+
+게시글 리스트
+-------
+
+새소식      
+| 번호 | 제목 | 작성자 | 작성일 | 조회수 | 첨부파일 |
+| --- | --- | --- | --- | --- | --- |
+| 전체게시판공지 | [**「전체」 \[25.01.16 내용변경됨\] 2025년1학기 컴퓨터공학부 교육과정 변경 예고.**](https://hansung.ac.kr/bbs/CSE/1248/265588/artclView.do) | 컴퓨터공학부 | 2025.01.16 | 3873 | 1 |
+| 전체게시판공지 | [**「전체」 26년2월 졸업자까지 기존과 마찬가지로 전공선택 1개를 트랙필수로 대체 인정 가능.**](https://hansung.ac.kr/bbs/CSE/1248/265982/artclView.do) | 컴퓨터공학부 | 2025.01.16 | 1245 |  |
+| 전체게시판공지 | [**「전체」 코딩테스트 학습 서비스, 코드트리 이용 공지사항**](https://hansung.ac.kr/bbs/CSE/1248/264081/artclView.do) | 컴퓨터공학부 | 2024.10.02 | 2882 |  |
+| 58 | [**금융연수원 Fufure Banker 아카데미 참가 안내** ![Image 1: 새글](https://hansung.ac.kr/sites/style_guide/images/common/icon_new.png)](https://hansung.ac.kr/bbs/CSE/1248/268523/artclView.do)  | 컴퓨터공학부 | 2025.05.09 | 39 | 1 |
+| 57 | [**AWS와 Codetree가 공동 주최하는 전국 대학생 프로그래밍 경진대회 'ACP ...**](https://hansung.ac.kr/bbs/CSE/1248/268311/artclView.do) | 컴퓨터공학부 | 2025.04.25 | 282 | 1 |
+| 56 | [**\[해외 현장실습\] TOSUN Technology 현장실습생 선발 안내 (~4/30)**](https://hansung.ac.kr/bbs/CSE/1248/268307/artclView.do) | 컴퓨터공학부 | 2025.04.25 | 214 | 2 |
+| 55 | [**★2025-1학기 컴퓨터공학부 캡스톤디자인 전시회 취합 공지**](https://hansung.ac.kr/bbs/CSE/1248/268169/artclView.do) | 컴퓨터공학부 | 2025.04.21 | 1528 |  |
+| 54 | [**삼성 청년SW·AI아카데미(SSAFY) 14기 모집 안내**](https://hansung.ac.kr/bbs/CSE/1248/268055/artclView.do) | 컴퓨터공학부 | 2025.04.16 | 265 | 3 |
+| 53 | [**외부 교육과정 안내**](https://hansung.ac.kr/bbs/CSE/1248/267774/artclView.do) | 컴퓨터공학부 | 2025.04.03 | 261 |  |
+| 52 | [**코딩라운지 튜터링 이용 안내(공학관A동 103호 2시~6시)**](https://hansung.ac.kr/bbs/CSE/1248/267562/artclView.do) | 컴퓨터공학부 | 2025.03.24 | 413 |  |
+| 51 | [**25-1학기 캡스톤디자인 팀 신청 공지사항**](https://hansung.ac.kr/bbs/CSE/1248/267378/artclView.do) | 컴퓨터공학부 | 2025.03.14 | 876 |  |
+| 50 | [**<전공기초: 컴퓨터프로그래밍 및 웹프로그래밍기초 중간&기말시험 일정 및 시험장소 안내 ...**](https://hansung.ac.kr/bbs/CSE/1248/267331/artclView.do) | 컴퓨터공학부 | 2025.03.12 | 538 |  |
+| 49 | [**코딩 라운지 튜터 모집(모집완료)**](https://hansung.ac.kr/bbs/CSE/1248/267269/artclView.do) | 컴퓨터공학부 | 2025.03.10 | 559 | 1 |
+
+        
+
+[처음](javascript:page_link('1') "처음 목록으로 이동")16
+
+*   **1**
+*   [2](javascript:page_link('2') "2페이지")
+*   [3](javascript:page_link('3') "3페이지")
+*   [4](javascript:page_link('4') "4페이지")
+*   [5](javascript:page_link('5') "5페이지")
+*   [6](javascript:page_link('6') "6페이지")
+
+[다음 페이지](javascript:page_link('2') "다음 페이지") [끝](javascript:page_link('6') "마지막 목록으로 이동")

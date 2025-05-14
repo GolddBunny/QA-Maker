@@ -1,0 +1,13 @@
+{
+  "timestamp": "20250511_0052",
+  "execution_time_seconds": 240.50735807418823,
+  "base_url": "https://hansung.ac.kr/sites/CSE/index.do",
+  "base_domain": "hansung.ac.kr",
+  "scope_patterns": [
+    "cse",
+    "cse"
+  ],
+  "scope_name": "cse_cse",
+  "total_pages_discovered": 309,
+  "total_documents_discovered": 28
+}

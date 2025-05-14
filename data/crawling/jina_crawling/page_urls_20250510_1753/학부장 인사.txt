@@ -1,0 +1,104 @@
+Title: 학부장 인사
+
+URL Source: https://hansung.ac.kr/CSE/10764/subview.do
+
+Markdown Content:
+학부장 인사
+===============  
+
+*   [한성대학교](https://hansung.ac.kr/sites/hansung/index.do "새창")
+*   [종합정보시스템](https://info.hansung.ac.kr/ "새창")
+
+*   [메인화면](https://hansung.ac.kr/CSE/index.do)
+*   [로그인](https://hansung.ac.kr/hnuLogin/hansung/loginView.do)
+*   [사이트맵](https://hansung.ac.kr/sitemap/CSE/siteMapView.do?layout=unknown)
+
+[](https://hansung.ac.kr/CSE/10764/subview.do#none)[](https://hansung.ac.kr/CSE/10764/subview.do#none)
+
+*   [홈으로](https://hansung.ac.kr/sites/CSE/index.do)
+
+학부장 인사
+======
+
+*   인쇄
+*   공유
+    
+    닫기
+    
+    *   페이스북 공유하기
+    *   트위터 공유하기
+    *   핀터레스트 공유하기
+    *   카카오스토리 공유하기
+    *   주소 공유하기
+    
+*   즐겨찾기
+    
+    **즐겨찾는 메뉴** 닫기
+    
+    메뉴추가하기 초기화
+    
+
+fnctId=sitemenu,menuViewType=tab
+
+ 
+
+/WEB-INF/jsp/k2web/com/cop/site/layout.jsp  
+CSE\_JW\_MS\_K2WT001\_S
+
+ 
+
+한성대학교 컴퓨터 공학부는 기존의 컴퓨터공학과와 멀티미디어 공학과를 합병하여 2016년 1학기부터 새로이 출범하였습니다. 창의적인 문제 해결 능력을 갖춘 글로벌 SW 인재 양성을 목표로 4개의 트랙별 교과 과정을 운영하고 있으며, 산업체와의 유기적인 연계를 통해 실무 교육을 진행하고 있습니다. 본교의 최대 학부로서 19명의 전임 교원이 학부 교육을 담당하고 있으며 학생들은 SW 경진 대회, 국내외 인턴쉽 참가, 학술 소모임 등 활발이 활동하고 있습니다. 앞으로도 교육, 산학, 연구를 축으로 IT 분야를 선도하는 학부가 되도록 노력하겠습니다.
+
+감사합니다.
+
+*   [개인정보처리방침](https://hansung.ac.kr/hansung/3916/subview..do "새창")
+*   [이메일무단수집거부](https://hansung.ac.kr/hansung/3917/subview..do "새창")
+
+교내주요사이트
+
+*   [개인정보보호방침](https://hansung.ac.kr/web/www/personal)
+*   [종합정보시스템](http://info.hansung.ac.kr/ "새창")
+*   [한성인트라넷](http://intra.hansung.ac.kr/index_basic.jsp "새창")
+*   [한성웹메일](http://info.hansung.ac.kr/jsp/gmail/gmail_pop_all.jsp "새창")
+*   [오피스365](http://www.hansung.ac.kr/o365/o365_login.jsp "새창")
+*   [한성 e-포트폴리오(HOPE)](https://hope.hansung.ac.kr/ "새창")
+*   [한성 e-class](https://learn.hansung.ac.kr/ "새창")
+*   [한성웹하드](http://idisk.hansung.ac.kr/main/index.php/main/LoginForm/ "새창")
+*   [한성SMS](http://sms.hansung.ac.kr/ "새창")
+*   [입찰/견적](https://hansung.ac.kr/web/www/cmty_01_05)
+*   [HELLO, Mr.PRESIDENT](https://hansung.ac.kr/web/www/hello-mr-president)
+*   [증명발급](http://hansung.webminwon.kr/)
+*   [원격지원](http://113366.com/hsu "새창")
+*   [대학정보공시](http://www.academyinfo.go.kr/pubinfo/pubinfo0020/list.do?schlId=0000200&svyYr=2018&pageIdx=all&filePath=01&fileName=01&saveName=01 "새창")
+*   [교수초빙](http://www.hansung.ac.kr/web/employ "새창")
+*   [국내외교류](http://www.hansung.ac.kr/web/www/553)
+*   [콘텐츠디자인칼리지](https://edubank.hansung.ac.kr/)
+*   [취업공지](http://www.hansung.ac.kr/web/www/cmty_01_06 "새창")
+*   [창업공지](http://www.hansung.ac.kr/web/www/1454 "새창")
+*   [학과행사안내](https://hansung.ac.kr/web/www/595 "새창")
+*   [Korean Language Program](http://korean.hansung.ac.kr/ "새창")
+*   [C&C School(창의융합교육원)](https://cncschool.hansung.ac.kr/ "새창")
+*   [캡스톤디자인 운영시스템](http://capstone.hansung.ac.kr/ "새창")
+*   [교육혁신원](https://eist.hansung.ac.kr/ "새창")
+*   [학생상담센터](https://hansung.ac.kr/web/hscc/home "새창")
+*   [캠퍼스타운](https://hansung.ac.kr/web/hsct/home "새창")
+*   [IPP사업단](https://ipp.hansung.ac.kr/index.do "새창")
+*   [현장실습관리시스템](http://coop.hansung.ac.kr/ "새창")
+*   [실시간출결(교원)](https://smart.hansung.ac.kr/ "새창")
+*   [생활관](http://dorm.hansung.ac.kr/kor/index.do "새창")
+*   [온라인취업멘토링](https://www.hansung.ac.kr/enterprise/comento/main.jsp "새창")
+*   [발전기금](https://www.hansung.ac.kr/web/giving "새창")
+
+관련기관
+
+*   [개인정보보호방침](https://hansung.ac.kr/web/www/personal)
+*   [종합정보시스템](http://info.hansung.ac.kr/ "새창")
+*   [한성인트라넷](http://intra.hansung.ac.kr/index_basic.jsp "새창")
+
+\[02876\] 서울특별시 성북구 삼선교로 16길 116(삼선동2가) 한성대학교 IT공과대학 트랙사무실 통합운영 (지선관 105호) _/_ TEL : 02-760-4433 _/_ FAX : 02-760-4439
+
+COPYRIGHT© HANSUNG UNIVERSITY. ALL RIGHTS RESERVED.
+
+![Image 1: 한성대학교](https://hansung.ac.kr/sites/style_guide/images/common/footer_logo.png)
+
+[TOP](https://hansung.ac.kr/CSE/10764/subview.do#)

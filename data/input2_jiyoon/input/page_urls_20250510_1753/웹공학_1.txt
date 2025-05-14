@@ -1,0 +1,159 @@
+Title: 웹공학
+
+URL Source: https://hansung.ac.kr/CSE/10777/subview.do
+
+Markdown Content:
+fnctId=prsnInt,fnctNo=165
+
+게시글 리스트
+-------
+
+*   ![Image 1: 김진환](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110114)
+    
+    김진환
+    
+    [이메일](mailto:kimjh@hansung.ac.kr "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4340
+    
+*   ![Image 2: 정인상](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110509)
+    
+    정인상
+    
+    [이메일](mailto:insang@hansung.ac.kr "새창") [홈페이지](http://old.hansung.ac.kr/web/insang "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4301
+    
+*   ![Image 3: 김성동](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110528)
+    
+    김성동
+    
+    [이메일](mailto:sdkim@hansung.ac.kr "새창")
+    
+    소속
+    
+    웹공학트랙 (1트랙)
+    
+    전화번호
+    
+    02-760-4161
+    
+*   ![Image 4: 김남윤](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110541)
+    
+    김남윤
+    
+    [이메일](mailto:nykim@hansung.ac.kr "새창") [홈페이지](http://old.hansung.ac.kr/web/nykim "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4348
+    
+*   ![Image 5: 박승현](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110858)
+    
+    박승현
+    
+    [이메일](mailto:sp@hansung.ac.kr "새창") [홈페이지](https://sp-mcslab.github.io/ "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙1)
+    
+    전화번호
+    
+    02-) 760-4120
+    
+*   ![Image 6: 유수진](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110901)
+    
+    유수진
+    
+    [이메일](mailto: sujin.yoo@hansung.kr "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4129
+    
+*   ![Image 7: 황기태](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110108)
+    
+    황기태
+    
+    [이메일](mailto:calafk@hansung.ac.kr "새창") [홈페이지](http://210.222.25.60/ "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-4300
+    
+*   ![Image 8: 이항찬](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110508)
+    
+    이항찬
+    
+    [이메일](mailto:lhangch@hansung.ac.kr "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-4307
+    
+*   ![Image 9: 정인환](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110527)
+    
+    정인환
+    
+    [이메일](mailto:ihjung@hansung.ac.kr "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-4136
+    
+*   ![Image 10: 황호영](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110590)
+    
+    황호영
+    
+    [이메일](mailto:hyhwang@hansung.ac.kr "새창")
+    
+    소속
+    
+    웹공학트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-5964
+    
+
+처음
+
+12
+
+*   **1**
+*   2
+
+다음 페이지 끝

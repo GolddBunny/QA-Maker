@@ -1,0 +1,55 @@
+Title: 한성대학교
+
+URL Source: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=3
+
+Markdown Content:
+한성대학교
+===============  
+
+    
+
+분류
+--
+
+*   [전체](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [공지사항](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [취업 및 연수](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [기타](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+
+[RSS 2.0](https://hansung.ac.kr/bbs/CSE/1248/rssList.do?row=50) 총 **58** 개의 게시물이 있습니다.
+
+게시물 검색
+
+ 
+
+         
+
+게시글 리스트
+-------
+
+새소식      
+| 번호 | 제목 | 작성자 | 작성일 | 조회수 | 첨부파일 |
+| --- | --- | --- | --- | --- | --- |
+| 38 | [**26년2월 졸업자까지 기존과 마찬가지로 전공선택 1개를 트랙필수로 대체 인정 가능.**](https://hansung.ac.kr/bbs/CSE/1248/265982/artclView.do) | 컴퓨터공학부 | 2025.01.16 | 1245 |  |
+| 37 | [**\[25.01.16 내용변경됨\] 2025년1학기 컴퓨터공학부 교육과정 변경 예고.**](https://hansung.ac.kr/bbs/CSE/1248/265588/artclView.do) | 컴퓨터공학부 | 2025.01.16 | 3873 | 1 |
+| 36 | [**\[파트타임/인턴\] 네모다임엑스, 웹/앱 서비스 개발**](https://hansung.ac.kr/bbs/CSE/1248/265886/artclView.do) | 컴퓨터공학부 | 2025.01.10 | 460 |  |
+| 35 | [**심규현교수님의 컴공학생 공개 포폴리스트 안내**](https://hansung.ac.kr/bbs/CSE/1248/265792/artclView.do) | 컴퓨터공학부 | 2025.01.06 | 842 |  |
+| 34 | [**졸업 요건에 캡스톤디자인 수강 필수는 변동 없습니다.**](https://hansung.ac.kr/bbs/CSE/1248/265656/artclView.do) | 컴퓨터공학부 | 2024.12.27 | 790 |  |
+| 33 | [**\[대학일자리플러스센터\] 동계방학 IT직무 부트캠프 모집**](https://hansung.ac.kr/bbs/CSE/1248/265639/artclView.do) | 컴퓨터공학부 | 2024.12.26 | 484 |  |
+| 32 | [**2025-1 캡스톤디자인 과목 관련 공지**](https://hansung.ac.kr/bbs/CSE/1248/265628/artclView.do) | 컴퓨터공학부 | 2024.12.24 | 1784 |  |
+| 31 | [**블록체인 관련 스타트업 아르바이트**](https://hansung.ac.kr/bbs/CSE/1248/265511/artclView.do) | 컴퓨터공학부 | 2024.12.17 | 421 |  |
+| 30 | [**\[LG AI 연구원에서 주관하는 교육 프로그램\] LG Aimers 6기 모집 안내**](https://hansung.ac.kr/bbs/CSE/1248/265443/artclView.do) | 컴퓨터공학부 | 2024.12.13 | 377 |  |
+| 29 | [**(재학생) 2025-2월 졸업대상자 졸업요건 제출 안내**](https://hansung.ac.kr/bbs/CSE/1248/265182/artclView.do) | 컴퓨터공학부 | 2024.12.02 | 1982 | 2 |
+
+        
+
+[처음](javascript:page_link('1') "처음 목록으로 이동") [이전페이지](javascript:page_link('2') "이전페이지")36
+
+*   [1](javascript:page_link('1') "1페이지")
+*   [2](javascript:page_link('2') "2페이지")
+*   **3**
+*   [4](javascript:page_link('4') "4페이지")
+*   [5](javascript:page_link('5') "5페이지")
+*   [6](javascript:page_link('6') "6페이지")
+
+[다음 페이지](javascript:page_link('4') "다음 페이지") [끝](javascript:page_link('6') "마지막 목록으로 이동")

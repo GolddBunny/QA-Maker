@@ -1,0 +1,133 @@
+Title: 캡스톤 디자인
+
+URL Source: https://hansung.ac.kr/CSE/10732/subview.do
+
+Markdown Content:
+캡스톤 디자인
+===============  
+
+*   [한성대학교](https://hansung.ac.kr/sites/hansung/index.do "새창")
+*   [종합정보시스템](https://info.hansung.ac.kr/ "새창")
+
+*   [메인화면](https://hansung.ac.kr/CSE/index.do)
+*   [로그인](https://hansung.ac.kr/hnuLogin/hansung/loginView.do)
+*   [사이트맵](https://hansung.ac.kr/sitemap/CSE/siteMapView.do?layout=unknown)
+
+[](https://hansung.ac.kr/CSE/10732/subview.do#none)[](https://hansung.ac.kr/CSE/10732/subview.do#none)
+
+*   [홈으로](https://hansung.ac.kr/sites/CSE/index.do)
+
+캡스톤 디자인
+=======
+
+*   인쇄
+*   공유
+    
+    닫기
+    
+    *   페이스북 공유하기
+    *   트위터 공유하기
+    *   핀터레스트 공유하기
+    *   카카오스토리 공유하기
+    *   주소 공유하기
+    
+*   즐겨찾기
+    
+    **즐겨찾는 메뉴** 닫기
+    
+    메뉴추가하기 초기화
+    
+
+fnctId=sitemenu,menuViewType=tab
+
+ 
+
+/WEB-INF/jsp/k2web/com/cop/site/layout.jsp  
+CSE\_JW\_MS\_K2WT001\_S
+
+ 
+
+![Image 2](https://hansung.ac.kr/sites/CSE/contents/images/000001/capstone_1.jpg)
+
+교과목 소개
+------
+
+  
+
+컴퓨터 공학부 커리큘럼을 기초로 프로토타입이 아닌 완성된 작품을 팀별로 한 학기 동안 구현하고 발표하는 과목으로서 협업을 통한 프로젝트 수행 기술을 습득한다. 각팀 스스로 프로젝트 목표와 진도를 설정하고 결과물에 관한 아이디어와 설계 구현에 관하여 다른 수강 학생들과 토론하며 프로젝트를 완성해 나간다. 수강생들은 4인으로 구성된 조를 구성하여 하드웨어가 포함된 시스템 또는 소프트웨어 시스템을 구축한다.
+
+  
+
+학생들의 생생한 목소리
+------------
+
+  
+
+4명이 한팀이 되어 작업을 한다는 것이 조직과 또 협동에 대해 미리 많은 경험을 할수있던 기회였던 것 같다 . 첫번째로 주제를 정하고 4명 모두의 승낙으로 얻어진 이 프로젝트가 지금까지 오기엔 정말 많은 노력과 시간이 필요했습니다. 확실치않았던 과연 잘될것인가? 라는 출발점에서 시작했던 이 프로젝트는 어느새 어느정도의 모습을 갖춰지게 됐었고 그 뿌듯함을 정말 말이 필요 없을 지경 이었다. 자신의 위치를 잘 알고 서로에게 도움이 되려는 자세에서 프로그래밍 실력의 발전도 있었다. 서로 이 프로젝트에 부여된 시간동안 감사함을 느끼며 다른 팀들을 맡으신 담당교수님께도 정말 큰 감사함을 느끼고 있습니다. 대학생으로서 서로가 임했던 이 순간은 정말이지 뿌듯하다고 생각합니다.
+
+  
+
+홈페이지 주소
+-------
+
+[https://github.com/cse-hansung](https://github.com/cse-hansung "캡스톤")
+
+[2024년 캡스톤디자인 팜플렛 자료](https://raw.githubusercontent.com/cse-hansung/capstone2024/main/cse-capstone2024.pdf "2024")
+
+[2023년 캡스톤디자인 팜플렛 자료](https://raw.githubusercontent.com/cse-hansung/capstone2023/main/cse-capstone2023.pdf "2023")
+
+[2022년 캡스톤디자인 팜플렛 자료](https://raw.githubusercontent.com/cse-hansung/capstone2022/main/cse-capstone2022.pdf "2022")
+
+  
+
+*   [개인정보처리방침](https://hansung.ac.kr/hansung/3916/subview..do "새창")
+*   [이메일무단수집거부](https://hansung.ac.kr/hansung/3917/subview..do "새창")
+
+교내주요사이트
+
+*   [개인정보보호방침](https://hansung.ac.kr/web/www/personal)
+*   [종합정보시스템](http://info.hansung.ac.kr/ "새창")
+*   [한성인트라넷](http://intra.hansung.ac.kr/index_basic.jsp "새창")
+*   [한성웹메일](http://info.hansung.ac.kr/jsp/gmail/gmail_pop_all.jsp "새창")
+*   [오피스365](http://www.hansung.ac.kr/o365/o365_login.jsp "새창")
+*   [한성 e-포트폴리오(HOPE)](https://hope.hansung.ac.kr/ "새창")
+*   [한성 e-class](https://learn.hansung.ac.kr/ "새창")
+*   [한성웹하드](http://idisk.hansung.ac.kr/main/index.php/main/LoginForm/ "새창")
+*   [한성SMS](http://sms.hansung.ac.kr/ "새창")
+*   [입찰/견적](https://hansung.ac.kr/web/www/cmty_01_05)
+*   [HELLO, Mr.PRESIDENT](https://hansung.ac.kr/web/www/hello-mr-president)
+*   [증명발급](http://hansung.webminwon.kr/)
+*   [원격지원](http://113366.com/hsu "새창")
+*   [대학정보공시](http://www.academyinfo.go.kr/pubinfo/pubinfo0020/list.do?schlId=0000200&svyYr=2018&pageIdx=all&filePath=01&fileName=01&saveName=01 "새창")
+*   [교수초빙](http://www.hansung.ac.kr/web/employ "새창")
+*   [국내외교류](http://www.hansung.ac.kr/web/www/553)
+*   [콘텐츠디자인칼리지](https://edubank.hansung.ac.kr/)
+*   [취업공지](http://www.hansung.ac.kr/web/www/cmty_01_06 "새창")
+*   [창업공지](http://www.hansung.ac.kr/web/www/1454 "새창")
+*   [학과행사안내](https://hansung.ac.kr/web/www/595 "새창")
+*   [Korean Language Program](http://korean.hansung.ac.kr/ "새창")
+*   [C&C School(창의융합교육원)](https://cncschool.hansung.ac.kr/ "새창")
+*   [캡스톤디자인 운영시스템](http://capstone.hansung.ac.kr/ "새창")
+*   [교육혁신원](https://eist.hansung.ac.kr/ "새창")
+*   [학생상담센터](https://hansung.ac.kr/web/hscc/home "새창")
+*   [캠퍼스타운](https://hansung.ac.kr/web/hsct/home "새창")
+*   [IPP사업단](https://ipp.hansung.ac.kr/index.do "새창")
+*   [현장실습관리시스템](http://coop.hansung.ac.kr/ "새창")
+*   [실시간출결(교원)](https://smart.hansung.ac.kr/ "새창")
+*   [생활관](http://dorm.hansung.ac.kr/kor/index.do "새창")
+*   [온라인취업멘토링](https://www.hansung.ac.kr/enterprise/comento/main.jsp "새창")
+*   [발전기금](https://www.hansung.ac.kr/web/giving "새창")
+
+관련기관
+
+*   [개인정보보호방침](https://hansung.ac.kr/web/www/personal)
+*   [종합정보시스템](http://info.hansung.ac.kr/ "새창")
+*   [한성인트라넷](http://intra.hansung.ac.kr/index_basic.jsp "새창")
+
+\[02876\] 서울특별시 성북구 삼선교로 16길 116(삼선동2가) 한성대학교 IT공과대학 트랙사무실 통합운영 (지선관 105호) _/_ TEL : 02-760-4433 _/_ FAX : 02-760-4439
+
+COPYRIGHT© HANSUNG UNIVERSITY. ALL RIGHTS RESERVED.
+
+![Image 3: 한성대학교](https://hansung.ac.kr/sites/style_guide/images/common/footer_logo.png)
+
+[TOP](https://hansung.ac.kr/CSE/10732/subview.do#)

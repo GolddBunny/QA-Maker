@@ -36,15 +36,20 @@ BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
+    
 ]
 # 문서 파일 확장자 패턴
-DOC_EXTENSIONS = ['.pdf', '.docx', '.doc', '.hwp', '.txt', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.jpg', '.jpeg', '.png', '.svg', '.webp']
+DOC_EXTENSIONS = ['.pdf', '.docx', '.doc', '.hwp', '.txt', '.hwpx', 'word']
 # 제외할 url 패턴
 EXCLUDE_PATTERNS = [
     '/login', '/logout', '/search?', 'javascript:', '#', 'mailto:', 'tel:',
-    '/api/', '/rss/', 'comment', 'print.do', 'popup', 'redirect', 'captcha', 'admin', 'synapView.do?', '/synapView.do?', '/synap', '/synap/view.do', '/synap/view.do?'
+    '/api/', '/rss/', 'comment', 'print.do', 'popup', 'redirect', 'captcha', 'admin', 'synapView.do?', '/synapView.do?', '/synap', '/synap/view.do', '/synap/view.do?',
+    '/hansung/8390'  # 추가된 제외 패턴
 ]
+# 제외할 파일 확장자
+EXCLUDE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.tif', '.tiff', '.ico', '.webp', 
+                     '.html', '.htm', '.css', '.js', '.mp3', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv']
 # 페이지네이션 감지를 위한 CSS 식별자
 PAGINATION_SELECTORS = [
     ".pagination", "nav.pagination", "ul.pagination", ".paging", "._paging", "_totPage"
@@ -186,13 +191,30 @@ class ScopeLimitedCrawler:
         path = parsed.path
         query_params = parse_qs(parsed.query)
         
+        # 파일 확장자 확인하여 제외
+        if any(path.lower().endswith(ext) for ext in EXCLUDE_EXTENSIONS):
+            return ""
+        
         # 기본 URL (경로까지)
         base_url = f"{parsed.scheme}://{parsed.netloc}{path}"
         
         # 도메인 루트인 경우 그대로 반환
         if parsed.path == '/':
             return url
-            
+        
+        # http와 https 표준화 (https 사용)
+        if parsed.scheme == 'http':
+            base_url = base_url.replace('http://', 'https://')
+        
+        # www와 non-www 표준화 (동일한 사이트로 처리)
+        if parsed.netloc.startswith('www.'):
+            non_www = base_url.replace(f"{parsed.scheme}://www.", f"{parsed.scheme}://")
+            base_url = non_www
+        else:
+            www_version = base_url.replace(f"{parsed.scheme}://", f"{parsed.scheme}://www.")
+            if self.base_domain.startswith('www.') and not parsed.netloc.startswith('www.'):
+                base_url = www_version
+        
         # 직접적인 페이지 파라미터가 있는 경우, 간소화된 URL 반환
         if 'page' in query_params:
             page_num = query_params['page'][0]
@@ -230,7 +252,7 @@ class ScopeLimitedCrawler:
                     return base_url
                 return f"{base_url}?page={page_num}"  # 표준화된 형식으로 변환
         
-        # 후행 슬래시 제거하여 반환
+        # 쿼리 파라미터가 없는 URL의 후행 슬래시 제거
         return base_url.rstrip('/')
 
     def is_in_scope(self, url: str) -> bool:
@@ -276,6 +298,10 @@ class ScopeLimitedCrawler:
             return False
         
         lower_url = href.lower()
+        
+        # 제외할 확장자 확인
+        if any(lower_url.endswith(ext) for ext in EXCLUDE_EXTENSIONS):
+            return False
         
         # 파일 확장자 확인
         if any(lower_url.endswith(ext) for ext in DOC_EXTENSIONS):
@@ -553,6 +579,9 @@ class ScopeLimitedCrawler:
         # 2. 페이지 URL 패턴과 마지막 페이지 번호 파악
         url_pattern, last_page = self._extract_pagination_pattern(soup, current_url, pagination_element)
         
+        # 페이지 수를 20으로 제한
+        last_page = min(last_page, 20)
+        
         logger.debug(f"URL 패턴: {url_pattern}, 마지막 페이지: {last_page}")
         
         # 3. 다음 페이지 버튼 처리 (JavaScript 포함)
@@ -583,8 +612,8 @@ class ScopeLimitedCrawler:
         # 직접 페이지 링크 추가
         pagination_urls.extend(direct_links)
         
-        # JavaScript 페이지 처리 (최대 100페이지로 제한하여 성능 최적화)
-        js_pages_to_process = min(100, len(js_links))
+        # JavaScript 페이지 처리 (최대 20페이지로 제한)
+        js_pages_to_process = min(20, len(js_links))
         for i in range(js_pages_to_process):
             js_link = js_links[i]
             logger.info(f"다음 페이지 버튼 발견: {js_link}")
@@ -956,28 +985,19 @@ class ScopeLimitedCrawler:
         domain_dir = domain_base_dir
         os.makedirs(domain_dir, exist_ok=True)
         
+        # 증분 저장을 위한 파일 경로 설정
+        page_urls_file = os.path.join(domain_dir, f"page_urls_{timestamp}.txt")
+        doc_urls_file = os.path.join(domain_dir, f"document_urls_{timestamp}.txt")
+        
+        # 증분 저장을 위한 카운터
+        page_urls_batch = []
+        doc_urls_batch = []
+        increment_size = 50  # 50개씩 증분 저장
+        
         logger.info(f"URL 발견 시작: {start_url}")
         logger.info(f"기본 도메인: {self.base_domain}")
         logger.info(f"범위 패턴: {self.scope_patterns}")
         logger.info(f"최대 페이지: {self.max_pages}")
-        
-        # 체크포인트 파일 경로
-        checkpoint_file = os.path.join(domain_dir, "checkpoint.json")
-        
-        # 체크포인트가 있으면 복원
-        if os.path.exists(checkpoint_file):
-            try:
-                with open(checkpoint_file, 'r', encoding='utf-8') as f:
-                    checkpoint_data = json.load(f)
-                    all_page_urls = set(checkpoint_data.get('all_page_urls', []))
-                    self.all_doc_urls = set(checkpoint_data.get('all_doc_urls', []))
-                    self.visited_urls = set(checkpoint_data.get('visited_urls', []))
-                    queue = checkpoint_data.get('queue', [])
-                    current_page = checkpoint_data.get('current_page', 0)
-                    processed_sitemaps = set(checkpoint_data.get('processed_sitemaps', []))
-                    logger.info(f"체크포인트 복원: {len(self.visited_urls)}개 URL 방문, {len(queue)}개 URL 대기 중")
-            except Exception as e:
-                logger.error(f"체크포인트 복원 실패: {e}")
         
         try:
             # 병렬 처리를 위한 설정
@@ -1024,11 +1044,13 @@ class ScopeLimitedCrawler:
                                 
                                 # 페이지 URL 저장
                                 all_page_urls.add(url)
+                                page_urls_batch.append(url)
                                 
                                 # 문서 URL 저장
                                 for doc_url in doc_links:
                                     if doc_url not in self.all_doc_urls:
                                         self.all_doc_urls.add(doc_url)
+                                        doc_urls_batch.append(doc_url)
                                         logger.info(f"{progress} Document found: {doc_url}")
                                 
                                 # 새 URL을 큐에 추가 (중복 URL 방지를 위해 정규화 적용)
@@ -1039,46 +1061,56 @@ class ScopeLimitedCrawler:
                         except Exception as e:
                             logger.error(f"{progress} URL 처리 실패: {url}, 오류: {e}")
                     
-                    # 주기적으로 체크포인트 저장 (50개 URL마다)
-                    if current_page % 50 == 0:
-                        try:
-                            checkpoint_data = {
-                                'all_page_urls': list(all_page_urls),
-                                'all_doc_urls': list(self.all_doc_urls),
-                                'visited_urls': list(self.visited_urls),
-                                'queue': queue,
-                                'current_page': current_page,
-                                'processed_sitemaps': list(processed_sitemaps)
-                            }
-                            with open(checkpoint_file, 'w', encoding='utf-8') as f:
-                                json.dump(checkpoint_data, f, ensure_ascii=False)
-                            logger.info(f"{progress} 체크포인트 저장 완료")
-                        except Exception as e:
-                            logger.error(f"체크포인트 저장 실패: {e}")
+                    # 50개씩 증분 저장
+                    if len(page_urls_batch) >= increment_size:
+                        self._save_incrementally(page_urls_batch, page_urls_file)
+                        page_urls_batch = []
+                    
+                    if len(doc_urls_batch) >= increment_size:
+                        self._save_incrementally(doc_urls_batch, doc_urls_file)
+                        doc_urls_batch = []
                     
                     # 요청 간 지연 추가 (배치 간 지연)
                     time.sleep(self.delay)
+                
+                # 남은 URL 저장
+                if page_urls_batch:
+                    self._save_incrementally(page_urls_batch, page_urls_file)
+                
+                if doc_urls_batch:
+                    self._save_incrementally(doc_urls_batch, doc_urls_file)
             
             # 실행 시간 계산
             execution_time = time.time() - start_time
             
-            # 결과 저장
-            results_data = self._save_results(
-                all_page_urls, 
-                self.all_doc_urls, 
-                domain_dir, 
-                timestamp, 
-                start_url,
-                scope_name,
-                execution_time
-            )
+            # 메타데이터 결과 JSON 저장
+            json_data = {
+                "timestamp": timestamp,
+                "execution_time_seconds": execution_time,
+                "base_url": start_url,
+                "base_domain": self.base_domain,
+                "scope_patterns": self.scope_patterns,
+                "scope_name": scope_name,
+                "total_pages_discovered": len(all_page_urls),
+                "total_documents_discovered": len(self.all_doc_urls),
+            }
+            
+            json_file = os.path.join(domain_dir, f"crawl_results_{timestamp}.json")
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, ensure_ascii=False, indent=2)
             
             logger.info(f"\nURL 발견 완료:")
             logger.info(f"발견된 페이지: {len(all_page_urls)}개, 문서: {len(self.all_doc_urls)}개")
             logger.info(f"결과 저장: {domain_dir}")
             logger.info(f"실행 시간: {execution_time:.1f}초")
             
-            return results_data
+            return {
+                "page_urls": all_page_urls,
+                "doc_urls": self.all_doc_urls,
+                "results_dir": domain_dir,
+                "json_file": json_file,
+                "execution_time": execution_time
+            }
         
         except Exception as e:
             logger.error(f"URL 발견 실패: {e}")
@@ -1092,56 +1124,18 @@ class ScopeLimitedCrawler:
         finally:
             # 드라이버 종료 
             self.close_driver()
-            
-            # 체크포인트 파일 삭제 (정상 완료 시)
-            if os.path.exists(checkpoint_file):
-                try:
-                    os.remove(checkpoint_file)
-                except:
-                    pass
 
-    def _save_results(self, page_urls, doc_urls, domain_dir, timestamp, start_url, scope_name, execution_time):
-        """크롤러 결과를 파일에 저장"""
-        # URL 목록 저장
-        page_urls_file = os.path.join(domain_dir, f"page_urls_{timestamp}.txt")
-        doc_urls_file = os.path.join(domain_dir, f"document_urls_{timestamp}.txt")
-        
-        self._save_urls_to_file(page_urls, page_urls_file)
-        self._save_urls_to_file(doc_urls, doc_urls_file)
-        
-        # 메타데이터와 함께 JSON 결과 저장
-        json_data = {
-            "timestamp": timestamp,
-            "execution_time_seconds": execution_time,
-            "base_url": start_url,
-            "base_domain": self.base_domain,
-            "scope_patterns": self.scope_patterns,
-            "scope_name": scope_name,
-            "total_pages_discovered": len(page_urls),
-            "total_documents_discovered": len(doc_urls),
-            "page_urls": list(page_urls),
-            "document_urls": list(doc_urls)
-        }
-        
-        json_file = os.path.join(domain_dir, f"crawl_results_{timestamp}.json")
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(json_data, f, ensure_ascii=False, indent=2)
-        
-        return {
-            "page_urls": page_urls,
-            "doc_urls": doc_urls,
-            "results_dir": domain_dir,
-            "json_file": json_file,
-            "execution_time": execution_time
-        }
+    def _save_incrementally(self, urls: List[str], filepath: str) -> None:
+        """URL 목록을 파일에 증분식으로 추가"""
+        try:
+            # 파일에 URL 추가
+            with open(filepath, 'a', encoding='utf-8') as f:
+                for url in urls:
+                    f.write(f"{url}\n")
+            logger.info(f"증분 저장 완료: {len(urls)}개 URL을 {filepath}에 추가")
+        except Exception as e:
+            logger.error(f"증분 저장 중 오류 발생: {e}")
 
-    def _save_urls_to_file(self, urls: Set[str], filepath: str) -> None:
-        """URL 목록을 파일에 저장"""
-        with open(filepath, 'w', encoding='utf-8') as f:
-            for url in sorted(urls):
-                f.write(f"{url}\n")
-        logger.info(f"URL 목록 저장: {filepath}")
-    
     def is_sitemap_url(self, url: str) -> bool:
         """URL이 사이트맵 페이지인지 확인"""
         lower_url = url.lower()
@@ -1355,9 +1349,10 @@ def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_reque
 if __name__ == "__main__":
     try:
         main(
-            start_url="https://hansung.ac.kr/sites/CSE/index.do",
-            scope=["cse", "CSE"],
-            max_pages=1000,
+            # start_url="https://hansung.ac.kr/sites/CSE/index.do",
+            start_url="https://hansung.ac.kr/sites/hansung/index.do",
+            # scope=["CSE", "cse"],
+            max_pages=10000,
             delay=1.0,
             timeout=20,
             use_requests=True,

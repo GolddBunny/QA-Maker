@@ -1,0 +1,29 @@
+Title: 연구실 소개
+
+URL Source: https://hansung.ac.kr/CSE/10858/subview.do
+
+Markdown Content:
+연구실 소개
+------
+
+*   **즐겨찾는 메뉴**
+    
+
+fnctId=sitemenu,menuViewType=tab
+
+/WEB-INF/jsp/k2web/com/cop/site/layout.jsp  
+CSE\_JW\_MS\_K2WT001\_S
+
+fnctId=profl,fnctNo=507
+
+게시물 검색
+
+인물소개 리스트
+--------
+
+*   [![Image 1: PNGraphics (Presence and Graphics) 연구실 사진](https://hansung.ac.kr/sites/CSE/atchmnfl/profl/507/temp_1729658402361100.jpg) **PNGraphics (Presence and Graphics) 연구실** 지도교수 김진모 이메일 jinmo.kim@hansung.ac.kr 사이트 https://sites.google.com/view/jmkim 연구분야 AR/VR/MR 실감형 기술을 활용한 컴퓨터그래픽스 응용 연구 사무실 연구관 517호](https://hansung.ac.kr/profl/CSE/507/1135/artclView.do)
+*   [![Image 2: 모빌리티 및 사이버 보안 연구실 (MCS Lab) 사진](https://hansung.ac.kr/sites/CSE/atchmnfl/profl/507/temp_1729593872339100.png) **모빌리티 및 사이버 보안 연구실 (MCS Lab)** 지도교수 박승현 이메일 sp@hansung.ac.kr 사이트 https://sp-mcslab.github.io 연구분야 자동차 사이버 보안 및 자율주행 기술 연구 사무실 연구관 329호](https://hansung.ac.kr/profl/CSE/507/1136/artclView.do)
+*   [![Image 3: 인텔리전트 시스템SW 연구실 사진](https://hansung.ac.kr/sites/CSE/atchmnfl/profl/507/temp_1729594484128100.jpg) **인텔리전트 시스템SW 연구실** 지도교수 허준영 이메일 jyheo@hansung.ac.kr 사이트 https://isyslab.github.io/ 연구분야 운영체제, 임베디드 시스템, 기계학습 사무실 연구관 305호](https://hansung.ac.kr/profl/CSE/507/1137/artclView.do)
+*   [![Image 4: Applied Machine Learning Lab 사진](https://hansung.ac.kr/sites/CSE/atchmnfl/profl/507/temp_1730344883337100.jpg) **Applied Machine Learning Lab** 지도교수 한기준 이메일 keejun.han@hansung.ac.kr 사이트 https://sites.google.com/hansung.ac.kr/aml/ 연구분야 데이터마이닝, 빅데이터, 인공지능 사무실](https://hansung.ac.kr/profl/CSE/507/1149/artclView.do)
+
+\* 여기에 소개되지 않은 연구실도 있습니다.

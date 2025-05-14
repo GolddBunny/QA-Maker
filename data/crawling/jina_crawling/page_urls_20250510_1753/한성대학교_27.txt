@@ -1,0 +1,28 @@
+Title: 한성대학교
+
+URL Source: https://hansung.ac.kr/bbs/CSE/1248/265123/artclView.do
+
+Markdown Content:
+1\. 매일 코드트리 1문제 제출 ( 1일1코드 ) (월자금씨 : 월Java 금C언어)
+
+언어는 과목에서 배운 5가지언어(C언어,JS,Python,C++,Java)를 요일별로 사용
+
+(예) 월:Java 화:JS 수: Python 목: C++ 금:C언어
+
+2\. 포폴2개를 만들어서 본인 깃허브에 업로드 ( 10주 2포폴 )
+
+(예) 4학년 강민서학생 포폴 35개
+
+[https://learn.hansung.ac.kr/mod/ubboard/article.php?id=813096&bwid=363004](https://learn.hansung.ac.kr/mod/ubboard/article.php?id=813096&bwid=363004)
+
+학생) 포폴 무엇을 만드나요? 막막해요
+
+교수) 심교수가 제공한 포폴5개로 시작하세요.
+
+C언어,C++ : [https://learn.hansung.ac.kr/mod/ubboard/article.php?id=813096&bwid=363024](https://learn.hansung.ac.kr/mod/ubboard/article.php?id=813096&bwid=363024)
+
+자바,파이썬,웹기초: [https://learn.hansung.ac.kr/mod/ubboard/article.php?id=813096&bwid=363111](https://learn.hansung.ac.kr/mod/ubboard/article.php?id=813096&bwid=363111)
+
+\= 커뮤니티 가입방법은 [https://blog.naver.com/khshimto/223301829586](https://blog.naver.com/khshimto/223301829586)
+
+▶관련 문의 : 한성대 컴퓨터공학부  심규현 교수님 (khshimto@hansung.kr)

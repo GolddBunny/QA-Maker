@@ -1,0 +1,159 @@
+Title: 모바일소프트웨어
+
+URL Source: https://hansung.ac.kr/CSE/10780/subview.do
+
+Markdown Content:
+fnctId=prsnInt,fnctNo=162
+
+게시글 리스트
+-------
+
+*   ![Image 1: 황기태](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110108)
+    
+    황기태
+    
+    [이메일](mailto:calafk@hansung.ac.kr "새창") [홈페이지](http://210.222.25.60/ "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4300
+    
+*   ![Image 2: 정인환](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110527)
+    
+    정인환
+    
+    [이메일](mailto:ihjung@hansung.ac.kr "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4136
+    
+*   ![Image 3: 황호영](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110590)
+    
+    황호영
+    
+    [이메일](mailto:hyhwang@hansung.ac.kr "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-5964
+    
+*   ![Image 4: 허준영](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110618)
+    
+    허준영
+    
+    [이메일](mailto:jyheo@hansung.ac.kr "새창") [홈페이지](https://jyheo.github.io/ "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-8039
+    
+*   ![Image 5: 한기준](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110866)
+    
+    한기준
+    
+    [이메일](mailto: keejun.han@hansung.ac.kr "새창") [홈페이지](https://sites.google.com/hansung.ac.kr/aml/ "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (1트랙)
+    
+    전화번호
+    
+    02-760-4328
+    
+*   ![Image 6: 송미화](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110890)
+    
+    송미화
+    
+    [이메일](mailto: mhsong@hansung.kr "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙1)
+    
+    전화번호
+    
+    02-760-4124
+    
+*   ![Image 7: 장재영](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110517)
+    
+    장재영
+    
+    [이메일](mailto:jychang@hansung.ac.kr "새창") [홈페이지](http://old.hansung.ac.kr/web/chang "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-4495
+    
+*   ![Image 8: 김남윤](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110541)
+    
+    김남윤
+    
+    [이메일](mailto:nykim@hansung.ac.kr "새창") [홈페이지](http://old.hansung.ac.kr/web/nykim "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-4348
+    
+*   ![Image 9: 계희원](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110595)
+    
+    계희원
+    
+    [이메일](mailto:kuei@hansung.ac.kr "새창") [홈페이지](http://old.hansung.ac.kr/web/hwkye "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-8014
+    
+*   ![Image 10: 박필준](https://info.hansung.ac.kr/fuz/staffAddr/sajin2.jsp?sabun=110909)
+    
+    박필준
+    
+    [이메일](mailto: yulian@hansung.kr "새창")
+    
+    소속
+    
+    모바일소프트웨어트랙 (트랙2)
+    
+    전화번호
+    
+    02-760-4487
+    
+
+처음
+
+12
+
+*   **1**
+*   2
+
+다음 페이지 끝

@@ -1,0 +1,69 @@
+Title: 한성대학교
+
+URL Source: https://hansung.ac.kr/sitemap/CSE/siteMapView.do
+
+Markdown Content:
+*   [학부 소개](https://hansung.ac.kr/CSE/10770/subview.do)
+    
+    *   [교육 목표](https://hansung.ac.kr/CSE/10770/subview.do)
+        
+    *   [졸업생 사례](https://hansung.ac.kr/CSE/10769/subview.do)
+        
+    *   [학부장 인사](https://hansung.ac.kr/CSE/10764/subview.do)
+        
+    *   [오시는길](https://hansung.ac.kr/CSE/10768/subview.do)
+        
+    *   [입학 안내](https://enter.hansung.ac.kr/)
+        
+    
+*   [구성원](https://hansung.ac.kr/CSE/10780/subview.do)
+    
+    *   [교수진](https://hansung.ac.kr/CSE/10780/subview.do)
+        *   [모바일소프트웨어](https://hansung.ac.kr/CSE/10780/subview.do)
+        *   [웹공학](https://hansung.ac.kr/CSE/10777/subview.do)
+        *   [빅데이터](https://hansung.ac.kr/CSE/10778/subview.do)
+        *   [디지털콘텐츠 및 가상현실](https://hansung.ac.kr/CSE/10779/subview.do)
+    *   [위원회](https://hansung.ac.kr/CSE/10727/subview.do)
+        
+    *   [가족 기업](https://hansung.ac.kr/CSE/10726/subview.do)
+        
+    
+*   [교육∙연구](https://hansung.ac.kr/CSE/10729/subview.do)
+    
+    *   [교육 과정](https://hansung.ac.kr/CSE/10729/subview.do)
+        
+    *   [교과 과정](https://hansung.ac.kr/CSE/10730/subview.do)
+        
+    *   [졸업 요건](https://hansung.ac.kr/CSE/10750/subview.do)
+        
+    *   [트랙 소개](https://hansung.ac.kr/CSE/10753/subview.do)
+        *   [모바일소프트웨어](https://hansung.ac.kr/CSE/10753/subview.do)
+        *   [웹공학](https://hansung.ac.kr/CSE/10754/subview.do)
+        *   [빅데이터](https://hansung.ac.kr/CSE/10755/subview.do)
+        *   [디지털콘텐츠 및 가상현실](https://hansung.ac.kr/CSE/10756/subview.do)
+    *   [연구실 소개](https://hansung.ac.kr/CSE/10858/subview.do)
+        
+    
+*   [학생 활동](https://hansung.ac.kr/CSE/10732/subview.do)
+    
+    *   [캡스톤 디자인](https://hansung.ac.kr/CSE/10732/subview.do)
+        
+    *   [경진 대회](https://hansung.ac.kr/CSE/10733/subview.do)
+        
+    *   [프로그래밍 캠프](https://hansung.ac.kr/CSE/10757/subview.do)
+        
+    *   [동아리](https://hansung.ac.kr/CSE/11575/subview.do)
+        
+    
+*   [새소식](https://hansung.ac.kr/CSE/10766/subview.do)
+    
+    *   [학부 소식](https://hansung.ac.kr/CSE/10766/subview.do)
+        
+    *   [(구)학부소식](http://223.194.145.73/news?searchCondition)
+        
+    *   [한성 소식](https://www.hansung.ac.kr/hansung/8385/subview.do)
+        
+    *   [기자재 대여](https://hansung.ac.kr/CSE/10787/subview.do)
+        
+    
+*   [사이트맵](https://hansung.ac.kr/CSE/10759/subview.do)

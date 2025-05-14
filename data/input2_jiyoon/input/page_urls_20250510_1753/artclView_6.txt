@@ -1,0 +1,1 @@
+{"code":500,"status":50000,"message":"Protocol error (Page.setBypassCSP): Session closed. Most likely the page has been closed.","name":"TargetCloseError"}

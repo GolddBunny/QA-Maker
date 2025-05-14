@@ -1,0 +1,53 @@
+Title: 한성대학교
+
+URL Source: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=6
+
+Markdown Content:
+한성대학교
+===============  
+
+    
+
+분류
+--
+
+*   [전체](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [공지사항](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [취업 및 연수](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+*   [기타](https://hansung.ac.kr/bbs/CSE/1248/artclList.do)
+
+[RSS 2.0](https://hansung.ac.kr/bbs/CSE/1248/rssList.do?row=50) 총 **58** 개의 게시물이 있습니다.
+
+게시물 검색
+
+ 
+
+         
+
+게시글 리스트
+-------
+
+새소식      
+| 번호 | 제목 | 작성자 | 작성일 | 조회수 | 첨부파일 |
+| --- | --- | --- | --- | --- | --- |
+| 8 | [**\[공모전\]신한과 함께하는 AI 챌린지, AI IDEATHON (~10/31)**](https://hansung.ac.kr/bbs/CSE/1248/264119/artclView.do) | 컴퓨터공학부 | 2024.10.07 | 285 |  |
+| 7 | [**기초역량증진 금융수학 프로그램 홍보**](https://hansung.ac.kr/bbs/CSE/1248/264083/artclView.do) | 컴퓨터공학부 | 2024.10.02 | 89 |  |
+| 6 | [**2024학년 2학기 step up 프로그램 홍보**](https://hansung.ac.kr/bbs/CSE/1248/264082/artclView.do) | 컴퓨터공학부 | 2024.10.02 | 129 |  |
+| 5 | [**\[웹젠\]24년 하반기 웹젠 채용연계형 인턴모집**](https://hansung.ac.kr/bbs/CSE/1248/264094/artclView.do) | 컴퓨터공학부 | 2024.10.02 | 125 |  |
+| 4 | [**코딩테스트 학습 서비스, 코드트리 이용 공지사항**](https://hansung.ac.kr/bbs/CSE/1248/264081/artclView.do) | 컴퓨터공학부 | 2024.10.02 | 2882 |  |
+| 3 | [**컴퓨터공학부 신규 홈페이지 오픈**](https://hansung.ac.kr/bbs/CSE/1248/264079/artclView.do) | 허준영 | 2024.10.01 | 352 |  |
+| 2 | [**2024 LG유플러스 테크 컨퍼런스 (9/23, 월)**](https://hansung.ac.kr/bbs/CSE/1248/264084/artclView.do) | 컴퓨터공학부 | 2024.09.20 | 104 |  |
+| 1 | [**\[삼성웰스토리\] 신입사원 채용설명회 안내**](https://hansung.ac.kr/bbs/CSE/1248/264085/artclView.do) | 컴퓨터공학부 | 2024.09.06 | 124 |  |
+
+        
+
+[처음](javascript:page_link('1') "처음 목록으로 이동") [이전페이지](javascript:page_link('5') "이전페이지")66
+
+*   [1](javascript:page_link('1') "1페이지")
+*   [2](javascript:page_link('2') "2페이지")
+*   [3](javascript:page_link('3') "3페이지")
+*   [4](javascript:page_link('4') "4페이지")
+*   [5](javascript:page_link('5') "5페이지")
+*   **6**
+
+[끝](javascript:page_link('6') "마지막 목록으로 이동")
