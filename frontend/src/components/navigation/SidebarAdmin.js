@@ -7,46 +7,45 @@ const BASE_URL = 'http://localhost:5000';
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [pages, setPages] = useState([]);
     const [newPageName, setNewPageName] = useState('');
+    const [newSysName, setNewSysName] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedPageId, setSelectedPageId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const {currentPageId, setCurrentPageId} = usePageContext();
+    const { pages, currentPageId, setCurrentPageId, updatePages } = usePageContext();
 
     useEffect(() => {
-        // 로컬 스토리지에서 저장된 페이지 목록 불러오기
-        let savedPages = JSON.parse(localStorage.getItem('pages')) || [];
-    
-        // 페이지가 없으면 기본 페이지 추가
-        if (savedPages.length === 0) {
-            const initDefaultPage = async () => {
+        const initializePages = async () => {
+            let savedPages = JSON.parse(localStorage.getItem('pages')) || [];
+
+            if (savedPages.length === 0) {
                 setIsLoading(true);
                 const defaultPageId = Date.now().toString();
-                
+
                 try {
-                    // 서버에 기본 페이지 초기화 요청
                     const response = await fetch(`${BASE_URL}/init/${defaultPageId}`, {
                         method: 'POST'
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     if (data.success) {
-                        // 기본 페이지 추가
                         const defaultPage = {
                             id: defaultPageId,
                             name: '기본 페이지',
+                            sysname: '',
+                            type: 'main',
+                            createdAt: new Date().toISOString()
                         };
-                        
+
                         savedPages = [defaultPage];
                         localStorage.setItem('pages', JSON.stringify(savedPages));
-
-                        setCurrentPageId(defaultPageId);
                         localStorage.setItem('currentPageId', defaultPageId);
-                        setPages(savedPages);
+
+                        updatePages(savedPages);
+                        setCurrentPageId(defaultPageId);
+
                         
-                        // 기본 페이지로 이동
                         navigate(`/admin/${defaultPageId}`);
                     } else {
                         console.error('기본 페이지 초기화 실패:', data.error);
@@ -54,25 +53,60 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                     }
                 } catch (error) {
                     console.error('기본 페이지 초기화 중 오류:', error);
-                    alert('기본 페이지 초기화 중 오류가 발생했습니다. 서버 연결을 확인해주세요.');
+                    alert('기본 페이지 초기화 중 오류가 발생했습니다.');
                 } finally {
                     setIsLoading(false);
                 }
-            };
-    
-            initDefaultPage();
-        } else {
-            setPages(savedPages);
-            const storedCurrentPageId = localStorage.getItem('currentPageId');
-            if (storedCurrentPageId) {
-                setCurrentPageId(storedCurrentPageId);
-            } else if (savedPages.length > 0) {
-                // 저장된 currentPageId가 없는 경우 첫 번째 페이지를 현재 페이지로 설정
-                setCurrentPageId(savedPages[0].id);
-                localStorage.setItem('currentPageId', savedPages[0].id);
+            } else {
+                const updatedPages = savedPages.map(page => {
+                    if (!page.hasOwnProperty('sysname')) {
+                        return { ...page, sysname: '' };
+                    }
+                    return page;
+                });
+                // If pages were updated to add sysname, save them
+                if (JSON.stringify(updatedPages) !== JSON.stringify(savedPages)) {
+                    localStorage.setItem('pages', JSON.stringify(updatedPages));
+                    updatePages(updatedPages);
+                } else {
+                    updatePages(savedPages);
+                }
+
+                // 저장된 현재 페이지 ID 확인
+                const storedCurrentPageId = localStorage.getItem('currentPageId');
+                
+                // 1. 저장된 currentPageId가 있고, 해당 ID를 가진 페이지가 존재하면 그 페이지 사용
+                if (storedCurrentPageId && savedPages.some(page => page.id === storedCurrentPageId)) {
+                    setCurrentPageId(storedCurrentPageId);
+                } 
+                // 2. main 타입 페이지가 있으면 그 페이지 사용
+                else {
+                    const mainPage = savedPages.find(page => page.type === 'main');
+                    if (mainPage) {
+                        setCurrentPageId(mainPage.id);
+                        localStorage.setItem('currentPageId', mainPage.id);
+                        console.log("메인 타입 페이지 ID 설정:", mainPage.id);
+                    }
+                    // 3. 없으면 첫 번째 페이지를 main으로 설정하고 사용
+                    else if (savedPages.length > 0) {
+                        const firstPage = savedPages[0];
+                        // 첫 번째 페이지를 main 타입으로 업데이트
+                        const updatedPages = [...savedPages];
+                        updatedPages[0] = { ...firstPage, type: 'main' };
+                        
+                        localStorage.setItem('pages', JSON.stringify(updatedPages));
+                        updatePages(updatedPages);
+                        
+                        setCurrentPageId(firstPage.id);
+                        localStorage.setItem('currentPageId', firstPage.id);
+                        console.log("첫 번째 페이지를 메인으로 설정:", firstPage.id);
+                    }
+                }
             }
-        }
-    }, [navigate, setCurrentPageId]);
+        };
+
+        initializePages();
+    }, [setCurrentPageId]);
 
     const handleAddPage = async() => {
         console.log('새 페이지 추가 버튼이 클릭되었습니다.');
@@ -93,12 +127,16 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                     const newPage = {
                         id: newPageId,
                         name: newPageName,
+                        sysname: newSysName,
+                        type: 'normal',
+                        createdAt: new Date().toISOString()
                     };
                     
                     const updatedPages = [...pages, newPage];
-                    setPages(updatedPages);
+                    updatePages(updatedPages);
                     localStorage.setItem('pages', JSON.stringify(updatedPages));
                     setNewPageName('');  // 입력창 초기화
+                    setNewSysName('');
                     
                     // 새 페이지로 이동
                     localStorage.setItem('currentPageId', newPageId);
@@ -116,10 +154,12 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
             }
         }
     };
+    
 
     const handlePageClick = (pageId) => {
         // 클릭된 페이지로 이동
         localStorage.setItem('currentPageId', pageId);
+        setCurrentPageId(pageId);
         navigate(`/admin/${pageId}`); // 해당 페이지로 네비게이션
     };
 
@@ -127,6 +167,17 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
         e.preventDefault();
         setSelectedPageId(pageId);
         setShowDeleteModal(true);
+    };
+
+    const handleSetMainPage = (pageId) => {
+        const updatedPages = pages.map(page => ({
+            ...page,
+            type: page.id === pageId ? 'main' : 'normal'
+        }));
+        
+        updatePages(updatedPages);
+        localStorage.setItem('pages', JSON.stringify(updatedPages));
+        setShowDeleteModal(false);
     };
 
     const handleDeletePage = async () => {
@@ -141,8 +192,17 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
             
             if (data.success) {
                 // 로컬 상태 업데이트
+                const pageToDelete = pages.find(page => page.id === selectedPageId);
+                const isMainPage = pageToDelete?.type === 'main';
+
+                // 로컬 상태 업데이트
                 const updatedPages = pages.filter((page) => page.id !== selectedPageId);
-                setPages(updatedPages);
+
+                // 만약 main 페이지가 삭제되었고 다른 페이지가 있다면 첫 번째 페이지를 main으로 설정
+                if (isMainPage && updatedPages.length > 0) {
+                    updatedPages[0] = { ...updatedPages[0], type: 'main' };
+                }
+                updatePages(updatedPages);
                 localStorage.setItem('pages', JSON.stringify(updatedPages));
                 
                 // 현재 페이지가 삭제된 페이지인 경우, 다른 페이지로 이동
@@ -175,9 +235,6 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const closeModal = () => {
         setShowDeleteModal(false);
     }
-
-    // 선택된 페이지 정보 가져오기
-    const selectedPage = pages.find(page => page.id === selectedPageId);
 
     return (
         <div>

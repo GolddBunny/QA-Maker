@@ -4,6 +4,9 @@ import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import axios from "axios";
+import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
+import { usePageContext } from '../utils/PageContext';
+
 
 const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
@@ -26,7 +29,7 @@ const AdminPage = () => {
     const [urlInput, setUrlInput] = useState("");
     const [uploadedUrls, setUploadedUrls] = useState([]);
     //const [uploadedDocs, setUploadedDocs] = useState([]);
-    const [currentPageId, setCurrentPageId] = useState(null);
+    //const [currentPageId, setCurrentPageId] = useState(null);
     const [isNewPage, setIsNewPage] = useState(false);
     const [isUrlLoading, setIsUrlLoading] = useState(false);
     const [isFileLoading, setIsFileLoading] = useState(false);
@@ -44,20 +47,21 @@ const AdminPage = () => {
     const [entitySearchTerm, setEntitySearchTerm] = useState("");
     const [relationshipSearchTerm, setRelationshipSearchTerm] = useState("");
     const [isSearchHovered, setIsSearchHovered] = useState(false);
-    const [uploadedDocs, setUploadedDocs] = useState(() => { //업로드 문서
-      const saved = localStorage.getItem(`uploadedDocs_${currentPageId}`);
-      return saved ? JSON.parse(saved) : [];
-    });
     const [graphData, setGraphData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [graphError, setGraphError] = useState(null);
     const [dataFetchError, setDataFetchError] = useState(null);
     const [showGraph, setShowGraph] = useState(false);
     const graphDataCacheRef = useRef({});
+    const { currentPageId, updatePages, updatePageSysName, updatePageName,
+      systemName, setSystemName, domainName, setDomainName
+     } = usePageContext();
+    const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
 
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
 
+    
     const fetchGraphData = useCallback(async (pageId) => {
       if (!pageId) return;
       const cacheKey = `graphData-${pageId}`;
@@ -67,6 +71,25 @@ const AdminPage = () => {
         setGraphData(graphDataCacheRef.current[cacheKey]);
         return;
       }
+
+      // 2. 로컬 JSON 파일에서 로딩 시도
+      const loadGraphFromLocalJson = async () => {
+        const filePath = `/json/${pageId}/admin_graphml_data.json`;
+        try {
+          const res = await fetch(filePath, { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            console.log("로컬 JSON 파일에서 그래프 데이터 로드됨");
+            return data;
+          } else {
+            console.log("로컬 JSON 파일 없음 또는 로딩 실패");
+            return null;
+          }
+        } catch (err) {
+          console.error("로컬 JSON 로딩 중 오류:", err);
+          return null;
+        }
+      };
 
       const generateGraphViaServer = async () => {
         console.log("서버로 그래프 생성 요청 전송 중...");
@@ -86,10 +109,15 @@ const AdminPage = () => {
       };
 
       try {
-        const data = await generateGraphViaServer();
-        console.log("그래프 데이터 로드 성공:", data);
-        graphDataCacheRef.current[cacheKey] = data;
-        setGraphData(data);
+        let data = await loadGraphFromLocalJson();
+        if (!data) {
+          data = await generateGraphViaServer();
+        }
+
+        if (data) {
+          graphDataCacheRef.current[cacheKey] = data;
+          setGraphData(data);
+        }
       } catch (err) {
         console.error("그래프 데이터 로드 중 오류:", err);
       }
@@ -201,8 +229,6 @@ const AdminPage = () => {
         if (entitiesData) setEntities(entitiesData);
         if (relationshipsData) setRelationships(relationshipsData);
         
-        // 그래프 데이터 구성 로직은 여기에 추가 가능
-        // 예: setGraphData(buildGraphData(entitiesData, relationshipsData));
       } catch (error) {
         console.error("데이터 로드 중 오류 발생:", error);
         setDataFetchError("데이터 로드 중 오류가 발생했습니다.");
@@ -212,22 +238,11 @@ const AdminPage = () => {
     }, [fetchEntities, fetchRelationships]);
 
     useEffect(() => {
+      if (currentPageId) {
+        const saved = localStorage.getItem(`uploadedDocs_${currentPageId}`);
+        setUploadedDocs(saved ? JSON.parse(saved) : []);
+      }
       let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
-      
-      // 페이지 ID 결정 로직
-      if (!savedPageId) {
-        savedPageId = localStorage.getItem('currentPageId');
-      }
-
-      if (!savedPageId) {
-        // 기본 페이지 ID로 이동
-        const savedPages = JSON.parse(localStorage.getItem('pages')) || [];
-        savedPageId = savedPages[0]?.id || null;
-      }
-
-      // 현재 페이지 ID 설정 및 저장
-      setCurrentPageId(savedPageId);
-      localStorage.setItem('currentPageId', savedPageId);
       
       // 페이지 ID가 유효한 경우에만 데이터 로드
       if (savedPageId) {
@@ -237,10 +252,16 @@ const AdminPage = () => {
           fetchSavedUrls(savedPageId),
           checkOutputFolder(savedPageId),
           loadAllData(savedPageId),
-          fetchGraphData(savedPageId) 
+          //fetchGraphData(savedPageId) 
         ]).catch(error => {
           console.error("데이터 로드 중 오류:", error);
         });
+        const pages = JSON.parse(localStorage.getItem('pages')) || [];
+        const currentPage = pages.find(page => page.id === savedPageId);
+        if (currentPage) {
+          setDomainName(currentPage.name || "");
+          setSystemName(currentPage.sysname || "");
+        }
       }
     }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData, fetchGraphData]);
 
@@ -566,6 +587,9 @@ const AdminPage = () => {
       }
       setShowGraph(true);
     };
+    
+
+    
 
     return (
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -576,18 +600,46 @@ const AdminPage = () => {
           <div className="input-group">
             <div className="input-field">
               <label>도메인 이름</label>
-              <input type="text" placeholder="도메인 이름을 정해주세요" />
+              <input
+                type="text"
+                placeholder="도메인 이름을 정해주세요"
+                value={domainName}  // 상태로 관리되는 도메인 이름
+                onChange={(e) => setDomainName(e.target.value)} // input 변화에 따른 상태 업데이트
+              />
             </div>
             <div className="divider"></div>
             <div className="input-field">
               <label>검색 시스템 이름</label>
-              <input type="text" placeholder="검색 시스템 이름을 정해주세요" />
+              <input
+                type="text"
+                placeholder="검색 시스템 이름을 정해주세요"
+                value={systemName}
+                onChange={(e) => setSystemName(e.target.value)}
+              />
             </div>
           </div>
-          <button className="apply-button">적용하기</button>
+          <button className="apply-button" onClick={() => {
+            // 도메인 이름 업데이트
+            const nameResult = updatePageName(currentPageId, domainName);
+            // 시스템 이름 업데이트
+            const sysNameResult = updatePageSysName(currentPageId, systemName);
+            // 각 업데이트 결과에 따라 개별적으로 상태 업데이트
+              if (nameResult.success) {
+                console.log("[적용 버튼] 도메인 이름 업데이트 성공:", domainName);
+              } else {
+                console.error("[적용 버튼] 도메인 이름 업데이트 실패:", nameResult.error);
+              }
+              
+              if (sysNameResult.success) {
+                console.log("[적용 버튼] 시스템 이름 업데이트 성공:", systemName);
+              } else {
+                console.error("[적용 버튼] 시스템 이름 업데이트 실패:", sysNameResult.error);
+              }
+            
+          }}>적용하기</button>
         </div>
 
-        {/* 상단 통계 카드 */}
+        {/* 상단 통계 카드
         <div className="stat-cards">
         <div className="card card-total-url">
           <div className="card-text">
@@ -614,20 +666,9 @@ const AdminPage = () => {
             평균 만족도<br /><strong>4.7 / 5</strong>
           </div>
         </div>
-      </div>
+      </div> */}
         
         {/* <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1> */}
-        
-        {/* 적용 버튼 */}
-        <div className="apply-btn-row">
-          <button 
-            className="btn-apply-update"
-            onClick={isNewPage ? handleApply : handleUpdate}
-            disabled={isAnyProcessing}
-          > 
-            {isAnyProcessing ? '추가한 문서/URL 적용 중' : '추가한 문서/URL 적용하기'}
-          </button>
-        </div>
 
         <div className="upload-section-wrapper">
           {/* 왼쪽 URL 섹션 */}
@@ -636,44 +677,37 @@ const AdminPage = () => {
             <p className="section-desc">URL을 등록하면 하위 페이지까지 모두 가져옵니다.</p>
             {/* URL 입력란 및 버튼 */}
             <div className="url-input">
-              {isAnyProcessing ? (
-                <>
-                  <input
-                    type="text"
-                    value="URL 적용 중"
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://example.com"
-                    className="url-input-field input-disabled"
-                    disabled={isAnyProcessing}
-                  />
-                  <button
-                    onClick={handleUrlUpload}
-                    disabled={isAnyProcessing}
-                    className="upload-button"
-                  >
-                    +
-                  </button>
-                </>
-              ) : (
-                <>
-                  <input
-                    type="text"
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://example.com"
-                    className="url-input-field"
-                    disabled={isAnyProcessing}
-                  />
-                  <button
-                    onClick={handleUrlUpload}
-                    disabled={isAnyProcessing}
-                    className="upload-button"
-                  >
-                    +
-                  </button>
-                </>
+              <input
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder={"https://example.com"}
+                className="url-input-field"
+                disabled={isAnyProcessing}
+                style={{ color: isAnyProcessing ? 'transparent' : 'inherit' }}
+              />
+              {isAnyProcessing && (
+                  <div className="loader processing-message">
+                    {"Loading".split("").map((char, i) => (
+                      <span key={i} className={`letter ${char === " " ? "i" : char}`}>
+                        {char}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+              {/* 버튼은 로딩 중일 때 숨김 */}
+              {!isAnyProcessing && (
+                <button
+                  onClick={handleUrlUpload}
+                  disabled={isAnyProcessing}
+                  className="upload-button"
+                >
+                  +
+                </button>
               )}
-            </div>
+              
+              </div>
 
             
               <table className="upload-table">
@@ -727,9 +761,13 @@ const AdminPage = () => {
                 
                 {/* 처리 중 메시지 */}
                 {isAnyProcessing && (
-                  <p className="processing-message">
-                    문서 적용 중...
-                  </p>
+                  <div className="loader processing-message">
+                    {"Loading".split("").map((char, i) => (
+                      <span key={i} className={`letter ${char === " " ? "i" : char}`}>
+                        {char}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 {/* 기존 텍스트는 isAnyProcessing이 false일 때만 보이도록 */}
@@ -746,13 +784,15 @@ const AdminPage = () => {
                   </>
                 )}
               </div>
-              <button
-                onClick={handleProcessDocuments}
-                disabled={isAnyProcessing}
-                className="process-button"
-              >
-                {isProcessLoading ? '+' : '+'}
-              </button>
+              {!isAnyProcessing && (
+                <button
+                  onClick={handleProcessDocuments}
+                  disabled={isAnyProcessing}
+                  className="process-button"
+                >
+                  +
+                </button>
+              )}
             </div>
 
             <table className="document-table">
@@ -799,11 +839,22 @@ const AdminPage = () => {
             )}
           </div>
         </div>
+
+        {/* 적용 버튼 */}
+        <div className="apply-btn-row">
+          <button 
+            className="btn-apply-update"
+            onClick={isNewPage ? handleApply : handleUpdate}
+            disabled={isAnyProcessing}
+          > 
+            {isAnyProcessing ? 'QA 생성 중' : 'QA 생성 시작'}
+          </button>
+        </div>
         
         <div className="result-table-section">
           <div className="header-bar">
             <div className="left-group">
-              <h2 className="section-title">최종 결과물</h2>
+              <h2 className="section-title">QA 시스템 정보 보기</h2>
               <div className="result-tabs">
                 <button
                   className={`tab ${activeTab === "entity" ? "active" : ""}`}
@@ -854,12 +905,19 @@ const AdminPage = () => {
 
         {/* 그래프 보기 */}
         <h2 className="section-title">그래프 보기</h2>
-        {graphData && (
+        <button
+          className="btn_primary"
+          onClick={handleShowGraph}
+          disabled={isAnyProcessing}
+        >
+          그래프 보기
+        </button>
+
+        {showGraph && graphData && (
           <div className="network-chart-wrapper">
             <NetworkChart data={graphData} />
           </div>
         )}
-
         <h2 className="section-title">유저 질문 및 만족도 분석</h2>
         <div className="stat-cards">
           <div className="card card-total-category">
