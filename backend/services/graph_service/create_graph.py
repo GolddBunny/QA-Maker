@@ -86,8 +86,8 @@ def create_graph(entities_list, relationships_list, entities_file, relationships
             except Exception as e:
                 print(f"Error parsing entity_ids: {e}")
 
-        if cluster == -1:
-            print(f"Warning: Community for entity_id not found. {human_readable_id} ")
+        # if cluster == -1:
+        #     print(f"Warning: Community for entity_id not found. {human_readable_id} ")
 
         # 노드 추가
         G.add_node(title,
@@ -149,7 +149,7 @@ def generate_and_save_graph(entities_list, relationships_list, page_id,
         os.makedirs(graph_dir, exist_ok=True)
         
     # .json 파일이 이미 존재하면 삭제
-    if os.path.exists(json_path):
+    if os.path.exists(json_path) and not os.path.basename(json_path) == "admin_graphml_data.json":
         os.remove(json_path)
         print(f"기존의 .json 파일 {json_path} 삭제됨.")
 
