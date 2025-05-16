@@ -15,7 +15,7 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
     const [deleteTargetId, setDeleteTargetId] = useState(null);
     
     // 현재 페이지의 QA 히스토리만 필터링
-    const currentPageQAs = qaHistory.filter(qa => qa.pageId === currentPageId);
+    const currentPageQAs = qaHistory;
 
     // QA 항목 클릭 시 해당 대화로 이동
     const handleQAClick = (qaId) => {
@@ -51,11 +51,22 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
 
     return (
         <div>
-            <div className={`hamburger-icon ${isSidebarOpen ? 'rotate' : ''}`} onClick={toggleSidebar}>
-                <span className="bar"></span>
-                <span className="bar"></span>
-                <span className="bar"></span>
-            </div>
+            {!isSidebarOpen && (
+                <div className="sidebar-toggle-button" onClick={toggleSidebar}>
+                    <img
+                    src="/assets/sidebar_right.png"
+                    alt="사이드바 열기"
+                    className="sidebar-toggle-icon"
+                    />
+                </div>
+                )}
+            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+            {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
+            {isSidebarOpen && (
+                <div className="sidebar-close-btnX" onClick={toggleSidebar}>
+                x
+                </div>
+            )}
             
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
@@ -64,36 +75,64 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
                 
                 <div className="qa-history-list">
                     {currentPageQAs.length > 0 ? (
-                        currentPageQAs.map((qa) => (
-                            <div
-                                key={qa.id}
-                                className={`qa-history-item ${location.search.includes(`qaId=${qa.id}`) ? 'active' : ''}`}
-                                onClick={() => handleQAClick(qa.id)}
-                            >
-                                <div className="qa-item-header">
-                                    <div className="delete-button" onClick={(e) => openDeleteModal(e, qa.id)} title="대화 삭제">
-                                        ×
-                                    </div>
-                                </div>
-                                
-                                <div className="qa-history-content">
+                        Object.entries(
+                            currentPageQAs.reduce((acc, qa) => {
+                                const date = new Date(qa.timestamp);
+                                const today = new Date();
+                                const yesterday = new Date();
+                                yesterday.setDate(today.getDate() - 1);
+
+                                const dateKey = date.toISOString().split('T')[0];
+
+                                if (!acc[dateKey]) acc[dateKey] = [];
+                                acc[dateKey].push(qa);
+                                return acc;
+                            }, {})
+                        )
+                        .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+                        .map(([dateKey, qas]) => {
+                            const labelDate = new Date(dateKey);
+                            const today = new Date();
+                            const yesterday = new Date();
+                            yesterday.setDate(today.getDate() - 1);
+
+                            let dateLabel;
+                            if (labelDate.toDateString() === today.toDateString()) {
+                                dateLabel = '오늘';
+                            } else if (labelDate.toDateString() === yesterday.toDateString()) {
+                                dateLabel = '어제';
+                            } else {
+                                dateLabel = `${labelDate.getMonth() + 1}월 ${labelDate.getDate()}일`;
+                            }
+                            const sortedQAs = [...qas].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                            return (
+                            <div key={dateKey} className="qa-date-group">
+                                <div className="qa-date-label">{dateLabel}</div>
+                                {sortedQAs.map((qa) => (
+                                <div
+                                    key={qa.id}
+                                    className={`qa-history-item ${location.search.includes(`qaId=${qa.id}`) ? 'active' : ''}`}
+                                    onClick={() => handleQAClick(qa.id)}
+                                >
+                                    <div className="qa-history-content">
                                     <div className="qa-history-question">
-                                        {qa.question.length > 20
-                                            ? qa.question.substring(0, 20) + '...'
-                                            : qa.question}
+                                        {qa.question.length > 20 ? qa.question.slice(0, 20) + '...' : qa.question}
                                     </div>
-                                    
-                                    <div className="qa-history-date">
-                                        {new Date(qa.timestamp).toLocaleString('ko-KR', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
+                                    <div className="qa-item-header">
+                                        <button
+                                        className="delete-button"
+                                        onClick={(e) => openDeleteModal(e, qa.id)}
+                                        >
+                                        ×
+                                        </button>
+                                    </div>
                                     </div>
                                 </div>
+                                ))}
                             </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="no-history-message">
                             아직 대화 기록이 없습니다.
@@ -113,6 +152,7 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }
