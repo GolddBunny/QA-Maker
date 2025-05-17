@@ -21,7 +21,7 @@ body {
   margin-left: 250px; /* 사이드바 크기만큼 밀기 */
 }
 
-h1 {
+.container h1 {
   font-size: 45px;
   font-weight: bold;
   margin-bottom: 0px;

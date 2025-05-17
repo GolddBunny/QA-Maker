@@ -71,21 +71,16 @@ const NetworkChart = ({ data }) => {
     // D3 시뮬레이션 설정
     const simulation = d3.forceSimulation(nodes)
       .force("link", d3.forceLink(edges).id(d => d.id)
-        .distance((d, i) => 100 + (i * 50))  // 인덱스에 따라 거리 증가
+        .distance((d, i) => 100 + (i * 10))  // 인덱스에 따라 거리 증가
         .strength(0.2)
       )
       .force("charge", d3.forceManyBody()
-        .strength(-30) // 부드러운 반발력 감소
+        .strength(-20) // 부드러운 반발력 감소
         .distanceMin(20) // 최소 거리 증가
         .distanceMax(200) // 최대 거리 증가
       )
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(d => sizeScale(d.degree) + 10))
-      .force("radial", d3.forceRadial(
-        (d, i) => i * 50,   // 인덱스에 따라 반지름 증가
-        width / 2,
-        height / 2
-      ).strength(1))
       .alphaDecay(0.08) // 수렴 속도 약간 증가
       .alphaTarget(0.01) // 이동 강도 약간 증가
       .on("tick", ticked);
