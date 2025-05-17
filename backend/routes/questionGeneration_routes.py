@@ -4,6 +4,8 @@ import pandas as pd
 import tiktoken
 import asyncio
 from dotenv import load_dotenv
+import nest_asyncio  
+nest_asyncio.apply() 
 
 from graphrag.config.enums import ModelType
 from graphrag.config.models.language_model_config import LanguageModelConfig
@@ -151,9 +153,7 @@ def generate_related_questions():
         )
 
         # 안전하게 기존 루프 재사용 또는 새 루프 생성
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(question_generator.agenerate(
+        result = asyncio.run(question_generator.agenerate(
             question_history=[question],
             context_data=None,
             question_count=5
