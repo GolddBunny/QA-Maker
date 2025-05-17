@@ -54,7 +54,7 @@ def create_graph(entities_list, relationships_list, entities_file, relationships
         entity_row = entities_df[entities_df["human_readable_id"] == entity_id]
         
         if entity_row.empty:
-            print(f"Warning: Entity with human_readable_id {entity_id} not found. Skipping.")
+            #print(f"Warning: Entity with human_readable_id {entity_id} not found. Skipping.")
             continue
 
         # 엔티티가 존재하면 노드 추가
@@ -66,7 +66,6 @@ def create_graph(entities_list, relationships_list, entities_file, relationships
         entity_type = entity_row["type"]
         degree = entity_row["degree"]
         #cluster = entity_row["frequency"]
-        # community 값 찾기
         # community 값 찾기
         cluster = -1  # 기본값
 
@@ -87,8 +86,8 @@ def create_graph(entities_list, relationships_list, entities_file, relationships
             except Exception as e:
                 print(f"Error parsing entity_ids: {e}")
 
-        if cluster == -1:
-            print(f"Warning: Community for entity_id not found. {human_readable_id} ")
+        # if cluster == -1:
+        #     print(f"Warning: Community for entity_id not found. {human_readable_id} ")
 
         # 노드 추가
         G.add_node(title,
@@ -106,7 +105,7 @@ def create_graph(entities_list, relationships_list, entities_file, relationships
         relationship_row = relationships_df[relationships_df["human_readable_id"] == relationship_id]
 
         if relationship_row.empty:
-            print(f"Warning: Relationship with ID {relationship_id} not found. Skipping.")
+            #print(f"Warning: Relationship with ID {relationship_id} not found. Skipping.")
             continue 
 
         relationship_row = relationship_row.iloc[0] 
@@ -130,8 +129,7 @@ def snapshot_graphml(input_graph: nx.Graph, name: str):
         name += ".graphml"
     
     # 파일 저장
-    with open(name, "w", encoding="utf-8") as file:
-        file.write(graphml)
+    nx.write_graphml(input_graph, name, encoding='utf-8')
 
 # 생성된 그래프를 GraphML로 저장하는 함수
 def generate_and_save_graph(entities_list, relationships_list, page_id, 

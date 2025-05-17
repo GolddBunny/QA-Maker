@@ -9,6 +9,7 @@ from routes.crawling_routes import crawling_bp
 from routes.urlLoad_routes import url_load_bp
 from routes.source_routes import source_bp
 from routes.urlSource_routes import url_source_bp
+from routes.parquet import parquet_bp
 
 def create_app():
     """Flask 애플리케이션 생성 및 설정"""
@@ -23,6 +24,7 @@ def create_app():
     app.register_blueprint(url_load_bp)
     app.register_blueprint(source_bp)
     app.register_blueprint(url_source_bp)
+    app.register_blueprint(parquet_bp)
     return app
 
 if __name__ == '__main__':

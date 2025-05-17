@@ -1,3 +1,5 @@
+# Copyright (c) 2024 Microsoft Corporation.
+# Licensed under the MIT License.
 import os
 import pandas as pd
 import tiktoken
@@ -21,7 +23,7 @@ from graphrag.config.models.language_model_config import LanguageModelConfig
 from graphrag.language_model.manager import ModelManager
 
 # Define input and database paths
-INPUT_DIR = "/Users/sunmay/Desktop/Domain_QA_Gen/data/input/gpt_ex_title에제몇조조항내용/output"
+INPUT_DIR = "/Users/jy/Documents/Domain_QA_Gen/data/input/1746882791795/output"
 LANCEDB_URI = f"{INPUT_DIR}/lancedb"
 COMMUNITY_REPORT_TABLE = "community_reports"
 ENTITY_TABLE = "entities"
@@ -42,21 +44,29 @@ description_embedding_store = LanceDBVectorStore(
     collection_name="default-entity-description",
 )
 description_embedding_store.connect(db_uri=LANCEDB_URI)
+#print(f"Entity count: {len(entity_df)}")
+#print(entity_df.head())
 
 # Load relationship data
 relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
 relationships = read_indexer_relationships(relationship_df)
+#print(f"Relationship count: {len(relationship_df)}")
+#print(relationship_df.head())
 
 # Load report data
 report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
 reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
+#print(f"Report records: {len(report_df)}")
+#print(report_df.head())
 
 # Load text unit data
 text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
 text_units = read_indexer_text_units(text_unit_df)
+#print(f"Text unit records: {len(text_unit_df)}")
+#print(text_unit_df.head())
 
 # Define API keys and models
-GRAPHRAG_API_KEY = "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"
+GRAPHRAG_API_KEY = ""
 GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
 GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
@@ -99,7 +109,7 @@ context_builder = LocalSearchMixedContext(
     # If you did not run covariates during indexing, set this to None
     # covariates=covariates,
     entity_text_embeddings=description_embedding_store,
-    embedding_vectorstore_key=EntityVectorStoreKey.ID,
+    embedding_vectorstore_key=EntityVectorStoreKey.ID,  # If the vectorstore uses entity title as ids, set this to EntityVectorStoreKey.TITLE
     text_embedder=text_embedder,
     token_encoder=token_encoder,
 )
@@ -108,20 +118,20 @@ context_builder = LocalSearchMixedContext(
 local_context_params = {
     "text_unit_prop": 0.5,
     "community_prop": 0.1,
-    "conversation_history_max_turns": 0,
+    "conversation_history_max_turns": 5,
     "conversation_history_user_turns_only": True,
-    "top_k_mapped_entities": 10,
-    "top_k_relationships": 10,
+    "top_k_mapped_entities": 20,
+    "top_k_relationships": 20,
     "include_entity_rank": True,
     "include_relationship_weight": True,
     "include_community_rank": False,
     "return_candidate_context": False,
-    "embedding_vectorstore_key": EntityVectorStoreKey.ID,
-    "max_tokens": 12_000,
+    "embedding_vectorstore_key": EntityVectorStoreKey.ID,  # Set this to EntityVectorStoreKey.TITLE if the vectorstore uses entity title as ids
+    "max_tokens": 12_000,  # Change this based on the token limit you have on your model
 }
 
 model_params = {
-    "max_tokens": 2_000,
+    "max_tokens": 2_000,  # Change this based on the token limit you have on your model
     "temperature": 0.0,
 }
 
@@ -132,13 +142,25 @@ search_engine = LocalSearch(
     token_encoder=token_encoder,
     model_params=model_params,
     context_builder_params=local_context_params,
-    response_type="multiple paragraphs",
+    response_type="multiple paragraphs",  # Free form text describing the response type and format
 )
 
 # Define an async function to run the search
 async def run_search():
-    result = await search_engine.search("학교법인 한성학원 정관 제 5 조 알려줘.")
+    result = await search_engine.search("graphrag 관련 내용은 어느 파일에 나와있어?")
     print(result.response)
+    
+    # print(result.context_data["entities"])
+    # print(result.context_data["relationships"])
+    
+    # if "reports" in result.context_data:
+    #     print(result.context_data["reports"].head())
+    
+    # print(result.context_data["sources"].head())
+    
+    # if "claims" in result.context_data:
+    #     print(result.context_data["claims"].head())
+    
     for key, df in result.context_data.items():
         if isinstance(df, pd.DataFrame):
             output_file = f"context_data_{key}.csv"

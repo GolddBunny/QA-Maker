@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
-import "../styles/App.css";
+import "../styles/MainPage.css";
 import Sidebar from "../components/navigation/Sidebar";
 import { usePageContext } from '../utils/PageContext';
 
@@ -8,7 +8,6 @@ function MainPage() {
   const { currentPageId, setCurrentPageId } = usePageContext(); 
   const [message, setMessage] = useState('');
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-  const [isPlusIconRotated, setIsPlusIconRotated] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchType, setSearchType] = useState('url');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -16,12 +15,17 @@ function MainPage() {
   const navigate = useNavigate(); // 페이지 이동을 위한 useNavigate
   const location = useLocation();
   const fileInputRef = useRef(null);
+  const { getCurrentPageSysName } = usePageContext(); //검색 시스템 이름
+
+  const [urlInput, setUrlInput] = useState('');
+  const [addedUrls, setAddedUrls] = useState([]);
+  const [showUrlInput, setShowUrlInput] = useState(false);
 
   useEffect(() => {
     // 로컬 스토리지에서 페이지 목록 불러오기
     const savedPages = JSON.parse(localStorage.getItem('pages')) || [];
     // "기본 페이지" 찾기
-    const defaultPage = savedPages.find(page => page.name === "기본 페이지");
+    const defaultPage = savedPages.find(page => page.name === "main");
 
     // "기본 페이지"가 존재하면 해당 ID를 기본 페이지 ID로 설정
     if (defaultPage) {
@@ -35,11 +39,6 @@ function MainPage() {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const toggleDropdown = () => {
-    setIsPlusIconRotated(!isPlusIconRotated);
-    setIsDropdownVisible(!isDropdownVisible);
   };
 
   const handleSearch = (e) => {
@@ -59,14 +58,6 @@ function MainPage() {
     }
   };
 
-  // 선택박스에서 옵션 선택 시 처리하는 함수
-  const handleOptionSelect = (type) => {
-    setSearchType(type);
-    setIsDropdownVisible(false);
-    setIsPlusIconRotated(false);
-    console.log(`${type} 선택됨`);
-  };
-
   // 파일 선택 처리 함수
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
@@ -79,39 +70,73 @@ function MainPage() {
   // 문서 버튼 클릭 시 파일 선택창 열기
   const handleDocumentOptionClick = () => {
     setSearchType('document');
+    fileInputRef.current.click();
     setIsDropdownVisible(false);
-    setIsPlusIconRotated(false);
-    
-    // 약간의 지연 후 파일 선택 다이얼로그 표시
-    setTimeout(() => {
-      fileInputRef.current.click();
-    }, 50);
   };
 
   // URL 선택 시 처리
   const handleUrlOptionClick = () => {
     setSearchType('url');
-    setIsDropdownVisible(false);
-    setIsPlusIconRotated(false);
+    setShowUrlInput(true); // 입력창 보이게
+
   };
+
+  const handleAddUrl = () => {
+    const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/;
+    if (!urlPattern.test(urlInput.trim())) {
+      alert('유효한 URL을 입력해주세요.');
+      return;
+    }
+
+    setAddedUrls([...addedUrls, urlInput.trim()]);
+    setUrlInput('');
+    setShowUrlInput(false); // 입력창 닫기
+  };
+
+  const headerText = "무엇이든 물어보세요!";
+  const headerLetters = headerText.split('');
   
   return (
     <div className={`container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      <h1>무엇이든 물어보세요!</h1>
-      <p className="subtitle">한성대학교 홈페이지에서 찾아볼게요!</p>
+
+      {/* 상단 버튼 추가 */}
+      <div className="top-buttons">
+        <div>
+          <button className="top-button">
+            🌐
+          </button>
+          <div className="stats">URL 수<br />43231</div>
+        </div>
+        <div>
+          <button className="top-button">
+            📑
+          </button>
+          <div className="stats">문서 수<br />5308</div>
+        </div>
+        <div>
+          <button className="top-button">
+            🙆🏻‍♀️
+          </button>
+          <div className="stats">엔티티 수<br />328</div>
+        </div>
+      </div>
+
+      {/* 제목 애니메이션 */}
+      <h1>
+        {headerLetters.map((letter, index) => (
+          <span key={index}>
+            {letter === ' ' ? '\u00A0' : letter}
+          </span>
+        ))}
+      </h1>
+
+      <div className="typing-text">
+        한성대학교 홈페이지에서 찾아볼게요!
+      </div>
 
       <div className="search-container">
-        <button className="icon-btn" id="plus-btn" onClick={toggleDropdown}>
-          <img
-            src="/assets/add.png"
-            alt="추가"
-            className={`icon ${isPlusIconRotated ? "rotate" : ""}`}
-            id="plus-icon"
-          />
-        </button>
-        
-        <input
+        <textarea
           type="text"
           id="search-input"
           placeholder="질문을 입력하세요"
@@ -119,29 +144,18 @@ function MainPage() {
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyPress}
         />
-        
-        <button className="icon-btn" onClick={handleSearch}>
-          <img src="/assets/search.png" alt="검색" className="icon" />
+
+        <button class="icon-btn" onClick={handleSearch}>
+          <svg class="icon" viewBox="0 0 24 24">
+            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
+            <line x1="14.5" y1="14.5" x2="20" y2="20" stroke="currentColor" stroke-width="2"/>
+          </svg>
         </button>
-        
-        {isDropdownVisible && (
-          <div className="select-box">
-            <button 
-              className={`option-btn ${searchType === 'url' ? 'active' : ''}`}
-              onClick={handleUrlOptionClick}
-            >
-              <img src="/assets/link.png" alt="URL" className="option-icon" />
-              URL
-            </button>
-            <button 
-              className={`option-btn ${searchType === 'document' ? 'active' : ''}`}
-              onClick={handleDocumentOptionClick}
-            >
-              <img src="/assets/document.png" alt="문서" className="option-icon" />
-              파일
-            </button>
-          </div>
-        )}
+
+        <div class="bottom-left-buttons">
+          <button class="url-btn" onClick={handleUrlOptionClick}>URL 추가하기</button>
+          <button class="doc-btn" onClick={handleDocumentOptionClick}>문서 추가하기</button>
+        </div>
 
         {/* 숨겨진 파일 입력 필드 */}
         <input
@@ -153,21 +167,67 @@ function MainPage() {
         />
       </div>
 
+      {showUrlInput && (
+      <div className="url-input-box-main">
+        <input
+          type="text"
+          placeholder="URL을 입력하세요"
+          value={urlInput}
+          onChange={(e) => setUrlInput(e.target.value)}
+          className="url-input-main"
+        />
+        <button 
+          onClick={() => {
+            handleAddUrl();
+            setShowUrlInput(false); // 입력 후 닫기
+          }} 
+          className="add-url-btn"
+        >
+          추가
+        </button>
+      </div>
+      )}
+
       {selectedFile && (
-          <div className="selected-file-container">
-            <div className="selected-file">
-              <img src="/assets/document.png" alt="파일" className="file-icon" />
-              <span className="file-name">{selectedFile.name}</span>
-              <button 
-                className="file-cancel" 
-                onClick={() => setSelectedFile(null)}
-                title="파일 선택 취소"
-              >
-                ×
-              </button>
+        <div className="selected-file-container">
+        <div className="selected-file">
+          <img src="/assets/document.png" alt="파일" className="file-icon" />
+          <span className="file-name">{selectedFile.name}</span>
+          <button 
+            className="file-cancel" 
+            onClick={() => setSelectedFile(null)}
+            title="파일 선택 취소"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+      )}
+
+      {addedUrls.length > 0 && (
+        <div className="url-list">
+          {addedUrls.map((url, index) => (
+            <div key={index} className="selected-file-container">
+              <div className="selected-file">
+                <span className='url-icon'>🌐</span>
+                <span>{url}</span>
+                <button 
+                  className="file-cancel"
+                  onClick={() => {
+                    const newUrls = [...addedUrls];
+                    newUrls.splice(index, 1);
+                    setAddedUrls(newUrls);
+                  }}
+                  title="URL 제거"
+                >
+                  ×
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }

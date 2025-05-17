@@ -7,6 +7,7 @@ import ChatInput from "../components/chat/ChatInput";
 import { usePageContext } from "../utils/PageContext";
 import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
+import axios from 'axios';
 
 function ChatPage() {
     const { currentPageId, setCurrentPageId } = usePageContext();
@@ -474,6 +475,29 @@ function ChatPage() {
     // 사이드바 토글
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
+    };
+
+    const fetchAnswerFromServer = async () => {
+        try {
+            const response = await axios.post('http://localhost:5000/api/answer', {
+            pageId: currentPageId,
+            history: qaList.map(qa => qa.question),
+            });
+
+            const answer = response.data.answer;
+
+            setQaList(prev => [
+            ...prev,
+            {
+                id: `qa-${Date.now()}`,
+                question: newQuestion,
+                answer: answer,
+                timestamp: new Date().toISOString(),
+            },
+            ]);
+        } catch (error) {
+            console.error('서버 응답 실패:', error);
+        }
     };
     
     // 근거 문서 목록 가져오기 또는 로컬 저장소에서 불러오기

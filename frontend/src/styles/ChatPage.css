@@ -11,6 +11,10 @@
   overflow: auto;  /* 스크롤 가능하도록 설정 */
   position: relative; /* 하위 요소에 상대적인 위치 지정 */
 }
+.chat-container.sidebar-open {
+  margin-left: 300px; /* 사이드바 너비 */
+  width: calc(100% - 300px); /* 남은 너비로 축소 */
+}
 /* 채팅 메시지를 포함하는 영역 */
 .chat-messages {
   width: 100%;
@@ -284,60 +288,124 @@
 }
 
 /* 입력창 & 전송 버튼 */
-.input-container {
-  position: fixed;
-  bottom: 1px;
+
+/* 검색 컨테이너 스타일링 */
+.search-container-chat {
+  position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: 700px;
+  margin: 20px auto;
+  border-radius: 20px;
+  background-color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 12px rgba(138, 83, 186, 0.1);
   display: flex;
-  padding: 0 16px;
+  align-items: flex-start;
+  padding: 15px 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  min-height: 80px;
+  overflow-y: auto;
+}
+
+/* 검색 입력창 스타일링 */
+#search-input-chat {
+  flex: 1;
+  padding: 0px 10px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  border-radius: 20px;
+  background-color: transparent;
+  margin-right: 12px;
+  color: #555;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.2em;
   box-sizing: border-box;
 }
-
-.input-box {
-  flex-grow: 1;
-  padding: 12px 16px;
-  border-radius: 20px;
-  background-color: #fafafa;
-  color: #333;
-  border: 1px solid #e0e0e0;
-  outline: none;
-  font-size: 15px;
-  resize: none;
-  height: 45px;
-  transition: all 0.3s ease;
-  font-family: inherit;
+#search-input-chat::-webkit-scrollbar {
+  width: 8px;
 }
 
-.input-box:focus {
-  border-color: #d6e9ff;
-  box-shadow: 0 0 0 2px rgba(172, 211, 255, 0.2);
+#search-input-chat::-webkit-scrollbar-thumb {
+  background-color: #ccbbea; /* 연보라 */
+  border-radius: 4px;
 }
 
-.send-button {
-  background-color: #7fbbff;
-  color: white;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
+#search-input-chat::-webkit-scrollbar-track {
+  background-color: #f3f0fa;
+}
+
+/* 검색 입력창 포커스 상태 */
+.search-container-chat:focus-within {
+  border: 2px solid #a58dd0;
+  box-shadow: 0 0 8px rgba(165, 141, 208, 0.5);
+}
+
+/* 검색 버튼 스타일링 */
+.icon-btn {
+  background: none;
   border: none;
-  margin-left: 12px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-left: auto;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  color: #a58dd0; /* 연보라 */
+  position: relative;
+  overflow: hidden;
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
   transition: all 0.3s ease;
 }
 
-.send-button:hover {
-  background-color: #ACD3FF;
-  transform: scale(1.05);
+/* 애니메이션 정의 */
+@keyframes slide45 {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    color: #a58dd0;
+  }
+  50% {
+    transform: translate(6px, 6px) rotate(45deg);
+    color: #7c52bb; /* 진한 보라 */
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    color: #a58dd0;
+  }
 }
 
-.send-button:disabled {
-  background-color: #d8d8d8;
-  cursor: not-allowed;
-  transform: none;
+.icon-btn:hover .icon {
+  animation: slide45 1.2s infinite;
+}
+
+.bottom-left-buttons {
+  position: absolute;
+  bottom: 10px;
+  left: 20px;
+  display: flex;
+  gap: 10px;
+}
+/* URL 및 문서 추가 버튼 */
+.url-btn, .doc-btn {
+  background: none;
+  border: 2px solid #bda7e5;
+  padding: 8px 16px;
+  color: #8a7fb0;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+.url-btn:hover, .doc-btn:hover {
+  background-color: rgba(199, 181, 234, 0.739);
+  color:#696187;
+  animation: sparkle 1s infinite;
 }
 
 /* 하이라이트 스타일 */
