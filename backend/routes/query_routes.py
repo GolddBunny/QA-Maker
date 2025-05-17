@@ -3,6 +3,8 @@ import pandas as pd
 import tiktoken
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
+from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 from services.graph_service.create_graph import generate_and_save_graph
@@ -34,6 +36,14 @@ query_bp = Blueprint('query', __name__)
 # Thread pool for running async code with Flask
 thread_pool = ThreadPoolExecutor(max_workers=5)
 
+
+env_path = Path("../data/parquet/.env")
+load_dotenv(dotenv_path=env_path)
+
+GRAPHRAG_API_KEY = os.getenv("GRAPHRAG_API_KEY")
+GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
+GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
+
 def run_async(coro):
     """Run a coroutine in a new event loop in a separate thread"""
     loop = asyncio.new_event_loop()
@@ -54,7 +64,7 @@ def run_local_query():
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
         
     # Define input and database paths
-    INPUT_DIR = f"/Users/sunmay/Desktop/Domain_QA_Gen/data/input/{page_id}/output"    
+    INPUT_DIR = f"../data/input/{page_id}/output"    
     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
     COMMUNITY_REPORT_TABLE = "community_reports"
     ENTITY_TABLE = "entities"
@@ -87,11 +97,6 @@ def run_local_query():
     # Load text unit data
     text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
     text_units = read_indexer_text_units(text_unit_df)
-
-    # Define API keys and models
-    GRAPHRAG_API_KEY = ""
-    GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
-    GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
     # Configure the language model
     api_key = GRAPHRAG_API_KEY
@@ -213,10 +218,6 @@ def run_global_query():
     query_text = request.json.get('query', '')
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
-        
-    GRAPHRAG_API_KEY = ""
-    GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
-    GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
     api_key = GRAPHRAG_API_KEY
     llm_model = GRAPHRAG_LLM_MODEL
@@ -237,7 +238,7 @@ def run_global_query():
     token_encoder = tiktoken.encoding_for_model(llm_model)
 
     # 경로
-    INPUT_DIR = f"/Users/sunmay/Desktop/Domain_QA_Gen/data/input/{page_id}/output"
+    INPUT_DIR = f"../data/input/{page_id}/output"
     COMMUNITY_TABLE = "communities"
     COMMUNITY_REPORT_TABLE = "community_reports"
     ENTITY_TABLE = "entities"
