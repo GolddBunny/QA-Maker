@@ -25,8 +25,7 @@ function MainPage() {
     // 로컬 스토리지에서 페이지 목록 불러오기
     const savedPages = JSON.parse(localStorage.getItem('pages')) || [];
     // "기본 페이지" 찾기
-    const defaultPage = savedPages.find(page => page.name === "main");
-
+    const defaultPage = savedPages.find(page => page.type === "main");
     // "기본 페이지"가 존재하면 해당 ID를 기본 페이지 ID로 설정
     if (defaultPage) {
         setCurrentPageId(defaultPage.id);

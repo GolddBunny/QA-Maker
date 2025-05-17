@@ -7,7 +7,6 @@ import ChatInput from "../components/chat/ChatInput";
 import { usePageContext } from "../utils/PageContext";
 import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
-import axios from 'axios';
 
 function ChatPage() {
     const { currentPageId, setCurrentPageId } = usePageContext();
@@ -203,7 +202,7 @@ function ChatPage() {
         // 사용된 근거 문서 목록 가져오기
         const fetchHeadlinesForAnswer = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/context-sources');
+                const response = await fetch(`http://localhost:5000/api/context-sources?page_id=${currentPageId}`);
                 if (!response.ok) {
                     throw new Error(`서버 응답 오류: ${response.status}`);
                 }
@@ -476,29 +475,6 @@ function ChatPage() {
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
-
-    const fetchAnswerFromServer = async () => {
-        try {
-            const response = await axios.post('http://localhost:5000/api/answer', {
-            pageId: currentPageId,
-            history: qaList.map(qa => qa.question),
-            });
-
-            const answer = response.data.answer;
-
-            setQaList(prev => [
-            ...prev,
-            {
-                id: `qa-${Date.now()}`,
-                question: newQuestion,
-                answer: answer,
-                timestamp: new Date().toISOString(),
-            },
-            ]);
-        } catch (error) {
-            console.error('서버 응답 실패:', error);
-        }
-    };
     
     // 근거 문서 목록 가져오기 또는 로컬 저장소에서 불러오기
     const fetchHeadlinesForMessage = async (index) => {
@@ -522,7 +498,7 @@ function ChatPage() {
         // 서버에서 headline 정보 가져오기
         setHeadlinesLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/context-sources');
+            const response = await fetch(`http://localhost:5000/api/context-sources?page_id=${currentPageId}`);
             if (!response.ok) {
                 throw new Error(`서버 응답 오류: ${response.status}`);
             }
@@ -565,7 +541,7 @@ function ChatPage() {
         if (!headline) return;
         
         const encodedHeadline = encodeURIComponent(headline); // 한글 인코딩 처리
-        const url = `http://localhost:5000/api/pdf/${encodedHeadline}`;
+        const url = `http://localhost:5000/api/pdf/${encodedHeadline}?page_id=${currentPageId}`;
         setPdfUrl(url);
     };
 

@@ -47,13 +47,14 @@ def run_async(coro):
 def run_local_query():
     # 외부에서 질문을 받음
     page_id = request.json.get('page_id', '')
-
+    if not page_id:
+        return jsonify({'error': 'page_id가 제공되지 않았습니다.'}), 400    
     query_text = request.json.get('query', '')
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
         
     # Define input and database paths
-    INPUT_DIR = "/Users/sunmay/Desktop/Domain_QA_Gen/data/input/1746002510272/output"
+    INPUT_DIR = f"/Users/sunmay/Desktop/Domain_QA_Gen/data/input/{page_id}/output"    
     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
     COMMUNITY_REPORT_TABLE = "community_reports"
     ENTITY_TABLE = "entities"
@@ -88,7 +89,7 @@ def run_local_query():
     text_units = read_indexer_text_units(text_unit_df)
 
     # Define API keys and models
-    GRAPHRAG_API_KEY = ""
+    GRAPHRAG_API_KEY = "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"
     GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
     GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
@@ -213,7 +214,7 @@ def run_global_query():
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
         
-    GRAPHRAG_API_KEY = ""
+    GRAPHRAG_API_KEY = "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"
     GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
     GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
@@ -236,7 +237,7 @@ def run_global_query():
     token_encoder = tiktoken.encoding_for_model(llm_model)
 
     # 경로
-    INPUT_DIR = "/Users/sunmay/Desktop/Domain_QA_Gen/data/input/1746002510272/output"
+    INPUT_DIR = f"/Users/sunmay/Desktop/Domain_QA_Gen/data/input/{page_id}/output"
     COMMUNITY_TABLE = "communities"
     COMMUNITY_REPORT_TABLE = "community_reports"
     ENTITY_TABLE = "entities"
