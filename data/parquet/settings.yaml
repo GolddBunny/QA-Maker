@@ -13,7 +13,7 @@ models:
     api_key: ${GRAPHRAG_API_KEY} # set this in the generated .env file
     # audience: "https://cognitiveservices.azure.com/.default"
     # organization: <organization_id>
-    model: gpt-3.5-turbo # gpt-4-turbo-preview
+    model: gpt-4o-mini # gpt-4-turbo-preview
     # deployment_name: <azure_model_deployment_name>
     # encoding_model: cl100k_base # automatically set by tiktoken if left undefined
     model_supports_json: true # recommended if this is available for your model.
@@ -61,8 +61,8 @@ input:
   base_dir: "input"
 
 chunks:
-  size: 1200
-  overlap: 100
+  size: 1500
+  overlap: 300
   group_by_columns: [id]
 
 ### Output settings ###
@@ -139,6 +139,13 @@ global_search:
   map_prompt: "prompts/global_search_map_system_prompt.txt"
   reduce_prompt: "prompts/global_search_reduce_system_prompt.txt"
   knowledge_prompt: "prompts/global_search_knowledge_system_prompt.txt"
+  use_community_summary: False  # False means using full community reports. True means using community short summaries.
+  shuffle_data: True
+  include_community_rank: True
+  include_community_weight: True
+  community_weight_name: "occurrence weight"
+  normalize_community_weight: True
+  max_tokens: 12_000  # change this based on the token limit you have on your model (if you are using a model with 8k limit, a good setting could be 5000)
 
 drift_search:
   chat_model_id: default_chat_model
