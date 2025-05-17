@@ -150,16 +150,16 @@ def generate_related_questions():
             system_prompt=custom_system_prompt,
         )
 
-        async def run():
-            result = await question_generator.agenerate(
-                question_history=[question],
-                context_data=None,
-                question_count=5
-            )
-            return result.response
+        # 안전하게 기존 루프 재사용 또는 새 루프 생성
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(question_generator.agenerate(
+            question_history=[question],
+            context_data=None,
+            question_count=5
+        ))
 
-        response = asyncio.run(run())
-        return jsonify({"response": response})
+        return jsonify({"response": result.response})
 
     except Exception as e:
         import traceback
