@@ -36,6 +36,17 @@ function ChatPage() {
     const [currentMessageIndex, setCurrentMessageIndex] = useState(null); // 현재 선택된 메시지 인덱스
     const [currentQaId, setCurrentQaId] = useState(null); // 현재 QA ID 추가
 
+
+    const [message, setMessage] = useState('');
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [urlInput, setUrlInput] = useState('');
+    const [addedUrls, setAddedUrls] = useState([]);
+    const [showUrlInput, setShowUrlInput] = useState(false);
+    const [searchType, setSearchType] = useState('url');
+    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+    
+    const fileInputRef = useRef(null);
+
     // 페이지 로드 시 초기 질문 또는 이전 대화 로드
     useEffect(() => {
         if (!currentPageId) {
@@ -463,12 +474,60 @@ function ChatPage() {
     const handleCloseGraph = () => {
         setShowGraph(false);
     };
+    
+    
+    // 선택된 파일 취소
+    const handleCancelFile = () => {
+        setSelectedFile(null);
+    };
+    
+    // URL 제거
+    const handleRemoveUrl = (index) => {
+        const newUrls = [...addedUrls];
+        newUrls.splice(index, 1);
+        setAddedUrls(newUrls);
+    };
 
     // 질문을 입력 후 전송
     const handleSendQuestion = () => {
         if (newQuestion.trim() && !isLoading) {
             sendQuestion(newQuestion.trim());
         }
+    };
+      // 파일 선택 처리 함수
+    const handleFileChange = (e) => {
+        if (e.target.files.length > 0) {
+        const file = e.target.files[0];
+        setSelectedFile(file);
+        console.log('선택된 파일:', file.name);
+        }
+    };
+
+    // 문서 버튼 클릭 시 파일 선택창 열기
+    const handleDocumentOptionClick = () => {
+        setSearchType('document');
+        fileInputRef.current.click();
+        setIsDropdownVisible(false);
+    };
+
+    // URL 선택 시 처리
+    const handleUrlOptionClick = () => {
+        setSearchType('url');
+        setShowUrlInput(true); // 입력창 보이게
+
+    };
+
+    const handleAddUrl = () => {
+        const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/;
+        if (!urlPattern.test(urlInput.trim())) {
+            alert('유효한 URL을 입력해주세요.');
+            setUrlInput('');
+            return;
+        }
+
+        setAddedUrls([...addedUrls, urlInput.trim()]);
+        setUrlInput('');
+        setShowUrlInput(false); // 입력창 닫기
     };
     
     // 사이드바 토글
@@ -651,7 +710,77 @@ function ChatPage() {
                     setNewQuestion={setNewQuestion} 
                     handleSendQuestion={handleSendQuestion} 
                     isLoading={isLoading} 
+                    handleUrlOptionClick={handleUrlOptionClick}
+                    handleDocumentOptionClick={handleDocumentOptionClick}
                 />
+                {/* 숨겨진 파일 입력 필드 */}
+                <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                accept=".pdf,.doc,.docx,.txt"
+                />
+                {showUrlInput && (
+                    <div className="url-input-box-main">
+                        <input
+                        type="text"
+                        placeholder="URL을 입력하세요"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        className="url-input-main"
+                        />
+                        <button 
+                        onClick={() => {
+                            handleAddUrl();
+                            setShowUrlInput(false); // 입력 후 닫기
+                        }} 
+                        className="add-url-btn"
+                        >
+                        추가
+                        </button>
+                    </div>
+                    )}
+
+                    {selectedFile && (
+                        <div className="selected-file-container">
+                        <div className="selected-file">
+                        <img src="/assets/document.png" alt="파일" className="file-icon" />
+                        <span className="file-name">{selectedFile.name}</span>
+                        <button 
+                            className="file-cancel" 
+                            onClick={() => setSelectedFile(null)}
+                            title="파일 선택 취소"
+                        >
+                            ×
+                        </button>
+                        </div>
+                    </div>
+                    )}
+
+                    {addedUrls.length > 0 && (
+                        <div className="url-list">
+                        {addedUrls.map((url, index) => (
+                            <div key={index} className="selected-file-container">
+                            <div className="selected-file">
+                                <span className='url-icon'>🌐</span>
+                                <span>{url}</span>
+                                <button 
+                                className="file-cancel"
+                                onClick={() => {
+                                    const newUrls = [...addedUrls];
+                                    newUrls.splice(index, 1);
+                                    setAddedUrls(newUrls);
+                                }}
+                                title="URL 제거"
+                                >
+                                ×
+                                </button>
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                    )}
 
                 {showGraph && graphData && (
                     <div className="graph-container">

@@ -29,6 +29,19 @@ api_key = os.getenv("GRAPHRAG_API_KEY")
 llm_model = "gpt-4o-mini"
 embedding_model = "text-embedding-3-small"
 
+def run_async(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import concurrent.futures
+        future = asyncio.run_coroutine_threadsafe(coro, loop)
+        return future.result()
+    else:
+        return asyncio.run(coro)
+    
 @question_bp.route('/generate-related-questions', methods=['POST'])
 def generate_related_questions():
     data = request.get_json()
@@ -153,7 +166,7 @@ def generate_related_questions():
         )
 
         # 안전하게 기존 루프 재사용 또는 새 루프 생성
-        result = asyncio.run(question_generator.agenerate(
+        result = run_async(question_generator.agenerate(
             question_history=[question],
             context_data=None,
             question_count=5
