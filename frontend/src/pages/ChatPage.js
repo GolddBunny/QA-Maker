@@ -7,9 +7,10 @@ import ChatInput from "../components/chat/ChatInput";
 import { usePageContext } from "../utils/PageContext";
 import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
+import axios from 'axios';
 
 function ChatPage() {
-    const { currentPageId } = usePageContext();
+    const { currentPageId, setCurrentPageId } = usePageContext();
     const { qaHistory, addQA } = useQAHistoryContext(); // QA 히스토리 컨텍스트 사용
     const [qaList, setQaList] = useState([]);
     const [newQuestion, setNewQuestion] = useState("");
@@ -28,7 +29,14 @@ function ChatPage() {
 
     // 페이지 로드 시 초기 질문 또는 이전 대화 로드
     useEffect(() => {
-        console.log("현재 페이지 ID:", currentPageId);
+        if (!currentPageId) {
+            const storedPageId = localStorage.getItem("currentPageId");
+            if (storedPageId) {
+                // PageContext에 setCurrentPageId가 있다면 여기에 설정
+                console.log("로컬스토리지에서 pageId 복원:", storedPageId);
+                setCurrentPageId(storedPageId);
+            }
+        }
 
         const params = new URLSearchParams(location.search);
         const initialQuestion = params.get("question");
@@ -130,13 +138,12 @@ function ChatPage() {
         try {
             // 두 요청을 병렬로 실행
             const [localData, globalData] = await Promise.all([
-                fetchLocalResponse(),
-                fetchGlobalResponse()
+                fetchLocalResponse()
             ]);
             
             // 각 응답 확인 및 통합 처리
             const localAnswer = localData.result || "서버에서 로컬 응답을 받지 못했습니다.";
-            const globalAnswer = globalData.result || "서버에서 글로벌 응답을 받지 못했습니다.";
+            const globalAnswer = "서버에서 글로벌 응답을 받지 못했습니다.";
             
             // 엔티티와 관계는 로컬 데이터에서 가져옴
             const newEntities = localData.entities ? localData.entities.join(',') : "";
@@ -247,29 +254,51 @@ function ChatPage() {
     };
 
     // 그래프 로드 함수
-    const handleShowGraph = async (e, index) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
+    const handleShowGraph = async () => {
+        // 이미 로딩 중이면 중복 실행 방지
+        if (isLoading) {
+            console.log("이미 그래프를 로딩 중입니다.");
+            return;
         }
 
+        // 서버 응답 확인
         if (!serverResponseReceived) {
             console.log("서버 응답을 기다리는 중입니다.");
-            return; // 서버 응답이 아직 없으면 그래프를 로드하지 않음
+            alert("서버 응답을 기다리는 중입니다. 잠시 후 다시 시도해주세요.");
+            return;
         }
 
-        // 캐시된 그래프 데이터 확인
-        const cacheKey = `${entities}-${relationships}`;
-        if (graphDataCacheRef.current[cacheKey]) {
-            setGraphData(graphDataCacheRef.current[cacheKey]);
-            setShowGraph(true);
+        // 필수 데이터 확인
+        if (!currentPageId) {
+            console.error("페이지 ID가 없습니다.");
+            alert("페이지 ID가 설정되지 않았습니다. 페이지를 새로고침하거나 다시 시도해주세요.");
+            return;
+        }
+        
+        if (!entities || !relationships) {
+            console.error("엔티티 또는 관계 데이터가 없습니다.");
+            alert("엔티티 또는 관계 데이터가 없습니다. 대화를 완료한 후 다시 시도해주세요.");
             return;
         }
 
         try {
-            console.log("그래프 데이터 로딩 시작");
+            // 로딩 상태 설정
             setIsLoading(true);
+            console.log("그래프 데이터 로딩 시작");
 
+            // 캐시 키 설정
+            const cacheKey = `${entities}-${relationships}`;
+            
+            // 메모리 캐시 확인
+            if (graphDataCacheRef.current[cacheKey]) {
+                console.log("메모리 캐시에서 그래프 데이터 로드");
+                setGraphData(graphDataCacheRef.current[cacheKey]);
+                setShowGraph(true);
+                setIsLoading(false);
+                return;
+            }
+            
+            // API 호출
             const generateResponse = await fetch("http://localhost:5000/generate-graph", {
                 method: "POST",
                 headers: { 
@@ -282,33 +311,52 @@ function ChatPage() {
                 })
             });
 
+            // API 응답 처리
             const generateData = await generateResponse.json();
 
             if (!generateResponse.ok) {
-                throw new Error(`Graph generation failed: ${generateData.error || "Unknown error"}`);
+                throw new Error(`그래프 생성 실패: ${generateData.error || "알 수 없는 오류"}`);
             }
             
-            // 서브 그래프 그리기 위한 json 파일 로드
-            const response = await fetch("./json/answer_graphml_data.json", {
+            console.log("그래프 생성 API 응답:", generateData);
+            
+            // 서버에서 파일 생성이 완료될 때까지 대기 (최소 1초)
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // 캐시를 방지하기 위한 타임스탬프 추가
+            const timestamp = new Date().getTime();
+            
+            // JSON 파일 로드
+            const jsonResponse = await fetch(`./json/answer_graphml_data.json?t=${timestamp}`, {
+                method: "GET",  // 명시적으로 GET 메서드 지정
                 headers: {
-                    "Cache-Control": "no-cache"
-                }
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                },
+                cache: "no-store"  // fetch API의 캐시 옵션
             });
-    
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+
+            if (!jsonResponse.ok) {
+                throw new Error(`HTTP 에러! 상태: ${jsonResponse.status}, ${jsonResponse.statusText}`);
             }
 
-            const data = await response.json();
-            console.log("그래프 데이터 로드 성공:", data);
+            const jsonData = await jsonResponse.json();
+            console.log("그래프 데이터 로드 성공:", jsonData);
+            
+            // 그래프 데이터 유효성 검사
+            if (!jsonData || !jsonData.nodes || !jsonData.edges) {
+                throw new Error("유효하지 않은 그래프 데이터입니다.");
+            }
 
-            // 그래프 데이터 캐시
-            graphDataCacheRef.current[cacheKey] = data;
-
-            setGraphData(data);
+            // 데이터 저장 및 그래프 표시
+            graphDataCacheRef.current[cacheKey] = jsonData;
+            setGraphData(jsonData);
             setShowGraph(true);
+            
         } catch (error) {
             console.error("그래프 데이터 로드 실패:", error);
+            alert(`그래프 데이터를 불러오는 데 실패했습니다: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -329,6 +377,29 @@ function ChatPage() {
     // 사이드바 토글 함수
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
+    };
+
+    const fetchAnswerFromServer = async () => {
+        try {
+            const response = await axios.post('http://localhost:5000/api/answer', {
+            pageId: currentPageId,
+            history: qaList.map(qa => qa.question),
+            });
+
+            const answer = response.data.answer;
+
+            setQaList(prev => [
+            ...prev,
+            {
+                id: `qa-${Date.now()}`,
+                question: newQuestion,
+                answer: answer,
+                timestamp: new Date().toISOString(),
+            },
+            ]);
+        } catch (error) {
+            console.error('서버 응답 실패:', error);
+        }
     };
     
     return (
