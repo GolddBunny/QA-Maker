@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
-import axios from "axios";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
 
@@ -617,26 +616,27 @@ const AdminPage = () => {
                 onChange={(e) => setSystemName(e.target.value)}
               />
             </div>
+            <button className="apply-button-admin" onClick={() => {
+              // 도메인 이름 업데이트
+              const nameResult = updatePageName(currentPageId, domainName);
+              // 시스템 이름 업데이트
+              const sysNameResult = updatePageSysName(currentPageId, systemName);
+              // 각 업데이트 결과에 따라 개별적으로 상태 업데이트
+                if (nameResult.success) {
+                  console.log("[적용 버튼] 도메인 이름 업데이트 성공:", domainName);
+                } else {
+                  console.error("[적용 버튼] 도메인 이름 업데이트 실패:", nameResult.error);
+                }
+                
+                if (sysNameResult.success) {
+                  console.log("[적용 버튼] 시스템 이름 업데이트 성공:", systemName);
+                } else {
+                  console.error("[적용 버튼] 시스템 이름 업데이트 실패:", sysNameResult.error);
+                }
+              }}>적용하기
+            </button>
           </div>
-          <button className="apply-button" onClick={() => {
-            // 도메인 이름 업데이트
-            const nameResult = updatePageName(currentPageId, domainName);
-            // 시스템 이름 업데이트
-            const sysNameResult = updatePageSysName(currentPageId, systemName);
-            // 각 업데이트 결과에 따라 개별적으로 상태 업데이트
-              if (nameResult.success) {
-                console.log("[적용 버튼] 도메인 이름 업데이트 성공:", domainName);
-              } else {
-                console.error("[적용 버튼] 도메인 이름 업데이트 실패:", nameResult.error);
-              }
-              
-              if (sysNameResult.success) {
-                console.log("[적용 버튼] 시스템 이름 업데이트 성공:", systemName);
-              } else {
-                console.error("[적용 버튼] 시스템 이름 업데이트 실패:", sysNameResult.error);
-              }
-            
-          }}>적용하기</button>
+          
         </div>
 
         {/* 상단 통계 카드

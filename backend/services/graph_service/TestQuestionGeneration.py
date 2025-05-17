@@ -24,7 +24,7 @@ from graphrag.vector_stores.lancedb import LanceDBVectorStore
 load_dotenv()
 
 api_key = os.getenv("GRAPHRAG_API_KEY")
-llm_model = "gpt-3.5-turbo"
+llm_model = "gpt-4o-mini"
 embedding_model = "text-embedding-3-small"
 
 chat_config = LanguageModelConfig(
@@ -54,7 +54,7 @@ text_embedder = ModelManager().get_or_create_embedding_model(
     config=embedding_config,
 )
 
-INPUT_DIR = "../data/input/1747110168282/output"
+INPUT_DIR = "../data/input/1743412670027/output"
 ENTITY_TABLE = "entities"
 COMMUNITY_TABLE = "communities"
 
@@ -77,7 +77,7 @@ class CustomLanceDBVectorStore(LanceDBVectorStore):
 
 description_embedding_store = CustomLanceDBVectorStore(
     collection_name="default-entity-description",
-    db_dir="../data/input/1747110168282/output/lancedb/default-entity-description.lance",
+    db_dir="../data/input/1743412670027/output/lancedb/default-entity-description.lance",
 )
 
 context_builder = LocalSearchMixedContext(
@@ -145,7 +145,7 @@ question_generator = LocalQuestionGen(
 
 async def generate_questions():
     question_history = [
-        "한성대학교 이사장이 누구야?"
+        "브리지 관련 내용은 몇 페이지에 있어?"
     ]
     candidate_questions = await question_generator.agenerate(
         question_history=question_history, context_data=None, question_count=5
