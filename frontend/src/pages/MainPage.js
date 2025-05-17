@@ -144,16 +144,16 @@ function MainPage() {
           onKeyDown={handleKeyPress}
         />
 
-        <button class="icon-btn" onClick={handleSearch}>
-          <svg class="icon" viewBox="0 0 24 24">
-            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
-            <line x1="14.5" y1="14.5" x2="20" y2="20" stroke="currentColor" stroke-width="2"/>
+        <button className="icon-btn" onClick={handleSearch}>
+          <svg className="icon" viewBox="0 0 24 24">
+            <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="2" fill="none" />
+            <line x1="14.5" y1="14.5" x2="20" y2="20" stroke="currentColor" strokeWidth="2" />
           </svg>
         </button>
 
-        <div class="bottom-left-buttons">
-          <button class="url-btn" onClick={handleUrlOptionClick}>URL 추가하기</button>
-          <button class="doc-btn" onClick={handleDocumentOptionClick}>문서 추가하기</button>
+        <div className="bottom-left-buttons">
+          <button className="url-btn" onClick={handleUrlOptionClick}>URL 추가하기</button>
+          <button className="doc-btn" onClick={handleDocumentOptionClick}>문서 추가하기</button>
         </div>
 
         {/* 숨겨진 파일 입력 필드 */}

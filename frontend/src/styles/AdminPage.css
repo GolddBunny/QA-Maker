@@ -24,7 +24,6 @@
 .input-group {
   display: flex;
   flex: 1;
-  align-items: flex-start;
 }
 
 .input-field {
@@ -68,7 +67,7 @@
   background-color: #beabda;
 }
 
-.apply-button {
+.apply-button-admin {
   background-color: #e0d4fa;
   color: #5e3fb2;
   font-weight: bold;
@@ -82,7 +81,7 @@
   z-index: 1;
 }
 
-.apply-button:hover, 
+.apply-button-admin:hover, 
 .btn_primary:hover {
   background-color: #bb9beb;
   color:white;

@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
@@ -655,4 +656,10 @@
 
 .source-url:hover {
       text-decoration: underline;
+}
+.centered-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }

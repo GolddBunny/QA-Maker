@@ -358,6 +358,10 @@ h1 span:nth-child(12) { animation-delay: 1.2s; }
   margin: 0px 0 10px;
 }
 
+.url-input-box-chat {
+  text-align: center;
+  margin-top: 10px;
+}
 .url-input-main {
   flex: 1;
   padding: 10px;
