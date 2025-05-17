@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
-import axios from "axios";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
 
