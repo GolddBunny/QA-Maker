@@ -1,14 +1,79 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, ExternalLink } from "lucide-react";
 
-const ChatMessage = ({ qa, index, handleShowGraph }) => {
-    // 현재 보고 있는 답변 타입 상태 (local 또는 global)
-    const [currentAnswerType, setCurrentAnswerType] = useState('local');
+const ChatMessage = ({ qa, index, handleShowGraph, handleShowDocument, showDocument }) => {
+    const [currentAnswerType, setCurrentAnswerType] = useState('local'); // 현재 보고 있는 답변 타입 상태
     
     // 현재 보고 있는 답변 가져오기
     const getCurrentAnswer = () => {
         if (currentAnswerType === 'local') {
-            return qa.localAnswer || qa.answer || "로컬 답변이 없습니다.";
+            let answer = qa.localAnswer || qa.answer || "로컬 답변이 없습니다.";
+            
+            // URL을 답변 텍스트에 삽입 (글로벌이 아닌 경우에만)
+            if (qa.sources && qa.sources.length > 0) {
+                // [Data: ...] 패턴 찾기
+                const dataPattern = /\[Data: [^\]]+\]/g;
+                const hasDataPattern = dataPattern.test(answer);
+                
+                // 패턴 검색을 위해 정규식 초기화 (test 후에는 lastIndex가 변경됨)
+                dataPattern.lastIndex = 0;
+                
+                if (hasDataPattern) {
+                    // [Data: ...] 패턴이 있는 경우, 패턴을 제외한 문장에만 링크 적용
+                    const dataMatches = answer.match(dataPattern);
+                    
+                    if (dataMatches && dataMatches.length > 0 && qa.sources && qa.sources[0]) {
+                        // [Data: ...] 패턴이 포함된 문장 찾기
+                        const sentencePattern = /([^.!?]+)(\[Data:[^\]]+\])([^.!?]*[.!?])/g;
+                        let result = answer;
+                        let match;
+                        
+                        // 정규식을 사용하여 문장을 세 부분으로 나눔: 앞부분, [Data:...] 패턴, 뒷부분
+                        while ((match = sentencePattern.exec(answer)) !== null) {
+                            if (match.length >= 4) {
+                                const beforeData = match[1]; // [Data:...] 패턴 앞 부분
+                                const dataPattern = match[2]; // [Data:...] 패턴
+                                const afterData = match[3]; // [Data:...] 패턴 뒤 부분
+                                
+                                // 원본 문장
+                                const originalSentence = match[0];
+                                
+                                // 앞부분과 뒷부분만 링크를 적용한 새 문장
+                                const linkedSentence = `<a href="${qa.sources[0].url}" target="_blank" rel="noopener noreferrer" class="inline-source-link">${beforeData}</a>${dataPattern}<a href="${qa.sources[0].url}" target="_blank" rel="noopener noreferrer" class="inline-source-link">${afterData}</a>`;
+                                
+                                // 원본 문장을 새 문장으로 교체
+                                result = result.replace(originalSentence, linkedSentence);
+                            }
+                        }
+                        
+                        answer = result;
+                    }
+                } else {
+                    // [Data: ...] 패턴이 없는 경우, 마지막 문장에 링크 추가 (기존 로직)
+                    const sentencePattern = /[^.!?]+[.!?](?:\s|$)/g;
+                    const sentences = [];
+                    let match;
+                    
+                    while ((match = sentencePattern.exec(answer)) !== null) {
+                        sentences.push(match[0]);
+                    }
+                    
+                    if (sentences.length > 0) {
+                        // 마지막 문장
+                        const lastSentence = sentences[sentences.length - 1].trim();
+                        
+                        // 마지막 문장에 링크 추가
+                        if (qa.sources[0]) {
+                            const linkedSentence = `<a href="${qa.sources[0].url}" target="_blank" rel="noopener noreferrer" class="inline-source-link">${lastSentence}</a>`;
+                            
+                            // 마지막 문장을 링크된 문장으로 교체
+                            answer = answer.substring(0, answer.lastIndexOf(lastSentence)) + linkedSentence;
+                        }
+                    }
+                }
+            }
+            
+            return answer;
         } else {
             return qa.globalAnswer || "글로벌 답변이 없습니다.";
         }
@@ -22,7 +87,12 @@ const ChatMessage = ({ qa, index, handleShowGraph }) => {
     const switchToGlobal = () => {
         setCurrentAnswerType('global');
     };
-    
+
+    // 답변 HTML로 렌더링
+    const renderAnswer = () => {
+        return { __html: getCurrentAnswer() };
+    };
+
     return (
         <div className="qa-box">
             <div className="question-box">{qa.question}</div>
@@ -32,35 +102,37 @@ const ChatMessage = ({ qa, index, handleShowGraph }) => {
                         <div className="nav-button-container">
                             <button
                                 type="button"
-                                className={`nav-button ${currentAnswerType === 'global' ? 'active' : ''}`}
+                                className={`nav-button ${currentAnswerType === 'local' ? 'active' : ''}`}
                                 onClick={switchToLocal}
                                 title="로컬 검색 결과 보기"
                             >
                                 <ChevronLeft />
                             </button>
-                            {currentAnswerType === 'global' && <span className="nav-text">Local</span>}
                         </div>
                         
-                        <span className="answer-text">{getCurrentAnswer()}</span>
+                        <span 
+                            className="answer-text"
+                            dangerouslySetInnerHTML={renderAnswer()}
+                        />
                         
                         <div className="nav-button-container">
                             <button
                                 type="button"
-                                className={`nav-button ${currentAnswerType === 'local' ? 'active' : ''}`}
+                                className={`nav-button ${currentAnswerType === 'global' ? 'active' : ''}`}
                                 onClick={switchToGlobal}
                                 title="글로벌 검색 결과 보기"
                             >
                                 <ChevronRight />
                             </button>
-                            {currentAnswerType === 'local' && <span className="nav-text">Global</span>}
                         </div>
                     </div>
+                    
                     {qa.actionButtonVisible && (
                         <div className="action-button-container">
                             <button
                                 type="button"
                                 className="action-button-left"
-                                onClick={(e) => handleShowGraph(e, index)}
+                                onClick={(e) => handleShowGraph(e, index, currentAnswerType)}
                             >
                                 <span className="button-icon">
                                     <img src="assets/graph.svg" alt="지식 그래프 아이콘" />
@@ -81,6 +153,14 @@ const ChatMessage = ({ qa, index, handleShowGraph }) => {
                 <div className="relative-buttons">
                     <button type="button" className="question-button">관련 질문 추천 1</button>
                     <button type="button" className="question-button">관련 질문 추천 2</button>
+                    <button 
+                        type="button" 
+                        className={`source-docs-button ${showDocument ? 'active' : ''}`}
+                        onClick={() => handleShowDocument(index)}
+                    >
+                        <FileText size={14} className="mr-1" />
+                        {qa.isDocumentLoading ? '로딩 중...' : '근거 문서'}
+                    </button>
                 </div>
             )}
         </div>

@@ -75,7 +75,7 @@ const NetworkChart = ({ data }) => {
         .strength(0.2)
       )
       .force("charge", d3.forceManyBody()
-        .strength(-30) // 부드러운 반발력 감소
+        .strength(-20) // 부드러운 반발력 감소
         .distanceMin(20) // 최소 거리 증가
         .distanceMax(200) // 최대 거리 증가
       )

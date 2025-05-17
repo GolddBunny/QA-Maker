@@ -66,7 +66,7 @@ text_units = read_indexer_text_units(text_unit_df)
 #print(text_unit_df.head())
 
 # Define API keys and models
-GRAPHRAG_API_KEY = "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"
+GRAPHRAG_API_KEY = ""
 GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
 GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 

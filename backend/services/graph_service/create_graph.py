@@ -141,15 +141,15 @@ def generate_and_save_graph(entities_list, relationships_list, page_id,
         graphml_path = os.path.join(backend_dir, "..", "data", "graphs", "answer_graph.graphml")
     
     if json_path is None:
-        json_path = os.path.join(backend_dir, "..", "frontend", "public", "json", "answer_graphml_data.json")
+        json_path = os.path.join(backend_dir, "..", "frontend", "src", "json", "answer_graphml_data.json")
     
     # 그래프 저장 경로가 존재하지 않으면 생성
     graph_dir = os.path.dirname(graphml_path)
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir, exist_ok=True)
         
-    # .json 파일이 이미 존재하면 삭제
-    if os.path.exists(json_path) and not os.path.basename(json_path) == "admin_graphml_data.json":
+    # # .json 파일이 이미 존재하면 삭제
+    if os.path.exists(json_path):
         os.remove(json_path)
         print(f"기존의 .json 파일 {json_path} 삭제됨.")
 

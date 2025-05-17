@@ -10,12 +10,12 @@ export function QAHistoryProvider({ children }) {
         const savedHistory = localStorage.getItem('qaHistory');
         return savedHistory ? JSON.parse(savedHistory) : [];
     });
-
+    
     // QA 히스토리가 변경될 때마다 로컬 스토리지에 저장
     useEffect(() => {
         localStorage.setItem('qaHistory', JSON.stringify(qaHistory));
     }, [qaHistory]);
-
+    
     // QA 항목 추가 또는 업데이트 함수
     const addQA = (newQA) => {
         setQaHistory(prevHistory => {
@@ -32,19 +32,69 @@ export function QAHistoryProvider({ children }) {
             }
         });
     };
-
+    
     // QA 항목 삭제 함수
     const deleteQA = (qaId) => {
         setQaHistory(prevHistory => prevHistory.filter(qa => qa.id !== qaId));
     };
-
+    
+    // QA 항목에 headline 업데이트 함수
+    const updateQAHeadlines = (qaId, conversationIndex, headlines) => {
+        setQaHistory(prevHistory => {
+            const updatedHistory = [...prevHistory];
+            const qaIndex = updatedHistory.findIndex(qa => qa.id === qaId);
+            
+            if (qaIndex >= 0 && updatedHistory[qaIndex].conversations && 
+                updatedHistory[qaIndex].conversations[conversationIndex]) {
+                updatedHistory[qaIndex].conversations[conversationIndex].headlines = headlines;
+                updatedHistory[qaIndex].conversations[conversationIndex].selectedHeadline = 
+                    headlines && headlines.length > 0 ? headlines[0] : '';
+            }
+            
+            return updatedHistory;
+        });
+    };
+    
+    // 선택된 headline 업데이트 함수
+    const updateSelectedHeadline = (qaId, conversationIndex, headline) => {
+        setQaHistory(prevHistory => {
+            const updatedHistory = [...prevHistory];
+            const qaIndex = updatedHistory.findIndex(qa => qa.id === qaId);
+            
+            if (qaIndex >= 0 && updatedHistory[qaIndex].conversations && 
+                updatedHistory[qaIndex].conversations[conversationIndex]) {
+                updatedHistory[qaIndex].conversations[conversationIndex].selectedHeadline = headline;
+            }
+            
+            return updatedHistory;
+        });
+    };
+    
+    // 소스 URL 업데이트 함수
+    const updateQASources = (qaId, conversationIndex, sources) => {
+        setQaHistory(prevHistory => {
+            const updatedHistory = [...prevHistory];
+            const qaIndex = updatedHistory.findIndex(qa => qa.id === qaId);
+            
+            if (qaIndex >= 0 && updatedHistory[qaIndex].conversations && 
+                updatedHistory[qaIndex].conversations[conversationIndex]) {
+                updatedHistory[qaIndex].conversations[conversationIndex].sources = sources || [];
+            }
+            
+            return updatedHistory;
+        });
+    };
+    
     // 컨텍스트 값 설정
     const contextValue = {
         qaHistory,
         addQA,
-        deleteQA
+        deleteQA,
+        updateQAHeadlines,
+        updateSelectedHeadline,
+        updateQASources
     };
-
+    
     return (
         <QAHistoryContext.Provider value={contextValue}>
             {children}
