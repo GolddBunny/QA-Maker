@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight,FileText, ExternalLink } from "lucide-react";
 
-const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
+const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
@@ -189,6 +189,14 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
                             </div>
                         </div>
                     </div>
+                    <button 
+                        type="button" 
+                        className={`source-docs-button ${showDocument ? 'active' : ''}`}
+                        onClick={() => handleShowDocument(index)}
+                    >
+                        <FileText size={14} className="mr-1" />
+                        {qa.isDocumentLoading ? '로딩 중...' : '근거 문서'}
+                    </button>
                     
                     <div className="answer-side-panel">
                     {!showGraph && (
