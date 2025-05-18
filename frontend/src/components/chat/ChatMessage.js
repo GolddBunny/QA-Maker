@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument }) => {
+const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
@@ -191,82 +191,63 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     </div>
                     
                     <div className="answer-side-panel">
-                        {!showGraph && (
-                            <div className="action-button-container">
-                                <span className="action-button-left">
-                                    정확도 {currentAnswerType === 'local' ? qa.localConfidence : qa.globalConfidence}%
+                    {!showGraph && (
+                        <div className="action-button-container">
+                        <span className="action-button-left">
+                            정확도 {currentAnswerType === 'local' ? qa.localConfidence : qa.globalConfidence}%
+                        </span>
+                        </div>
+                    )}
+
+                    {!showGraph && (
+                        <div className="graph-button-wrapper">
+                        <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
+                            <span className="button-icon">지식 그래프 보기 ⚡</span>
+                        </button>
+                        </div>
+                    )}
+
+                    {!showGraph && (
+                        <div className="satisfaction-button-container">
+                        <button type="button" className="action-button-left">
+                            <span className="button-icon">
+                            만족도
+                            <span className="rating-stars">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                    key={star}
+                                    className={`star ${rating >= star ? 'filled' : ''}`}
+                                    onClick={() => setRating(star)}
+                                >
+                                    ★
                                 </span>
-                            </div>
-                        )}
+                                ))}
+                            </span>
+                            </span>
+                        </button>
+                        </div>
+                    )}
 
-                        {!showGraph && (
-                            <div className="graph-button-wrapper">
-                                <button 
-                                    type="button" 
-                                    className="action-button-left" 
-                                    onClick={(e) => handleShowGraph(e, index, currentAnswerType)}
-                                >
-                                    <span className="button-icon">지식 그래프 보기 ⚡</span>
-                                </button>
-                            </div>
+                    {qa.relatedQuestionsVisible && !showGraph && (
+                        <div className="related-questions">
+                        <div className="related-questions-header">관련 질문</div>
+                        {isLoadingRelated ? (
+                            <p className="loading">로딩 중...</p>
+                        ) : (
+                            <table className="related-questions-table">
+                            <tbody>
+                                {relatedQuestions.map((question, i) => (
+                                <tr key={i}>
+                                    <td>{question}</td>
+                                </tr>
+                                ))}
+                            </tbody>
+                            </table>
                         )}
-
-                        {/* 근거 문서 버튼 추가 */}
-                        {!showGraph && qa.actionButtonVisible && (
-                            <div className="source-docs-button-wrapper">
-                                <button 
-                                    type="button" 
-                                    className={`action-button-left source-docs-button ${showDocument ? 'active' : ''}`}
-                                    onClick={() => handleShowDocument(index)}
-                                >
-                                    <span className="button-icon">
-                                        <FileText size={14} className="mr-1" />
-                                        {qa.isDocumentLoading ? '로딩 중...' : '근거 문서 보기'}
-                                    </span>
-                                </button>
-                            </div>
-                        )}
-
-                        {!showGraph && (
-                            <div className="satisfaction-button-container">
-                                <button type="button" className="action-button-left">
-                                    <span className="button-icon">
-                                        만족도
-                                        <span className="rating-stars">
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                            <span
-                                                key={star}
-                                                className={`star ${rating >= star ? 'filled' : ''}`}
-                                                onClick={() => setRating(star)}
-                                            >
-                                                ★
-                                            </span>
-                                            ))}
-                                        </span>
-                                    </span>
-                                </button>
-                            </div>
-                        )}
-
-                        {qa.relatedQuestionsVisible && !showGraph && (
-                            <div className="related-questions">
-                                <div className="related-questions-header">관련 질문</div>
-                                {isLoadingRelated ? (
-                                    <p className="loading">로딩 중...</p>
-                                ) : (
-                                    <table className="related-questions-table">
-                                        <tbody>
-                                            {relatedQuestions.map((question, i) => (
-                                            <tr key={i}>
-                                                <td>{question}</td>
-                                            </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
-                        )}
+                        </div>
+                    )}
                     </div>
+
                 </div>
             )}
             <div ref={chatEndRef} />
