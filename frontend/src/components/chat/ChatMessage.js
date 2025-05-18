@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
-    const [rating, setRating] = useState(0);
-    
+    const[rating, setRating] = useState(0);
+    const chatEndRef = useRef(null);
     // 현재 보고 있는 답변 가져오기
     const getCurrentAnswer = () => {
         if (currentAnswerType === 'local') {
@@ -96,6 +96,15 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
     const renderAnswer = () => {
         return { __html: getCurrentAnswer() };
     };
+
+    const scrollToBottom = () => {
+        if (chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+    useEffect(() => {
+        scrollToBottom();
+    }, [qa.question, qa.answer]);
 
     // useEffect(() => {
     //     if (qa.actionButtonVisible && qa.relatedQuestionsVisible) {
@@ -260,6 +269,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     </div>
                 </div>
             )}
+            <div ref={chatEndRef} />
         </div>
     );
 };
