@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 
-const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
+const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
-    const[rating, setRating] = useState(0);
+    const [rating, setRating] = useState(0);
     
     // 현재 보고 있는 답변 가져오기
     const getCurrentAnswer = () => {
@@ -97,52 +97,52 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
         return { __html: getCurrentAnswer() };
     };
 
-    useEffect(() => {
-        if (qa.actionButtonVisible && qa.relatedQuestionsVisible) {
-            const fetchRelatedQuestions = async () => {
-                const pageId = localStorage.getItem("currentPageId");
-                if (!pageId || !qa.question) return;
+    // useEffect(() => {
+    //     if (qa.actionButtonVisible && qa.relatedQuestionsVisible) {
+    //         const fetchRelatedQuestions = async () => {
+    //             const pageId = localStorage.getItem("currentPageId");
+    //             if (!pageId || !qa.question) return;
 
-                setIsLoadingRelated(true);
+    //             setIsLoadingRelated(true);
 
-                try {
-                    const response = await fetch("http://localhost:5000/generate-related-questions", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ page_id: pageId, question: qa.question })
-                    });
+    //             try {
+    //                 const response = await fetch("http://localhost:5000/generate-related-questions", {
+    //                     method: "POST",
+    //                     headers: { "Content-Type": "application/json" },
+    //                     body: JSON.stringify({ page_id: pageId, question: qa.question })
+    //                 });
 
-                    const data = await response.json();
-                    if (response.ok) {
-                        let questions = [];
+    //                 const data = await response.json();
+    //                 if (response.ok) {
+    //                     let questions = [];
 
-                        // 문자열일 경우 (기존 방식)
-                        if (typeof data.response === "string") {
-                            questions = data.response
-                                .split(/\n|\r/)
-                                .filter(line => line.trim().startsWith("-"))
-                                .map(line => line.replace(/^-\s*/, "").trim());
-                        }
+    //                     // 문자열일 경우 (기존 방식)
+    //                     if (typeof data.response === "string") {
+    //                         questions = data.response
+    //                             .split(/\n|\r/)
+    //                             .filter(line => line.trim().startsWith("-"))
+    //                             .map(line => line.replace(/^-\s*/, "").trim());
+    //                     }
 
-                        // 리스트일 경우 (안전 처리)
-                        else if (Array.isArray(data.response)) {
-                            questions = data.response.map(q => q.trim()).filter(Boolean);
-                        }
+    //                     // 리스트일 경우 (안전 처리)
+    //                     else if (Array.isArray(data.response)) {
+    //                         questions = data.response.map(q => q.trim()).filter(Boolean);
+    //                     }
 
-                        setRelatedQuestions(questions);
-                    } else {
-                        console.error("관련 질문 로딩 실패:", data.error);
-                    }
-                } catch (err) {
-                    console.error("관련 질문 요청 에러:", err);
-                } finally {
-                    setIsLoadingRelated(false);
-                }
-            };
+    //                     setRelatedQuestions(questions);
+    //                 } else {
+    //                     console.error("관련 질문 로딩 실패:", data.error);
+    //                 }
+    //             } catch (err) {
+    //                 console.error("관련 질문 요청 에러:", err);
+    //             } finally {
+    //                 setIsLoadingRelated(false);
+    //             }
+    //         };
 
-            fetchRelatedQuestions();
-        }
-    }, [qa]);
+    //         fetchRelatedQuestions();
+    //     }
+    // }, [qa]);
     
     return (
         <div className="qa-box">
@@ -182,66 +182,84 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
                     </div>
                     
                     <div className="answer-side-panel">
-                    {!showGraph && (
-                        <div className="action-button-container">
-                        <span className="action-button-left">
-                            정확도 {currentAnswerType === 'local' ? qa.localConfidence : qa.globalConfidence}%
-                        </span>
-                        </div>
-                    )}
-
-                    {!showGraph && (
-                        <div className="graph-button-wrapper">
-                        <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
-                            <span className="button-icon">지식 그래프 보기 ⚡</span>
-                        </button>
-                        </div>
-                    )}
-
-                    {!showGraph && (
-                        <div className="satisfaction-button-container">
-                        <button type="button" className="action-button-left">
-                            <span className="button-icon">
-                            만족도
-                            <span className="rating-stars">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                <span
-                                    key={star}
-                                    className={`star ${rating >= star ? 'filled' : ''}`}
-                                    onClick={() => setRating(star)}
-                                >
-                                    ★
+                        {!showGraph && (
+                            <div className="action-button-container">
+                                <span className="action-button-left">
+                                    정확도 {currentAnswerType === 'local' ? qa.localConfidence : qa.globalConfidence}%
                                 </span>
-                                ))}
-                            </span>
-                            </span>
-                        </button>
-                        </div>
-                    )}
-
-                    {qa.relatedQuestionsVisible && !showGraph && (
-                        <div className="related-questions">
-                        <div className="related-questions-header">관련 질문</div>
-                        {isLoadingRelated ? (
-                            <p className="loading">로딩 중...</p>
-                        ) : (
-                            <table className="related-questions-table">
-                            <tbody>
-                                {relatedQuestions.map((question, i) => (
-                                <tr key={i}>
-                                    <td>{question}</td>
-                                </tr>
-                                ))}
-                            </tbody>
-                            </table>
+                            </div>
                         )}
-                        </div>
-                    )}
-                    </div>
 
+                        {!showGraph && (
+                            <div className="graph-button-wrapper">
+                                <button 
+                                    type="button" 
+                                    className="action-button-left" 
+                                    onClick={(e) => handleShowGraph(e, index, currentAnswerType)}
+                                >
+                                    <span className="button-icon">지식 그래프 보기 ⚡</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 근거 문서 버튼 추가 */}
+                        {!showGraph && qa.actionButtonVisible && (
+                            <div className="source-docs-button-wrapper">
+                                <button 
+                                    type="button" 
+                                    className={`action-button-left source-docs-button ${showDocument ? 'active' : ''}`}
+                                    onClick={() => handleShowDocument(index)}
+                                >
+                                    <span className="button-icon">
+                                        <FileText size={14} className="mr-1" />
+                                        {qa.isDocumentLoading ? '로딩 중...' : '근거 문서 보기'}
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+
+                        {!showGraph && (
+                            <div className="satisfaction-button-container">
+                                <button type="button" className="action-button-left">
+                                    <span className="button-icon">
+                                        만족도
+                                        <span className="rating-stars">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                            <span
+                                                key={star}
+                                                className={`star ${rating >= star ? 'filled' : ''}`}
+                                                onClick={() => setRating(star)}
+                                            >
+                                                ★
+                                            </span>
+                                            ))}
+                                        </span>
+                                    </span>
+                                </button>
+                            </div>
+                        )}
+
+                        {qa.relatedQuestionsVisible && !showGraph && (
+                            <div className="related-questions">
+                                <div className="related-questions-header">관련 질문</div>
+                                {isLoadingRelated ? (
+                                    <p className="loading">로딩 중...</p>
+                                ) : (
+                                    <table className="related-questions-table">
+                                        <tbody>
+                                            {relatedQuestions.map((question, i) => (
+                                            <tr key={i}>
+                                                <td>{question}</td>
+                                            </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
-            
         </div>
     );
 };
