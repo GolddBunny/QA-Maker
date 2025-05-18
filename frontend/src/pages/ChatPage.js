@@ -36,7 +36,7 @@ function ChatPage() {
     const [currentMessageIndex, setCurrentMessageIndex] = useState(null); // 현재 선택된 메시지 인덱스
     const [currentQaId, setCurrentQaId] = useState(null); // 현재 QA ID 추가
 
-
+    const chatEndRef = useRef(null);
     const [message, setMessage] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
     const [urlInput, setUrlInput] = useState('');
@@ -47,6 +47,11 @@ function ChatPage() {
     
     const fileInputRef = useRef(null);
 
+    const scrollToBottom = () => {
+        if (chatEndRef.current) {
+            chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    };
     // 페이지 로드 시 초기 질문 또는 이전 대화 로드
     useEffect(() => {
         if (!currentPageId) {
@@ -57,6 +62,7 @@ function ChatPage() {
                 setCurrentPageId(storedPageId);
             }
         }
+        scrollToBottom();
         const params = new URLSearchParams(location.search);
         const initialQuestion = params.get("question");
         const qaId = params.get("qaId");
@@ -179,6 +185,7 @@ function ChatPage() {
         
         // 새 질문-답변 추가
         setQaList((prevQaList) => [...prevQaList, newQaEntry]);
+        scrollToBottom();
         setNewQuestion(""); // 질문 입력란 초기화
         
         // 각 방식별 서버 요청 함수
@@ -493,6 +500,7 @@ function ChatPage() {
         if (newQuestion.trim() && !isLoading) {
             sendQuestion(newQuestion.trim());
         }
+        
     };
       // 파일 선택 처리 함수
     const handleFileChange = (e) => {
@@ -704,6 +712,7 @@ function ChatPage() {
                             showDocument={showDocument && currentMessageIndex === index}
                         />
                     ))}
+                    <div ref={chatEndRef} />
                 </div>
 
                 <ChatInput 

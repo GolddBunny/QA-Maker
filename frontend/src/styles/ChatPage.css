@@ -10,6 +10,11 @@
   margin-left: 00px; /* 사이드바 너비 */
 }
 
+.chat-container {
+  height: calc(100vh - 130px); /* 필요 시 전체 높이 조절 */
+  overflow-y: auto;
+  max-height: calc(100vh - 130px);
+}
 
 
 /* 개별 메시지 박스 */
@@ -273,7 +278,6 @@
   align-items: flex-start;
   padding: 15px 12px;
   transition: all 0.3s ease;
-  overflow: hidden;
   min-height: 80px;
   overflow-y: auto;
 }
@@ -383,7 +387,6 @@
   color: #ff7a28;
   font-weight: 500;
 }
-
 
 /* 그래프 보일 때, 질문과 입력창을 왼쪽으로 밀기 */
 .chat-container.shift-left {
