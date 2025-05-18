@@ -370,6 +370,16 @@ h1 span:nth-child(12) { animation-delay: 1.2s; }
   width: 300px;
   transition: border-color 0.2s;
 }
+
+.url-input-main {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #a58dd0;
+  border-radius: 6px;
+  width: 300px;
+  transition: border-color 0.2s;
+}
+
 .url-input-main:focus {
   border-color: #8b71c4;
 }

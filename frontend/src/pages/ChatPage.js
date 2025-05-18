@@ -699,6 +699,7 @@ function ChatPage() {
                             qa={qa} 
                             index={index} 
                             handleShowGraph={handleShowGraph} 
+                            showGraph={showGraph}
                             handleShowDocument={handleShowDocument}
                             showDocument={showDocument && currentMessageIndex === index}
                         />
@@ -722,7 +723,7 @@ function ChatPage() {
                 accept=".pdf,.doc,.docx,.txt"
                 />
                 {showUrlInput && (
-                    <div className="url-input-box-main">
+                    <div className="url-input-box-chat">
                         <input
                         type="text"
                         placeholder="URL을 입력하세요"
