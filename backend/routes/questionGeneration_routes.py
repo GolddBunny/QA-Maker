@@ -76,101 +76,104 @@ def generate_related_questions():
             db_dir=db_dir,
         )
 
-        token_encoder = tiktoken.encoding_for_model(llm_model)
+        async def generate_all():
+            token_encoder = tiktoken.encoding_for_model(llm_model)
 
-        chat_config = LanguageModelConfig(
-            api_key=api_key,
-            type=ModelType.OpenAIChat,
-            model=llm_model,
-            max_retries=20,
-        )
-        chat_model = ModelManager().get_or_create_chat_model(
-            name="local_search",
-            model_type=ModelType.OpenAIChat,
-            config=chat_config,
-        )
+            chat_config = LanguageModelConfig(
+                api_key=api_key,
+                type=ModelType.OpenAIChat,
+                model=llm_model,
+                max_retries=20,
+            )
+            chat_model = ModelManager().get_or_create_chat_model(
+                name="local_search",
+                model_type=ModelType.OpenAIChat,
+                config=chat_config,
+            )
 
-        embedding_config = LanguageModelConfig(
-            api_key=api_key,
-            type=ModelType.OpenAIEmbedding,
-            model=embedding_model,
-            max_retries=20,
-        )
-        text_embedder = ModelManager().get_or_create_embedding_model(
-            name="local_search_embedding",
-            model_type=ModelType.OpenAIEmbedding,
-            config=embedding_config,
-        )
+            embedding_config = LanguageModelConfig(
+                api_key=api_key,
+                type=ModelType.OpenAIEmbedding,
+                model=embedding_model,
+                max_retries=20,
+            )
+            text_embedder = ModelManager().get_or_create_embedding_model(
+                name="local_search_embedding",
+                model_type=ModelType.OpenAIEmbedding,
+                config=embedding_config,
+            )
 
-        context_builder = LocalSearchMixedContext(
-            community_reports=reports,
-            text_units=text_units,
-            entities=entities,
-            relationships=relationships,
-            covariates=None,
-            entity_text_embeddings=description_embedding_store,
-            embedding_vectorstore_key=EntityVectorStoreKey.ID,
-            text_embedder=text_embedder,
-            token_encoder=token_encoder,
-        )
+            context_builder = LocalSearchMixedContext(
+                community_reports=reports,
+                text_units=text_units,
+                entities=entities,
+                relationships=relationships,
+                covariates=None,
+                entity_text_embeddings=description_embedding_store,
+                embedding_vectorstore_key=EntityVectorStoreKey.ID,
+                text_embedder=text_embedder,
+                token_encoder=token_encoder,
+            )
 
-        local_context_params = {
-            "text_unit_prop": 0.5,
-            "community_prop": 0.1,
-            "conversation_history_max_turns": 5,
-            "conversation_history_user_turns_only": True,
-            "top_k_mapped_entities": 10,
-            "top_k_relationships": 10,
-            "include_entity_rank": True,
-            "include_relationship_weight": True,
-            "include_community_rank": False,
-            "return_candidate_context": False,
-            "embedding_vectorstore_key": EntityVectorStoreKey.ID,
-            "max_tokens": 12000,
-            "temperature": 0.5,
-        }
+            local_context_params = {
+                "text_unit_prop": 0.5,
+                "community_prop": 0.1,
+                "conversation_history_max_turns": 5,
+                "conversation_history_user_turns_only": True,
+                "top_k_mapped_entities": 10,
+                "top_k_relationships": 10,
+                "include_entity_rank": True,
+                "include_relationship_weight": True,
+                "include_community_rank": False,
+                "return_candidate_context": False,
+                "embedding_vectorstore_key": EntityVectorStoreKey.ID,
+                "max_tokens": 12000,
+                "temperature": 0.5,
+            }
 
-        custom_system_prompt = """
-        ---Role---
+            custom_system_prompt = """
+            ---Role---
 
-        You are a helpful assistant generating a **diverse** bulleted list of {question_count} follow-up questions based on a user's question and the available data. 
-        Your responses must be in Korean.
+            You are a helpful assistant generating a **diverse** bulleted list of {question_count} follow-up questions based on a user's question and the available data. 
+            Your responses must be in Korean.
 
-        ---Data tables---
+            ---Data tables---
 
-        {context_data}
+            {context_data}
 
-        ---Goal---
+            ---Goal---
 
-        Given the example question(s) provided by the user, generate a bulleted list of diverse, relevant candidate questions. Use - marks as bullet points.
+            Given the example question(s) provided by the user, generate a bulleted list of diverse, relevant candidate questions. Use - marks as bullet points.
 
-        Guidelines:
-        - Do NOT repeat the same question using different wording.
-        - Explore related **topics, entities, attributes, or policies** that are also covered in the data.
-        - Vary the focus of each question (e.g., graduation criteria → credit, time, departments, exceptions, etc.).
-        - Preferably, cover **other departments**, **different graduation requirements**, **credit details**, **internship conditions**, etc.
-        - Do not refer to data tables or technical terms directly.
-        - Stay within the scope of the data content.
+            Guidelines:
+            - Do NOT repeat the same question using different wording.
+            - Explore related **topics, entities, attributes, or policies** that are also covered in the data.
+            - Vary the focus of each question (e.g., graduation criteria → credit, time, departments, exceptions, etc.).
+            - Preferably, cover **other departments**, **different graduation requirements**, **credit details**, **internship conditions**, etc.
+            - Do not refer to data tables or technical terms directly.
+            - Stay within the scope of the data content.
 
-        Your responses must be in Korean.
+            Your responses must be in Korean.
 
-        ---Example questions---
-        """
+            ---Example questions---
+            """
 
-        question_generator = LocalQuestionGen(
-            model=chat_model,
-            context_builder=context_builder,
-            token_encoder=token_encoder,
-            context_builder_params=local_context_params,
-            system_prompt=custom_system_prompt,
-        )
+            question_generator = LocalQuestionGen(
+                model=chat_model,
+                context_builder=context_builder,
+                token_encoder=token_encoder,
+                context_builder_params=local_context_params,
+                system_prompt=custom_system_prompt,
+            )
 
-        # 안전하게 기존 루프 재사용 또는 새 루프 생성
-        result = run_async(question_generator.agenerate(
-            question_history=[question],
-            context_data=None,
-            question_count=5
-        ))
+            return await question_generator.agenerate(
+                question_history=[question],
+                context_data=None,
+                question_count=3
+            )
+
+        # 실행
+        result = run_async(generate_all())
 
         return jsonify({"response": result.response})
 

@@ -30,17 +30,7 @@
   cursor: pointer;
   z-index: 200;
 }
-/* 채팅페이지 사이드바 닫기 버튼*/
-.sidebar-close-btnX {
-  position: absolute;
-  top: 8px;
-  right: 15px;
-  font-size: 28px;
-  font-weight: 500;
-  color: #242424;
-  cursor: pointer;
-  z-index: 999;
-}
+
 .sidebar.open {
   left: 0;
 }
@@ -144,40 +134,54 @@
 }
 
 .sidebar-header {
-  background-color: #c5b1ec;
-  border-bottom: 3px solid #b4a3ce;
-  text-align: center;
+  background-color: #cabaea;
+  border-bottom: 3px solid #bdb0d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 30px 0px;
 }
 
 .sidebar-header h3 {
   font-size: 20px;
   font-weight: 600;
   color: #242424;
-  margin: 0px;
-  padding: 15px 0px;
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sidebar-close-btnX {
+  font-size: 28px;
+  font-weight: 500;
+  color: #242424;
+  cursor: pointer;
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
 }
 
 .qa-history-list {
   margin-top: -2px;
 }
 
-.qa-date-group {
-  margin-bottom: 10px;
-}
 
 .qa-date-label {
   background-color: #ffffff;
   border-bottom: 1px solid #cfcece;
   padding: 13px 10px;
-  font-weight: bold;
-  font-size: 17px;
-  color: #555;
+  font-weight: 800;
+  font-size: 18px;
+  color: #323232;
 }
 
 .qa-history-item {
-  background-color: #E6D9FF;
-  margin: 0;
-  padding: 12px 10px;
+  background-color: #eae2f9;
+  padding: 10px 10px;
   border-bottom: 1px solid #d8c7f2;
   font-size: 14px;
   font-weight: 500;
@@ -187,12 +191,12 @@
 }
 
 .qa-history-item:hover {
-  background-color: #d9caf9;
+  background-color: #cabaea;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
 }
 
 .qa-history-item.active {
-  background-color: #c5b1ec;
+  background-color: #cabaea;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
 }
 

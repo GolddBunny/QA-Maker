@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const ChatMessage = ({ qa, index, handleShowGraph }) => {
+const ChatMessage = ({ qa, index, handleShowGraph, showGraph }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
+    const[rating, setRating] = useState(0);
     
     // 현재 보고 있는 답변 가져오기
     const getCurrentAnswer = () => {
@@ -146,78 +147,101 @@ const ChatMessage = ({ qa, index, handleShowGraph }) => {
     return (
         <div className="qa-box">
             <div className="question-box">{qa.question}</div>
+
             {qa.answer && (
-                <div className="answer-box">
-                    <div className="flex-row">
-                        <div className="nav-button-container">
-                            <button
+                <div className="answer-and-action">
+                    <div className="answer-box">
+                        <div className="flex-row">
+                            <div className="nav-button-container">
+                                <button
                                 type="button"
                                 className={`nav-button ${currentAnswerType === 'local' ? 'active' : ''}`}
                                 onClick={switchToLocal}
-                                title="로컬 검색 결과 보기"
-                            >
+                                title="첫번째 검색 결과 보기"
+                                >
                                 <ChevronLeft />
-                            </button>
-                        </div>
-                        
-                        <span 
-                            className="answer-text"
-                            dangerouslySetInnerHTML={renderAnswer()}
-                        />
-                        
-                        <div className="nav-button-container">
-                            <button
+                                </button>
+                            </div>
+
+                            <span
+                                className="answer-text"
+                                dangerouslySetInnerHTML={renderAnswer()}
+                            />
+
+                            <div className="nav-button-container">
+                                <button
                                 type="button"
                                 className={`nav-button ${currentAnswerType === 'global' ? 'active' : ''}`}
                                 onClick={switchToGlobal}
-                                title="글로벌 검색 결과 보기"
-                            >
+                                title="두번째 검색 결과 보기"
+                                >
                                 <ChevronRight />
-                            </button>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
-                    {qa.actionButtonVisible && (
+                    <div className="answer-side-panel">
+                    {!showGraph && (
                         <div className="action-button-container">
-                            <button
-                                type="button"
-                                className="action-button-left"
-                                onClick={(e) => handleShowGraph(e, index, currentAnswerType)}
-                            >
-                                <span className="button-icon">
-                                    <img src="assets/graph.svg" alt="지식 그래프 아이콘" />
-                                </span>
-                                <div className="tooltip"><span className="tooltiptext">지식 그래프 보기</span></div>
-                            </button>
-                            <div className="action-button-right">
-                                <span className="button-text">
-                                    {currentAnswerType === 'local' ? qa.localConfidence || qa.confidence : qa.globalConfidence || 0}%
-                                </span>
-                                <div className="tooltip"><span className="tooltiptext">답변 정확도 보기</span></div>
-                            </div>
+                        <span className="action-button-left">
+                            정확도 {currentAnswerType === 'local' ? qa.localConfidence : qa.globalConfidence}%
+                        </span>
                         </div>
                     )}
-                </div>
-            )}
-            {qa.actionButtonVisible && qa.relatedQuestionsVisible && (
-                <div className="related-questions">
-                    <h4>관련 질문</h4>
-                    {isLoadingRelated ? (
-                        <p>로딩 중...</p>
-                    ) : (
-                        <table className="related-questions-table">
+
+                    {!showGraph && (
+                        <div className="graph-button-wrapper">
+                        <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
+                            <span className="button-icon">지식 그래프 보기 ⚡</span>
+                        </button>
+                        </div>
+                    )}
+
+                    {!showGraph && (
+                        <div className="satisfaction-button-container">
+                        <button type="button" className="action-button-left">
+                            <span className="button-icon">
+                            만족도
+                            <span className="rating-stars">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                    key={star}
+                                    className={`star ${rating >= star ? 'filled' : ''}`}
+                                    onClick={() => setRating(star)}
+                                >
+                                    ★
+                                </span>
+                                ))}
+                            </span>
+                            </span>
+                        </button>
+                        </div>
+                    )}
+
+                    {qa.relatedQuestionsVisible && !showGraph && (
+                        <div className="related-questions">
+                        <div className="related-questions-header">관련 질문</div>
+                        {isLoadingRelated ? (
+                            <p className="loading">로딩 중...</p>
+                        ) : (
+                            <table className="related-questions-table">
                             <tbody>
                                 {relatedQuestions.map((question, i) => (
-                                    <tr key={i}>
-                                        <td>{i + 1}</td>
-                                        <td>{question}</td>
-                                    </tr>
+                                <tr key={i}>
+                                    <td>{question}</td>
+                                </tr>
                                 ))}
                             </tbody>
-                        </table>
+                            </table>
+                        )}
+                        </div>
                     )}
+                    </div>
+
                 </div>
             )}
+            
         </div>
     );
 };

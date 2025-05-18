@@ -61,16 +61,17 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
                 </div>
                 )}
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-            {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
-            {isSidebarOpen && (
-                <div className="sidebar-close-btnX" onClick={toggleSidebar}>
-                x
-                </div>
-            )}
+            
             
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <h3>대화 기록</h3>
+                    {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
+                    {isSidebarOpen && (
+                        <div className="sidebar-close-btnX" onClick={toggleSidebar}>
+                        x
+                        </div>
+                    )}
                 </div>
                 
                 <div className="qa-history-list">
