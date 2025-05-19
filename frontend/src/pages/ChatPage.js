@@ -338,8 +338,8 @@ function ChatPage() {
             }
             
             // 최종 응답 정보 추출
-            const localAnswer = localData?.response || "서버에서 로컬 응답을 받지 못했습니다.";
-            const globalAnswer = globalData?.response || "서버에서 글로벌 응답을 받지 못했습니다.";
+            const localAnswer = localData?.response || "응답을 받지 못했습니다.";
+            const globalAnswer = globalData?.response || "응답을 받지 못했습니다.";
             
             // 나머지 데이터 가져오기
             let headlinesList = [];
@@ -469,6 +469,7 @@ function ChatPage() {
                 headlines: headlines || [], // 근거 문서 목록 추가
                 selectedHeadline: headlines && headlines.length > 0 ? headlines[0] : '', // 기본 선택 근거 문서
                 sources: sources || [], // 소스 URL 정보 추가
+                
             };
             return newList;
         });
