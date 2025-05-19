@@ -158,6 +158,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
             <div className="question-box">{qa.question}</div>
 
             {qa.answer && (
+                <>
                 <div className="answer-and-action">
                     <div className="answer-box">
                         <div className="flex-row">
@@ -189,14 +190,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                             </div>
                         </div>
                     </div>
-                    <button 
-                        type="button" 
-                        className={`source-docs-button ${showDocument ? 'active' : ''}`}
-                        onClick={() => handleShowDocument(index)}
-                    >
-                        <FileText size={14} className="mr-1" />
-                        {qa.isDocumentLoading ? '로딩 중...' : '근거 문서'}
-                    </button>
+
                     
                     <div className="answer-side-panel">
                     {!showGraph && (
@@ -243,20 +237,32 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                             <p className="loading">로딩 중...</p>
                         ) : (
                             <table className="related-questions-table">
-                            <tbody>
-                                {relatedQuestions.map((question, i) => (
-                                <tr key={i}>
-                                    <td>{question}</td>
-                                </tr>
-                                ))}
-                            </tbody>
+                                <tbody>
+                                    {qa.relatedQuestions && qa.relatedQuestions.length > 0 ? (
+                                        qa.relatedQuestions.map((question, i) => (
+                                            <tr key={i}>
+                                                <td>{question}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr><td>관련 질문이 없습니다.</td></tr>
+                                    )}
+                                </tbody>
                             </table>
                         )}
                         </div>
                     )}
                     </div>
-
                 </div>
+                <button 
+                    type="button" 
+                    className={`source-docs-button ${showDocument ? 'active' : ''}`}
+                    onClick={() => handleShowDocument(index)}
+                >
+                    <FileText size={14} className="mr-1" />
+                    {qa.isDocumentLoading ? '로딩 중...' : '근거 문서'}
+                </button>
+                </>
             )}
             <div ref={chatEndRef} />
         </div>
