@@ -4,9 +4,7 @@ import pandas as pd
 import tiktoken
 import asyncio
 from dotenv import load_dotenv
-import nest_asyncio  
-nest_asyncio.apply() 
-
+from concurrent.futures import ThreadPoolExecutor
 from graphrag.config.enums import ModelType
 from graphrag.config.models.language_model_config import LanguageModelConfig
 from graphrag.language_model.manager import ModelManager
@@ -21,6 +19,10 @@ from graphrag.query.question_gen.local_gen import LocalQuestionGen
 from graphrag.query.structured_search.local_search.mixed_context import LocalSearchMixedContext
 from graphrag.vector_stores.lancedb import LanceDBVectorStore
 
+from routes.query_routes import run_async
+
+
+thread_pool = ThreadPoolExecutor(max_workers=5)
 question_bp = Blueprint('questionGeneration', __name__)
 
 load_dotenv()
@@ -29,19 +31,6 @@ api_key = os.getenv("GRAPHRAG_API_KEY")
 llm_model = "gpt-4o-mini"
 embedding_model = "text-embedding-3-small"
 
-def run_async(coro):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
-
-    if loop and loop.is_running():
-        import concurrent.futures
-        future = asyncio.run_coroutine_threadsafe(coro, loop)
-        return future.result()
-    else:
-        return asyncio.run(coro)
-    
 @question_bp.route('/generate-related-questions', methods=['POST'])
 def generate_related_questions():
     data = request.get_json()
@@ -76,105 +65,112 @@ def generate_related_questions():
             db_dir=db_dir,
         )
 
-        async def generate_all():
-            token_encoder = tiktoken.encoding_for_model(llm_model)
+        # 모델 설정
+        token_encoder = tiktoken.encoding_for_model(llm_model)
 
-            chat_config = LanguageModelConfig(
-                api_key=api_key,
-                type=ModelType.OpenAIChat,
-                model=llm_model,
-                max_retries=20,
-            )
-            chat_model = ModelManager().get_or_create_chat_model(
-                name="local_search",
-                model_type=ModelType.OpenAIChat,
-                config=chat_config,
-            )
+        chat_config = LanguageModelConfig(
+            api_key=api_key,
+            type=ModelType.OpenAIChat,
+            model=llm_model,
+            max_retries=20,
+        )
+        chat_model = ModelManager().get_or_create_chat_model(
+            name="local_search",
+            model_type=ModelType.OpenAIChat,
+            config=chat_config,
+        )
 
-            embedding_config = LanguageModelConfig(
-                api_key=api_key,
-                type=ModelType.OpenAIEmbedding,
-                model=embedding_model,
-                max_retries=20,
-            )
-            text_embedder = ModelManager().get_or_create_embedding_model(
-                name="local_search_embedding",
-                model_type=ModelType.OpenAIEmbedding,
-                config=embedding_config,
-            )
+        embedding_config = LanguageModelConfig(
+            api_key=api_key,
+            type=ModelType.OpenAIEmbedding,
+            model=embedding_model,
+            max_retries=20,
+        )
+        text_embedder = ModelManager().get_or_create_embedding_model(
+            name="local_search_embedding",
+            model_type=ModelType.OpenAIEmbedding,
+            config=embedding_config,
+        )
 
-            context_builder = LocalSearchMixedContext(
-                community_reports=reports,
-                text_units=text_units,
-                entities=entities,
-                relationships=relationships,
-                covariates=None,
-                entity_text_embeddings=description_embedding_store,
-                embedding_vectorstore_key=EntityVectorStoreKey.ID,
-                text_embedder=text_embedder,
-                token_encoder=token_encoder,
-            )
+        context_builder = LocalSearchMixedContext(
+            community_reports=reports,
+            text_units=text_units,
+            entities=entities,
+            relationships=relationships,
+            covariates=None,
+            entity_text_embeddings=description_embedding_store,
+            embedding_vectorstore_key=EntityVectorStoreKey.ID,
+            text_embedder=text_embedder,
+            token_encoder=token_encoder,
+        )
 
-            local_context_params = {
-                "text_unit_prop": 0.5,
-                "community_prop": 0.1,
-                "conversation_history_max_turns": 5,
-                "conversation_history_user_turns_only": True,
-                "top_k_mapped_entities": 10,
-                "top_k_relationships": 10,
-                "include_entity_rank": True,
-                "include_relationship_weight": True,
-                "include_community_rank": False,
-                "return_candidate_context": False,
-                "embedding_vectorstore_key": EntityVectorStoreKey.ID,
-                "max_tokens": 12000,
-                "temperature": 0.5,
-            }
+        local_context_params = {
+            "text_unit_prop": 0.5,
+            "community_prop": 0.1,
+            "conversation_history_max_turns": 5,
+            "conversation_history_user_turns_only": True,
+            "top_k_mapped_entities": 10,
+            "top_k_relationships": 10,
+            "include_entity_rank": True,
+            "include_relationship_weight": True,
+            "include_community_rank": False,
+            "return_candidate_context": False,
+            "embedding_vectorstore_key": EntityVectorStoreKey.ID,
+            "max_tokens": 12000,
+            "temperature": 0.5,
+        }
 
-            custom_system_prompt = """
-            ---Role---
+        custom_system_prompt = """
+        ---Role---
 
-            You are a helpful assistant generating a **diverse** bulleted list of {question_count} follow-up questions based on a user's question and the available data. 
-            Your responses must be in Korean.
+        You are a helpful assistant generating a **diverse** bulleted list of {question_count} follow-up questions based on a user's question and the available data. 
+        Your responses must be in Korean.
 
-            ---Data tables---
+        ---Data tables---
 
-            {context_data}
+        {context_data}
 
-            ---Goal---
+        ---Goal---
 
-            Given the example question(s) provided by the user, generate a bulleted list of diverse, relevant candidate questions. Use - marks as bullet points.
+        Given the example question(s) provided by the user, generate a bulleted list of diverse, relevant candidate questions. Use - marks as bullet points.
 
-            Guidelines:
-            - Do NOT repeat the same question using different wording.
-            - Explore related **topics, entities, attributes, or policies** that are also covered in the data.
-            - Vary the focus of each question (e.g., graduation criteria → credit, time, departments, exceptions, etc.).
-            - Preferably, cover **other departments**, **different graduation requirements**, **credit details**, **internship conditions**, etc.
-            - Do not refer to data tables or technical terms directly.
-            - Stay within the scope of the data content.
+        Guidelines:
+        - Do NOT repeat the same question using different wording.
+        - Explore related **topics, entities, attributes, or policies** that are also covered in the data.
+        - Vary the focus of each question (e.g., graduation criteria → credit, time, departments, exceptions, etc.).
+        - Preferably, cover **other departments**, **different graduation requirements**, **credit details**, **internship conditions**, etc.
+        - Do not refer to data tables or technical terms directly.
+        - Stay within the scope of the data content.
 
-            Your responses must be in Korean.
+        Your responses must be in Korean.
 
-            ---Example questions---
-            """
+        ---Example questions---
+        """
 
-            question_generator = LocalQuestionGen(
-                model=chat_model,
-                context_builder=context_builder,
-                token_encoder=token_encoder,
-                context_builder_params=local_context_params,
-                system_prompt=custom_system_prompt,
-            )
+        question_generator = LocalQuestionGen(
+            model=chat_model,
+            context_builder=context_builder,
+            token_encoder=token_encoder,
+            context_builder_params=local_context_params,
+            system_prompt=custom_system_prompt,
+        )
 
-            return await question_generator.agenerate(
-                question_history=[question],
-                context_data=None,
-                question_count=3
-            )
+        def run_generation():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(question_generator.generate(
+                    question_history=[question],
+                    context_data=None,
+                    question_count=3
+                ))
+            finally:
+                loop.close()
+        
+        # 별도 스레드에서 실행
+        result = thread_pool.submit(run_generation).result()
 
-        # 실행
-        result = run_async(generate_all())
-
+        print("Generated questions:", result.response)
         return jsonify({"response": result.response})
 
     except Exception as e:

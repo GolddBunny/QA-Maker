@@ -617,3 +617,20 @@
 .source-url:hover {
       text-decoration: underline;
 }
+
+.source-docs-button {
+  background-color: white;
+  margin-top: -80px;
+  border: 1px solid var(--light-purple);
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+}
