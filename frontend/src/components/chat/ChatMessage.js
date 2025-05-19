@@ -92,9 +92,37 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         setCurrentAnswerType('global');
     };
 
-    // 답변 HTML로 렌더링
+    const wrapTextWithSpans = (text) => {
+        return (
+            <div className="bouncing-text">
+                {text.split('').map((char, i) => (
+                    <span key={i} style={{ animationDelay: `${i * 0.1}s` }}>
+                        {char === ' ' ? '\u00A0' : char}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
+    // 답변이 로딩 중인지 확인하는 함수 
+    const isLoadingAnswer = () => {
+        const currentAnswer = currentAnswerType === 'local' 
+            ? qa.localAnswer || qa.answer
+            : qa.globalAnswer;
+        
+        return currentAnswer === "답변을 불러오는 중...";
+    };
+
+    // 답변 HTML로 렌더링하는 함수
     const renderAnswer = () => {
-        return { __html: getCurrentAnswer() };
+        const answer = getCurrentAnswer();
+        
+        // "답변을 불러오는 중..." 상태인 경우 바운스 애니메이션을 위해 null 반환
+        if (answer === "답변을 불러오는 중...") {
+            return null;
+        }
+        
+        return { __html: answer };
     };
 
     const scrollToBottom = () => {
@@ -173,10 +201,13 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                                 </button>
                             </div>
 
-                            <span
-                                className="answer-text"
-                                dangerouslySetInnerHTML={renderAnswer()}
-                            />
+                            <span className="answer-text">
+                                {isLoadingAnswer() ? (
+                                    wrapTextWithSpans("답변을 불러오는 중...")
+                                ) : (
+                                    <span dangerouslySetInnerHTML={renderAnswer()} />
+                                )}
+                            </span>
 
                             <div className="nav-button-container">
                                 <button
@@ -232,24 +263,24 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
 
                     {qa.relatedQuestionsVisible && !showGraph && (
                         <div className="related-questions">
-                        <div className="related-questions-header">관련 질문</div>
-                        {isLoadingRelated ? (
-                            <p className="loading">로딩 중...</p>
-                        ) : (
-                            <table className="related-questions-table">
-                                <tbody>
-                                    {qa.relatedQuestions && qa.relatedQuestions.length > 0 ? (
+                            <div className="related-questions-header">💁🏻‍♀️ 관련 질문</div>
+                            {isLoadingRelated ? (
+                                <p className="loading">
+                                    {wrapTextWithSpans("관련 질문 찾는 중")}
+                                </p>
+                            ) : (
+                                <div className="related-questions-table">
+                                    {Array.isArray(qa.relatedQuestions) && qa.relatedQuestions.length > 0 ? (
                                         qa.relatedQuestions.map((question, i) => (
-                                            <tr key={i}>
-                                                <td>{question}</td>
-                                            </tr>
+                                            <div key={i} className="related-question-item">
+                                                {question}
+                                            </div>
                                         ))
                                     ) : (
-                                        <tr><td>관련 질문이 없습니다.</td></tr>
+                                        <div className="related-question-item">관련 질문이 없습니다.</div>
                                     )}
-                                </tbody>
-                            </table>
-                        )}
+                                </div>
+                            )}
                         </div>
                     )}
                     </div>
