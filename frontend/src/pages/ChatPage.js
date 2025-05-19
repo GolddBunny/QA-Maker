@@ -47,7 +47,7 @@ function ChatPage() {
     
     const fileInputRef = useRef(null);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = () => { //새 질문 시 아래로 스크롤
         if (chatEndRef.current) {
             chatEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
@@ -171,13 +171,14 @@ function ChatPage() {
         const newQaEntry = { 
             question: questionText,
             answer: "답변을 불러오는 중...",
-            localAnswer: "로컬 답변을 불러오는 중...",
-            globalAnswer: "글로벌 답변을 불러오는 중...",
+            localAnswer: "답변을 불러오는 중...",
+            globalAnswer: "답변을 불러오는 중...",
             confidence: null,
             localConfidence: null,
             globalConfidence: null,
             actionButtonVisible: false, // 그래프 버튼 숨김
             relatedQuestionsVisible: false, // 관련 질문 숨김
+            relatedQuestions: [], //관련 질문 배열
             headlines: headlines || [], // 근거 문서 목록
             selectedHeadline: headlines && headlines.length > 0 ? headlines[0] : '', // 기본 선택 근거 문서
             sources: [] // 소스 URL 정보
@@ -189,18 +190,19 @@ function ChatPage() {
         setNewQuestion(""); // 질문 입력란 초기화
         
         // 각 방식별 서버 요청 함수
-        const fetchLocalResponse = () => {
-            return fetch("http://localhost:5000/run-local-query", {
+        const fetchLocalResponse = async () => {
+            const response = await fetch("http://localhost:5000/run-local-query", {
                 method: "POST",
-                headers: { 
+                headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
                 body: JSON.stringify({
                     page_id: currentPageId,
-                    query: questionText  // 변경됨: message -> query
+                    query: questionText
                 })
-            }).then(response => response.json());
+            });
+            return await response.json();
         };
         
         const fetchGlobalResponse = () => {
@@ -238,49 +240,150 @@ function ChatPage() {
             }
         };
 
+        // 관련 질문 API 호출 함수
+        const fetchRelatedQuestions = async () => {
+            try {
+                const pageId = localStorage.getItem("currentPageId") || currentPageId;
+                if (!pageId || !questionText) {
+                    console.log("페이지 ID 또는 질문 텍스트가 없음");
+                    return [];
+                }
+
+                console.log("관련 질문 요청 시작:", pageId, questionText);
+                const response = await fetch("http://localhost:5000/generate-related-questions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ page_id: pageId, question: questionText })
+                });
+
+                console.log("관련 질문 응답 상태:", response.status);
+                
+                if (!response.ok) {
+                    console.error("관련 질문 API 오류:", response.status);
+                    return [];
+                }
+
+                const data = await response.json();
+                console.log("관련 질문 응답 데이터:", data);
+                
+                let questions = [];
+
+                if (typeof data.response === "string") {
+                    questions = data.response
+                        .split(/\r?\n/)
+                        .filter(line => line.trim().startsWith("-"))
+                        .map(line => line.replace(/^-\s*/, "").trim());
+                } else if (Array.isArray(data.response)) {
+                    questions = data.response.map(q => q.trim()).filter(Boolean);
+                }
+
+                console.log("처리된 관련 질문:", questions);
+                return questions;
+            } catch (err) {
+                console.error("관련 질문 요청 에러 발생:", err);
+                return [];
+            }
+        };
+        
+        // 부분 응답 업데이트를 위한 새 함수 추가
+        const updatePartialAnswer = (type, answer) => {
+            setQaList(prevQaList => {
+                const updatedList = [...prevQaList];
+                const lastIndex = updatedList.length - 1;
+                
+                if (type === 'local') {
+                    updatedList[lastIndex].localAnswer = answer;
+                } else if (type === 'global') {
+                    updatedList[lastIndex].globalAnswer = answer;
+                }
+                
+                // 기본 답변 업데이트
+                updatedList[lastIndex].answer = answer;
+                
+                return updatedList;
+            });
+        };
+
         try {
-            // 세 요청을 병렬로 실행
-            const [localData, globalData, headlinesList] = await Promise.all([
-                fetchLocalResponse(),
-                fetchGlobalResponse(),
-                fetchHeadlinesForAnswer()
-            ]);
+            // 로컬 응답과 글로벌 응답을 먼저 가져오기
+            console.log("로컬 및 글로벌 응답 요청 시작");
+            let localData, globalData;
             
-            // 응답 구조 확인 및 처리
-            console.log("로컬 응답:", localData);
-            console.log("글로벌 응답:", globalData);
-            console.log("근거 문서 목록:", headlinesList);
+            try {
+                localData = await fetchLocalResponse();
+                console.log("로컬 응답 받음:", localData);
+                
+                // 로컬 응답이 성공적으로 도착하면 즉시 UI 업데이트
+                if (localData && localData.response) {
+                    const localAnswer = localData.response;
+                    updatePartialAnswer('local', localAnswer);
+                }
+            } catch (localError) {
+                console.error("로컬 응답 요청 실패:", localError);
+                localData = { response: "로컬 응답을 받지 못했습니다." };
+            }
             
-            // 각 응답에서 올바른 키로 데이터 추출
-            const localAnswer = localData.response || "서버에서 로컬 응답을 받지 못했습니다.";
-            const globalAnswer = globalData.response || "서버에서 글로벌 응답을 받지 못했습니다.";
-            // CSV 파일에서 엔티티와 관계 데이터가 저장되므로 직접 엔티티/관계 ID 추출은 불필요
-            const newEntities = "";
-            const newRelationships = "";
+            try {
+                globalData = await fetchGlobalResponse();
+                console.log("글로벌 응답 받음:", globalData);
+                
+                // 글로벌 응답이 성공적으로 도착하면 즉시 UI 업데이트
+                if (globalData && globalData.response) {
+                    const globalAnswer = globalData.response;
+                    updatePartialAnswer('global', globalAnswer);
+                }
+            } catch (globalError) {
+                console.error("글로벌 응답 요청 실패:", globalError);
+                globalData = { response: "글로벌 응답을 받지 못했습니다." };
+            }
+            
+            // 최종 응답 정보 추출
+            const localAnswer = localData?.response || "서버에서 로컬 응답을 받지 못했습니다.";
+            const globalAnswer = globalData?.response || "서버에서 글로벌 응답을 받지 못했습니다.";
+            
+            // 나머지 데이터 가져오기
+            let headlinesList = [];
+            let relatedQuestions = [];
+            
+            try {
+                headlinesList = await fetchHeadlinesForAnswer();
+                console.log("근거 문서 목록 받음:", headlinesList);
+            } catch (headlinesError) {
+                console.error("근거 문서 목록 요청 실패:", headlinesError);
+            }
+            
+            try {
+                relatedQuestions = await fetchRelatedQuestions();
+                console.log("관련 질문 받음:", relatedQuestions);
+            } catch (questionsError) {
+                console.error("관련 질문 요청 실패:", questionsError);
+            }
             
             // 소스 URL 추출 (로컬 답변에서)
             const sourcesData = await extractSourcesFromAnswer(localAnswer, currentPageId);
             console.log("추출된 소스 URL:", sourcesData);
             
-            // 응답 업데이트 (근거 문서 목록 및 소스 URL 포함)
-            updateLastAnswer(localAnswer, globalAnswer, newEntities, newRelationships, headlinesList, sourcesData);
-            setEntities(newEntities);
-            setRelationships(newRelationships);
+            // 최종 업데이트
+            updateLastAnswer(localAnswer, globalAnswer, "", "", headlinesList, sourcesData);
             setServerResponseReceived(true);
             
-            // 기존 그래프 데이터 캐시 초기화
-            graphDataCacheRef.current = {};
-            
-            // 그래프 및 관련 질문 보이기
+            // 그래프 및 관련 질문 버튼 표시
             setQaList(prevQaList => {
                 const updatedList = [...prevQaList];
-                updatedList[updatedList.length - 1].actionButtonVisible = true;
-                updatedList[updatedList.length - 1].relatedQuestionsVisible = true;
+                const lastIndex = updatedList.length - 1;
+
+                updatedList[lastIndex] = {
+                    ...updatedList[lastIndex],
+                    actionButtonVisible: true,
+                    relatedQuestionsVisible: true,
+                    relatedQuestions: relatedQuestions,
+                };
+
                 return updatedList;
             });
             
             // 대화 히스토리에 저장
-            saveToQAHistory(questionText, localAnswer, globalAnswer, newEntities, newRelationships, headlinesList, sourcesData);
+            saveToQAHistory(questionText, localAnswer, globalAnswer, "", "", headlinesList, sourcesData);
             
         } catch (error) {
             console.error("네트워크 오류:", error);
@@ -710,6 +813,7 @@ function ChatPage() {
                             showGraph={showGraph}
                             handleShowDocument={handleShowDocument}
                             showDocument={showDocument && currentMessageIndex === index}
+                            
                         />
                     ))}
                     <div ref={chatEndRef} />
