@@ -8,7 +8,7 @@ source_bp = Blueprint('source', __name__)
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
-CSV_PATH = os.path.join(PROJECT_ROOT, 'context_data_sources.csv')
+CSV_PATH = os.path.join(BACKEND_DIR, 'context_data_sources.csv')
 
 @source_bp.route('/api/context-sources', methods=['GET'])
 def get_context_sources():
