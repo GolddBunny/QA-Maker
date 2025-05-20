@@ -46,6 +46,7 @@ function ChatPage() {
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     
     const fileInputRef = useRef(null);
+    const { systemName } = usePageContext();
 
     const scrollToBottom = () => { //새 질문 시 아래로 스크롤
         if (chatEndRef.current) {
@@ -804,6 +805,9 @@ function ChatPage() {
             />
             
             <div className={`chat-container ${showGraph || showDocument ? "shift-left" : ""} ${isSidebarOpen ? "sidebar-open" : ""}`}>
+                <div className="domain-name">
+                    <h2>{systemName + " QA 시스템" || "QA시스템"}</h2>
+                </div>
                 <div className="chat-messages">
                     {qaList.map((qa, index) => (
                         <ChatMessage 
@@ -814,19 +818,28 @@ function ChatPage() {
                             showGraph={showGraph}
                             handleShowDocument={handleShowDocument}
                             showDocument={showDocument && currentMessageIndex === index}
+                            sendQuestion={sendQuestion}
                             
                         />
                     ))}
                     <div ref={chatEndRef} />
                 </div>
 
-                <ChatInput 
-                    newQuestion={newQuestion} 
-                    setNewQuestion={setNewQuestion} 
-                    handleSendQuestion={handleSendQuestion} 
-                    isLoading={isLoading} 
+                <ChatInput
+                    newQuestion={newQuestion}
+                    setNewQuestion={setNewQuestion}
+                    handleSendQuestion={handleSendQuestion}
                     handleUrlOptionClick={handleUrlOptionClick}
                     handleDocumentOptionClick={handleDocumentOptionClick}
+                    addedUrls={addedUrls}
+                    setAddedUrls={setAddedUrls}
+                    selectedFile={selectedFile}
+                    setSelectedFile={setSelectedFile}
+                    showUrlInput={showUrlInput}
+                    setShowUrlInput={setShowUrlInput}
+                    urlInput={urlInput}
+                    setUrlInput={setUrlInput}
+                    handleAddUrl={handleAddUrl}
                 />
                 {/* 숨겨진 파일 입력 필드 */}
                 <input
@@ -836,67 +849,6 @@ function ChatPage() {
                 style={{ display: 'none' }}
                 accept=".pdf,.doc,.docx,.txt"
                 />
-                {showUrlInput && (
-                    <div className="url-input-box-chat">
-                        <input
-                        type="text"
-                        placeholder="URL을 입력하세요"
-                        value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
-                        className="url-input-main"
-                        />
-                        <button 
-                        onClick={() => {
-                            handleAddUrl();
-                            setShowUrlInput(false); // 입력 후 닫기
-                        }} 
-                        className="add-url-btn"
-                        >
-                        추가
-                        </button>
-                    </div>
-                    )}
-
-                    {selectedFile && (
-                        <div className="selected-file-container">
-                        <div className="selected-file">
-                        <img src="/assets/document.png" alt="파일" className="file-icon" />
-                        <span className="file-name">{selectedFile.name}</span>
-                        <button 
-                            className="file-cancel" 
-                            onClick={() => setSelectedFile(null)}
-                            title="파일 선택 취소"
-                        >
-                            ×
-                        </button>
-                        </div>
-                    </div>
-                    )}
-
-                    {addedUrls.length > 0 && (
-                        <div className="url-list">
-                        {addedUrls.map((url, index) => (
-                            <div key={index} className="selected-file-container">
-                            <div className="selected-file">
-                                <span className='url-icon'>🌐</span>
-                                <span>{url}</span>
-                                <button 
-                                className="file-cancel"
-                                onClick={() => {
-                                    const newUrls = [...addedUrls];
-                                    newUrls.splice(index, 1);
-                                    setAddedUrls(newUrls);
-                                }}
-                                title="URL 제거"
-                                >
-                                ×
-                                </button>
-                            </div>
-                            </div>
-                        ))}
-                        </div>
-                    )}
-
                 {showGraph && graphData && (
                     <div className="graph-container">
                         <button className="close-graph" onClick={handleCloseGraph}>닫기</button>
