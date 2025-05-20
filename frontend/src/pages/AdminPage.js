@@ -237,12 +237,21 @@ const AdminPage = () => {
     }, [fetchEntities, fetchRelationships]);
 
     useEffect(() => {
+      if (!pageId) {
+        const savedPages = JSON.parse(localStorage.getItem("pages")) || [];
+        if (savedPages.length > 0) {
+          const fallbackPageId = savedPages[0].id;
+          navigate(`/admin/${fallbackPageId}`);
+        }
+      }
+
       if (currentPageId) {
         const saved = localStorage.getItem(`uploadedDocs_${currentPageId}`);
         setUploadedDocs(saved ? JSON.parse(saved) : []);
       }
       let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
-      
+      console.log("현재 currentPageId:", pageId);
+
       // 페이지 ID가 유효한 경우에만 데이터 로드
       if (savedPageId) {
         // 병렬로 데이터 로드 작업 실행
@@ -251,7 +260,7 @@ const AdminPage = () => {
           fetchSavedUrls(savedPageId),
           checkOutputFolder(savedPageId),
           loadAllData(savedPageId),
-          //fetchGraphData(savedPageId) 
+          fetchGraphData(savedPageId) 
         ]).catch(error => {
           console.error("데이터 로드 중 오류:", error);
         });

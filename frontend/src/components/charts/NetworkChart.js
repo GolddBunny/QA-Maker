@@ -11,7 +11,7 @@ const NetworkChart = ({ data }) => {
     }
 
     // SVG 너비와 높이 설정
-    const width = window.innerWidth;  // 화면의 90%를 사용
+    const width = window.innerWidth / 2;  // 화면의 90%를 사용
     const height = window.innerHeight;  
 
     // 색상 스케일 설정

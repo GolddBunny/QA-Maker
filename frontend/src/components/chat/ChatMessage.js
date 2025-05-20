@@ -225,15 +225,13 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                                 <div className="related-questions-table">
                                     {Array.isArray(qa.relatedQuestions) && qa.relatedQuestions.length > 0 ? (
                                         qa.relatedQuestions.map((question, i) => (
-                                            <div key={i} className="related-question-item">
-                                                <div
-                                                    key={i}
-                                                    className="related-question-item"
-                                                    onClick={() => sendQuestion(question)}
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    {question}
-                                                </div>
+                                            <div
+                                                key={i}
+                                                className="related-question-item"
+                                                onClick={() => sendQuestion(question)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                {question}
                                             </div>
                                         ))
                                     ) : (
