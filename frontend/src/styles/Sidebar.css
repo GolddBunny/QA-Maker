@@ -296,3 +296,13 @@
 .modal-buttons button:last-child {
   background-color: #d9d9d9;
 }
+
+.sidebar::-webkit-scrollbar {
+  height: 4px;
+  width: 9px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: #ccbbea;
+  border-radius: 3px;
+}

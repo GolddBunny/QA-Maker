@@ -6,6 +6,19 @@
   --box-shadow: 0 3px 3px rgba(0, 0, 0, 0.1);
 }
 
+.domain-name {
+  position: sticky;
+  text-align: center;
+  border-bottom: 1px solid #ccc;
+  font-size: 15px;
+  padding: 1px 0;
+  margin-bottom: 10px;
+  font-weight: 600;
+  top: 0;                /* 위쪽에 붙임 */
+  z-index: 99;           /* 다른 요소 위에 오도록 */
+  background-color: #fff;
+}
+
 .chat-container.sidebar-open {
   margin-left: 00px; /* 사이드바 너비 */
 }
@@ -175,12 +188,18 @@
 .button-icon {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
+.graph-button-wrapper .action-button-left:hover {
+  background-color: var(--light-purple);
+  font-weight: 500;
+}
+
 
 .button-icon img {
   width: 16px;
   height: 16px;
+  margin-bottom: 2px;
 }
 
 .action-button-letf:hover {
@@ -306,7 +325,6 @@
   animation: bounce 0.5s alternate infinite ease;
   position: relative;
   z-index: 1;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* 각 글자마다 애니메이션 지연 시간 설정 */
@@ -360,6 +378,29 @@ p.loading .bouncing-text {
   font-size: 14px;
 }
 
+/* 첨부 컨테이너 */
+.attachment-container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* URL 및 문서 리스트 수평 스크롤 */
+.attachment-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.attachment-container::-webkit-scrollbar-thumb {
+  background-color: #ccbbea;
+  border-radius: 3px;
+}
+
 /* 검색 컨테이너 스타일링 */
 .search-container-chat {
   position: fixed; /* relative → fixed */
@@ -379,6 +420,8 @@ p.loading .bouncing-text {
   transition: all 0.3s ease;
   min-height: 80px;
   overflow-y: auto;
+  flex-direction: column;
+  z-index: 99;
 }
 
 /* 검색 입력창 스타일링 */
@@ -479,6 +522,13 @@ p.loading .bouncing-text {
   background-color: rgba(199, 181, 234, 0.739);
   color:#696187;
   animation: sparkle 1s infinite;
+}
+.url-list, .selected-file-container {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;   /* ✅ 줄바꿈 없이 스크롤되도록 */
+  align-items: center;
+  white-space: nowrap;
 }
 
 /* 하이라이트 스타일 */

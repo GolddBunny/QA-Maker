@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight,FileText, ExternalLink } from "lucide-react";
 
-const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument }) => {
+const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument, sendQuestion }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
@@ -133,53 +133,6 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
     useEffect(() => {
         scrollToBottom();
     }, [qa.question, qa.answer]);
-
-    // useEffect(() => {
-    //     if (qa.actionButtonVisible && qa.relatedQuestionsVisible) {
-    //         const fetchRelatedQuestions = async () => {
-    //             const pageId = localStorage.getItem("currentPageId");
-    //             if (!pageId || !qa.question) return;
-
-    //             setIsLoadingRelated(true);
-
-    //             try {
-    //                 const response = await fetch("http://localhost:5000/generate-related-questions", {
-    //                     method: "POST",
-    //                     headers: { "Content-Type": "application/json" },
-    //                     body: JSON.stringify({ page_id: pageId, question: qa.question })
-    //                 });
-
-    //                 const data = await response.json();
-    //                 if (response.ok) {
-    //                     let questions = [];
-
-    //                     // 문자열일 경우 (기존 방식)
-    //                     if (typeof data.response === "string") {
-    //                         questions = data.response
-    //                             .split(/\n|\r/)
-    //                             .filter(line => line.trim().startsWith("-"))
-    //                             .map(line => line.replace(/^-\s*/, "").trim());
-    //                     }
-
-    //                     // 리스트일 경우 (안전 처리)
-    //                     else if (Array.isArray(data.response)) {
-    //                         questions = data.response.map(q => q.trim()).filter(Boolean);
-    //                     }
-
-    //                     setRelatedQuestions(questions);
-    //                 } else {
-    //                     console.error("관련 질문 로딩 실패:", data.error);
-    //                 }
-    //             } catch (err) {
-    //                 console.error("관련 질문 요청 에러:", err);
-    //             } finally {
-    //                 setIsLoadingRelated(false);
-    //             }
-    //         };
-
-    //         fetchRelatedQuestions();
-    //     }
-    // }, [qa]);
     
     return (
         <div className="qa-box">
@@ -235,7 +188,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     {!showGraph && (
                         <div className="graph-button-wrapper">
                         <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
-                            <span className="button-icon">지식 그래프 보기 ⚡</span>
+                            <span className="button-icon">지식 그래프 보기 <img src="/assets/graph_button.png" alt="Graph icon" /></span>
                         </button>
                         </div>
                     )}
@@ -273,7 +226,14 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                                     {Array.isArray(qa.relatedQuestions) && qa.relatedQuestions.length > 0 ? (
                                         qa.relatedQuestions.map((question, i) => (
                                             <div key={i} className="related-question-item">
-                                                {question}
+                                                <div
+                                                    key={i}
+                                                    className="related-question-item"
+                                                    onClick={() => sendQuestion(question)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    {question}
+                                                </div>
                                             </div>
                                         ))
                                     ) : (
