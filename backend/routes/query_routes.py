@@ -358,7 +358,7 @@ def all_graph():
     try:
         # 절대 경로로 안전하게 설정
         base_path = os.path.join(BASE_PATH, str(page_id), "output")
-        print("base_path:", base_path)
+        #print("base_path:", base_path)
 
         entities_parquet = os.path.join(base_path, "entities.parquet")
         relationships_parquet = os.path.join(base_path, "relationships.parquet")
@@ -366,20 +366,46 @@ def all_graph():
         entities_df = pd.read_parquet(entities_parquet)
         relationships_df = pd.read_parquet(relationships_parquet)
 
+        # entities: degree 기준 상위 100개
+        top_entities = (
+            entities_df
+            .sort_values(by='degree', ascending=False)
+            .head(120)
+            ['human_readable_id']
+            .astype(int)
+            .tolist()
+        )
+
+        # relationships: weight 기준 상위 100개
+        top_relationships = (
+            relationships_df
+            .sort_values(by='weight', ascending=False)
+            .head(100)
+            ['human_readable_id']
+            .astype(int)
+            .tolist()
+        )
         # GraphML / JSON 절대 경로
         graphml_path = os.path.abspath(os.path.join(BASE_PATH, "../../data/graphs", str(page_id), "all_graph.graphml"))
         json_path = os.path.abspath(os.path.join(BASE_PATH, "../../frontend/public/json", str(page_id), "admin_graphml_data.json"))
 
-        print(f"graphml_path exists: {os.path.exists(os.path.dirname(graphml_path))}")
-        print(f"json_path exists: {os.path.exists(os.path.dirname(json_path))}")
+        # print(f"graphml_path exists: {os.path.exists(os.path.dirname(graphml_path))}")
+        # print(f"json_path exists: {os.path.exists(os.path.dirname(json_path))}")
 
         os.makedirs(os.path.dirname(graphml_path), exist_ok=True)
         os.makedirs(os.path.dirname(json_path), exist_ok=True)
 
         # 그래프 생성 및 저장
+        # generate_and_save_graph(
+        #     entities_df['human_readable_id'].astype(int).tolist(),
+        #     relationships_df['human_readable_id'].astype(int).tolist(),
+        #     page_id,
+        #     graphml_path=graphml_path,
+        #     json_path=json_path
+        # )
         generate_and_save_graph(
-            entities_df['human_readable_id'].astype(int).tolist(),
-            relationships_df['human_readable_id'].astype(int).tolist(),
+            top_entities,
+            top_relationships,
             page_id,
             graphml_path=graphml_path,
             json_path=json_path
