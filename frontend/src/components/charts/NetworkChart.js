@@ -11,26 +11,26 @@ const NetworkChart = ({ data }) => {
     }
 
     // SVG 너비와 높이 설정
-    const width = window.innerWidth / 2;  // 화면의 90%를 사용
+    const width = window.innerWidth;  // 화면의 90%를 사용
     const height = window.innerHeight;  
 
     // 색상 스케일 설정
     const color = d3.scaleOrdinal([
-      "#f7ad63", "#6ade53", "#f15fb2", "#83d7f1", "#a133ff", "#ff5733", "#33ff57", "#5733ff", 
+      "#f7ad63", "#6ade53", "#f15fb2", "#83d7f1", "#a133ff", "#ff5733", "#33ff57",
       "#ff33a8", "#33a8ff", "#a8ff33", "#ff8c33", "#338cff", "#8c33ff", "#33ff8c", "#ff3333", 
-      "#33ff33", "#3333ff", "#ff6633", "#66ff33", "#3366ff", "#ff3366", "#6633ff", "#33ff66", 
+      "#33ff33", "#66ff33", "#3366ff", "#ff3366", "#6633ff", "#33ff66", 
       "#ff9933", "#99ff33", "#3399ff", "#ff3399", "#9933ff", "#33ff99", "#ffcc33", "#ccff33", 
       "#33ccff", "#ff33cc", "#cc33ff", "#33ffcc", "#ffdd33", "#ddff33", "#33ddff", "#ff33dd", 
-      "#dd33ff", "#33ffdd", "#ff33ff", "#ff6633", "#66ff33", "#3366ff", "#ff3366", "#6633ff", 
+      "#dd33ff", "#33ffdd", "#ff33ff", "#66ff33", "#3366ff", "#ff3366", "#6633ff", 
       "#33ff66", "#ff9933", "#99ff33", "#3399ff", "#ff3399", "#9933ff", "#33ff99", "#ffcc33", 
       "#ccff33", "#33ccff", "#ff33cc", "#cc33ff", "#33ffcc", "#ffdd33", "#ddff33", "#33ddff", 
-      "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff", "#ff6633", "#66ff33", "#3366ff", "#ff3366", 
+      "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff", "#66ff33", "#3366ff", "#ff3366", 
       "#6633ff", "#33ff66", "#ff9933", "#99ff33", "#3399ff", "#ff3399", "#9933ff", "#33ff99", 
       "#ffcc33", "#ccff33", "#33ccff", "#ff33cc", "#cc33ff", "#33ffcc", "#ffdd33", "#ddff33", 
-      "#33ddff", "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff", "#ff6633", "#66ff33", "#3366ff", 
+      "#33ddff", "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff", "#66ff33", "#3366ff", 
       "#ff3366", "#6633ff", "#33ff66", "#ff9933", "#99ff33", "#3399ff", "#ff3399", "#9933ff", 
       "#33ff99", "#ffcc33", "#ccff33", "#33ccff", "#ff33cc", "#cc33ff", "#33ffcc", "#ffdd33", 
-      "#ddff33", "#33ddff", "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff", "#ff6633", "#66ff33", 
+      "#ddff33", "#33ddff", "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff", "#66ff33", 
       "#3366ff", "#ff3366", "#6633ff", "#33ff66", "#ff9933", "#99ff33", "#3399ff", "#ff3399", 
       "#9933ff", "#33ff99", "#ffcc33", "#ccff33", "#33ccff", "#ff33cc", "#cc33ff", "#33ffcc", 
       "#ffdd33", "#ddff33", "#33ddff", "#ff33dd", "#dd33ff", "#33ffdd", "#ff33ff"
@@ -71,12 +71,12 @@ const NetworkChart = ({ data }) => {
     // D3 시뮬레이션 설정
     const simulation = d3.forceSimulation(nodes)
       .force("link", d3.forceLink(edges).id(d => d.id)
-        .distance((d, i) => 50 + (i * 10))  // 인덱스에 따라 거리 증가
+        .distance((d, i) => 50 + (i * 20))  // 인덱스에 따라 거리 증가
         .strength(0.2)
       )
       .force("charge", d3.forceManyBody()
-        .strength(-20) // 부드러운 반발력 감소
-        .distanceMin(20) // 최소 거리 증가
+        .strength(-30) // 부드러운 반발력 감소
+        .distanceMin(50) // 최소 거리 증가
         .distanceMax(200) // 최대 거리 증가
       )
       .force("center", d3.forceCenter(width / 2, height / 2))
