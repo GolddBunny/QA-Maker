@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight,FileText, ExternalLink } from "lucide-react";
+import { marked } from 'marked';
 
 const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument, sendQuestion }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
@@ -122,7 +123,12 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
             return null;
         }
         
-        return { __html: answer };
+        const cleanAnswer = answer.replace(/\[Data:[^\]]*\]/g, "");
+
+        // Markdown → HTML 변환
+        const htmlAnswer = marked.parse(cleanAnswer);
+
+        return { __html: htmlAnswer };
     };
 
     const scrollToBottom = () => {
@@ -186,14 +192,6 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     )}
 
                     {!showGraph && (
-                        <div className="graph-button-wrapper">
-                        <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
-                            <span className="button-icon">지식 그래프 보기 <img src="/assets/graph_button.png" alt="Graph icon" /></span>
-                        </button>
-                        </div>
-                    )}
-
-                    {!showGraph && (
                         <div className="satisfaction-button-container">
                         <button type="button" className="action-button-left">
                             <span className="button-icon">
@@ -210,6 +208,14 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                                 ))}
                             </span>
                             </span>
+                        </button>
+                        </div>
+                    )}
+
+                    {!showGraph && (
+                        <div className="graph-button-wrapper">
+                        <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
+                            <span className="button-icon">지식 그래프 보기 <img src="/assets/graph_button.png" alt="Graph icon" /></span>
                         </button>
                         </div>
                     )}
