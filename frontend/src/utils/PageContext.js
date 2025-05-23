@@ -128,8 +128,8 @@ export const PageProvider = ({ children }) => {
     pages,
     updatePages,
     updatePageName,
-    updatePageSysName, // 새로 추가된 함수
-    getCurrentPageSysName, // 새로 추가된 함수
+    updatePageSysName,
+    getCurrentPageSysName,
     systemName,
     setSystemName,
     domainName,

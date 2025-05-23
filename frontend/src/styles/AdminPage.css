@@ -95,17 +95,20 @@
 }
 
 .btn_primary {
-background-color: #e0d4fa;
+background-color: #e2dbf0;
   color: #5e3fb2;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 40px;
   border: none;
-  padding: 10px 16px;
+  padding: 0px 15px;
   border-radius: 15px;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.15);
   position: static; /* 또는 relative */
   z-index: 1;
+  will-change: transform;
+  margin-left: 10px;
+  margin-bottom: 9px;
 }
 
 .stat-cards {
@@ -246,10 +249,13 @@ background-color: #e0d4fa;
   margin-bottom: 40px;
 }
 
+.user-qa-analyze {
+  margin-top: 50px;
+}
 .section-title,
 .section-desc {
   text-align: left;
-  margin: 0; 
+  margin: 0 5px; 
 }
 
 .section-title {
@@ -414,7 +420,7 @@ background-color: #e0d4fa;
 }
 
 .user-table td {
-  padding: 4px;
+  padding: 8px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -697,12 +703,29 @@ background-color: #e0d4fa;
   font-size: 1.2rem;
 }
 
+.graph-section{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
 
 .network-chart-wrapper {
-  margin: 0 auto;
+  margin: 5px;
   position: relative;
   border: 2px solid #d3c7fa;
   margin-bottom: 50px;
+  overflow: hidden;
+  transition: visibility 0.3s, height 0.3s ease;
+}
+
+.network-chart-hidden {
+  visibility: hidden;
+  height: 0;
+}
+
+.network-chart-visible {
+  visibility: visible;
+  height: auto;
 }
 
 .url-input .loader.processing-message {
