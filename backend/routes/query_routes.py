@@ -37,7 +37,6 @@ BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/
 # Thread pool for running async code with Flask
 thread_pool = ThreadPoolExecutor(max_workers=5)
 
-
 env_path = Path("../data/parquet/.env")
 load_dotenv(dotenv_path=env_path)
 
@@ -310,22 +309,7 @@ def run_global_query():
                 df.to_csv(output_file, index=False, encoding='utf-8-sig')
                 print(f"{key} 데이터가 {output_file}에 저장되었습니다.")
                 context_files[key] = output_file
-                # context_data_entities.csv와 context_data_relationships.csv에서 데이터 로드
-        entities_df = pd.read_csv('context_data_entities.csv')
-        relationships_df = pd.read_csv('context_data_relationships.csv')
-
-        # 엔티티 ID 리스트 추출
-        entities_list = entities_df['id'].astype(int).tolist()
         
-        # 관계 ID 리스트 추출 
-        # 관계 데이터프레임의 구조에 따라 필드명 조정 필요
-        relationships_list = relationships_df['id'].astype(int).tolist()
-        
-        print("entities_list: ", entities_list, 
-              "relationships_list: ", relationships_list)
-
-        # 서브 그래프 생성
-        generate_and_save_graph(entities_list, relationships_list, page_id)        
         return jsonify({
             'response': result.response,
             'context_files': context_files
@@ -335,11 +319,8 @@ def run_global_query():
         return jsonify({'error': str(e)}), 500
 
 @query_bp.route('/generate-graph', methods=['POST'])
-def generate_graph():
-    page_id = request.json.get('page_id', '')
-    
+def generate_graph():    
     try:
-
         return jsonify({
             'success': True,
             # 'entities_count': len(entities_list),

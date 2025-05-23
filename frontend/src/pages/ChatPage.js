@@ -7,6 +7,8 @@ import ChatInput from "../components/chat/ChatInput";
 import { usePageContext } from "../utils/PageContext";
 import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
+import Modal from '../components/modal/Modal';
+import answerGraphData from '../json/answer_graphml_data.json';
 
 function ChatPage() {
     const { currentPageId, setCurrentPageId } = usePageContext();
@@ -53,6 +55,54 @@ function ChatPage() {
             chatEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
     };
+
+    // 모달 관련 상태 추가
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'alert', // 'alert' 또는 'confirm'
+        onConfirm: null
+    });
+
+    // 모달 함수들
+    const showAlert = (title, message) => {
+        setModalState({
+            isOpen: true,
+            title,
+            message,
+            type: 'alert',
+            onConfirm: null
+        });
+    };
+
+    const showConfirm = (title, message, onConfirm) => {
+        setModalState({
+            isOpen: true,
+            title,
+            message,
+            type: 'confirm',
+            onConfirm
+        });
+    };
+
+    const closeModal = () => {
+        setModalState({
+            isOpen: false,
+            title: '',
+            message: '',
+            type: 'alert',
+            onConfirm: null
+        });
+    };
+
+    const handleModalConfirm = () => {
+        if (modalState.onConfirm) {
+            modalState.onConfirm();
+        }
+        closeModal();
+    };
+
     // 페이지 로드 시 초기 질문 또는 이전 대화 로드
     useEffect(() => {
         if (!currentPageId) {
@@ -110,10 +160,11 @@ function ChatPage() {
         }
     };
 
-    // 답변에서 소스 URL 추출 함수 추가
+    // 답변에서 소스 URL과 Title 추출 함수
     const extractSourcesFromAnswer = async (answerText, pageId) => {
         try {
-            //console.log("소스 추출 시작:", answerText);
+            console.log("소스 추출 시작");
+            
             // 예외 처리: 답변이 없거나 비어있을 경우
             if (!answerText || answerText.trim() === "") {
                 console.log("답변이 비어있어 소스 추출을 건너뜁니다.");
@@ -128,7 +179,7 @@ function ChatPage() {
             
             const response = await fetch("http://localhost:5000/extract-sources", {
                 method: "POST",
-                headers: { 
+                headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
@@ -148,8 +199,9 @@ function ChatPage() {
                 console.error("소스 추출 오류:", data.error);
                 return [];
             }
+            
             // 응답 형식 검증 및 로깅
-            // console.log("서버에서 받은 소스 데이터:", data.sources);
+            console.log("서버에서 받은 소스 데이터:", data.sources);
             
             // 소스 데이터 검증
             if (!Array.isArray(data.sources)) {
@@ -157,9 +209,29 @@ function ChatPage() {
                 return [];
             }
             
-            return data.sources;
+            // 각 소스 데이터의 구조 검증 및 로깅
+            const validSources = data.sources.filter(source => {
+                if (!source || typeof source !== 'object') {
+                    console.warn("유효하지 않은 소스 데이터:", source);
+                    return false;
+                }
+                
+                // source_id는 필수, url과 title 중 하나는 있어야 함
+                if (!source.source_id || (!source.url && !source.title)) {
+                    console.warn("소스 ID가 없거나 URL/Title이 모두 없는 소스:", source);
+                    return false;
+                }
+                
+                console.log(`소스 ${source.source_id}: Title="${source.title || '없음'}", URL="${source.url || '없음'}"`);
+                return true;
+            });
+            
+            console.log(`총 ${data.sources.length}개 소스 중 ${validSources.length}개 유효한 소스 추출됨`);
+            
+            return validSources;
+            
         } catch (error) {
-            console.error("소스 URL 추출 실패:", error);
+            console.error("소스 URL/Title 추출 실패:", error);
             return [];
         }
     };
@@ -476,37 +548,30 @@ function ChatPage() {
         });
     };
 
-    // 그래프 로드 함수
     const handleShowGraph = async () => {
-        // 이미 로딩 중이면 중복 실행 방지
         if (isLoading) {
             console.log("이미 그래프를 로딩 중입니다.");
             return;
         }
 
-        // 서버 응답 확인
         if (!serverResponseReceived) {
             console.log("서버 응답을 기다리는 중입니다.");
-            alert("서버 응답을 기다리는 중입니다. 잠시 후 다시 시도해주세요.");
+            showAlert("알림", "서버 응답을 기다리는 중입니다. 잠시 후 다시 시도해주세요.");
             return;
         }
 
-        // 필수 데이터 확인
         if (!currentPageId) {
             console.error("페이지 ID가 없습니다.");
-            alert("페이지 ID가 설정되지 않았습니다. 페이지를 새로고침하거나 다시 시도해주세요.");
+            showAlert("오류", "페이지 ID가 설정되지 않았습니다. 페이지를 새로고침하거나 다시 시도해주세요.");
             return;
         }
 
         try {
-            // 로딩 상태 설정
             setIsLoading(true);
             console.log("그래프 데이터 로딩 시작");
 
-            // 캐시 키 설정
             const cacheKey = `${entities}-${relationships}`;
             
-            // 메모리 캐시 확인
             if (graphDataCacheRef.current[cacheKey]) {
                 console.log("메모리 캐시에서 그래프 데이터 로드");
                 setGraphData(graphDataCacheRef.current[cacheKey]);
@@ -514,69 +579,23 @@ function ChatPage() {
                 setIsLoading(false);
                 return;
             }
-            
-            // // API 호출
-            // const generateResponse = await fetch("http://localhost:5000/generate-graph", {
-            //     method: "POST",
-            //     headers: { 
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify({
-            //         page_id: currentPageId,
-            //     })
-            // });
 
-            // // API 응답 처리
-            // const generateData = await generateResponse.json();
+            // 여기서 fetch 대신 import로 가져온 데이터를 사용
+            const jsonData = answerGraphData;
 
-            // if (!generateResponse.ok) {
-            //     throw new Error(`그래프 생성 실패: ${generateData.error || "알 수 없는 오류"}`);
-            // }
-            
-            // console.log("그래프 생성 API 응답:", generateData);
-            
-            // 캐시를 방지하기 위한 타임스탬프 추가
-            const timestamp = new Date().getTime();
-            
-            // JSON 파일 로드
-            const jsonResponse = await fetch(`./json/answer_graphml_data.json?t=${timestamp}`, {
-                method: "GET",  // 명시적으로 GET 메서드 지정
-                headers: {
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0"
-                },
-                cache: "no-store"  // fetch API의 캐시 옵션
-            });
-
-            if (!jsonResponse.ok) {
-            const errorText = await jsonResponse.text().catch(() => "응답 텍스트를 읽을 수 없음");
-            console.error("JSON 응답 오류:", jsonResponse.status, errorText);
-            throw new Error(`JSON 파일 로드 실패 (상태: ${jsonResponse.status}): ${errorText}`);
-        }
-        
-            let jsonData;
-            try {
-                jsonData = await jsonResponse.json();
-            } catch (jsonError) {
-                console.error("JSON 파싱 오류:", jsonError);
-                throw new Error("JSON 데이터를 파싱할 수 없습니다.");
-            }
-            
             console.log("그래프 데이터 로드 성공:", jsonData);
-            // 그래프 데이터 유효성 검사
+
             if (!jsonData || !jsonData.nodes || !jsonData.edges) {
                 throw new Error("유효하지 않은 그래프 데이터입니다.");
             }
 
-            // 데이터 저장 및 그래프 표시
             graphDataCacheRef.current[cacheKey] = jsonData;
             setGraphData(jsonData);
             setShowGraph(true);
-            
+
         } catch (error) {
             console.error("그래프 데이터 로드 실패:", error);
-            alert(`그래프 데이터를 불러오는 데 실패했습니다: ${error.message}`);
+            showAlert("오류", `그래프 데이터를 불러오는 데 실패했습니다: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -633,7 +652,7 @@ function ChatPage() {
     const handleAddUrl = () => {
         const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/;
         if (!urlPattern.test(urlInput.trim())) {
-            alert('유효한 URL을 입력해주세요.');
+            showAlert("입력 오류", "유효한 URL을 입력해주세요.");
             setUrlInput('');
             return;
         }
@@ -708,24 +727,103 @@ function ChatPage() {
         }
     };
 
-    // PDF URL 업데이트
-    const updatePdfUrl = (headline) => {
-        if (!headline) return;
+    // HWP 파일 확인 함수
+    const checkIfHwpFile = async (headline) => {
+        if (!headline) return false;
         
-        const encodedHeadline = encodeURIComponent(headline); // 한글 인코딩 처리
-        const url = `http://localhost:5000/api/pdf/${encodedHeadline}?page_id=${currentPageId}`;
+        try {
+            const processedHeadline = headline.trim();
+            const encodedHeadline = encodeURIComponent(processedHeadline);
+            const url = `http://localhost:5000/api/document/${encodedHeadline}?page_id=${currentPageId}`;
+            
+            const response = await fetch(url, { method: 'HEAD' });
+            
+            // 서버에서 HWP 파일에 대한 에러 응답 확인
+            if (!response.ok && response.status === 400) {
+                const errorData = await fetch(url).then(res => res.json()).catch(() => ({}));
+                if (errorData.error && errorData.error.includes('HWP')) {
+                    return true;
+                }
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('HWP 파일 확인 오류:', error);
+            return false;
+        }
+    };
+
+    // HWP 파일 다운로드 알림 및 다운로드 처리
+    const handleHwpDownload = (headline) => {
+        const processedHeadline = headline.trim();
+        const encodedHeadline = encodeURIComponent(processedHeadline);
+        const downloadUrl = `http://localhost:5000/api/download/${encodedHeadline}?page_id=${currentPageId}`;
+        
+        showConfirm(
+            "문서 다운로드", 
+            `"${headline}" 파일은 HWP 형식입니다.\n현재 뷰어에서는 지원되지 않으니 파일을 다운로드 후 확인해 주세요.`,
+            () => {
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => {
+                    showAlert("다운로드 완료", "파일 다운로드가 완료되었습니다.\n다운로드된 HWP 파일을 한글 프로그램으로 열어서 확인해주세요.");
+                }, 500);
+            }
+        );
+    };
+
+    // Document URL 업데이트
+    const updateDocumentUrl = async (headline) => {
+    if (!headline) return false;
+        
+    // HWP 파일인지 먼저 확인
+    const isHwpFile = await checkIfHwpFile(headline);
+        if (isHwpFile) {
+            handleHwpDownload(headline);
+            return false; // HWP 파일이므로 문서 뷰어를 열지 않음
+        }
+
+        // 특수문자 처리 및 파일명 정리 (괄호 등에 대한 처리)
+        let processedHeadline = headline.trim();
+        const encodedHeadline = encodeURIComponent(processedHeadline); // 한글 인코딩 처리
+        
+        // 파일명에 사용될 수 있는 확장자 체크를 서버에서 처리하도록 함
+        const url = `http://localhost:5000/api/document/${encodedHeadline}?page_id=${currentPageId}`;
+        
+        console.log(`문서 요청 URL: ${url}`);
         setPdfUrl(url);
+        
+        // 파일 로딩 확인을 위한 테스트 요청
+        try {
+            const response = await fetch(url, { method: 'HEAD' });
+            console.log(`문서 응답 상태: ${response.status}`);
+            if (!response.ok) {
+                console.error('문서를 찾을 수 없습니다. 확인 필요.');
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('문서 요청 오류:', error);
+            return false;
+        }
     };
 
     // 근거 문서 열기 핸들러
-    const handleShowDocument = async (index) => {
+    const handleShowDocument = async (index, specificHeadline = null) => {
         setCurrentMessageIndex(index);
         
-        if (showDocument && currentMessageIndex === index) {
+        if (showDocument && currentMessageIndex === index && !specificHeadline) {
             setShowDocument(false);
+            setCurrentMessageIndex(null);
             document.querySelector('.chat-container').classList.remove('shift-left');
             return;
         }
+        
         setShowGraph(false); // 그래프 닫기
         setDocumentErrorMessage('');
         
@@ -736,34 +834,50 @@ function ChatPage() {
             }
             return updatedList;
         });
+        
         // 해당 메시지 headline 목록 가져오기
         const messageHeadlines = await fetchHeadlinesForMessage(index);
         
         if (messageHeadlines.length > 0) {
             setHeadlines(messageHeadlines);
-            // 이미 선택된 headline이 있는지 확인
-            let selectedHead = '';
-            // 로컬 대화 목록에서 선택된 headline 확인
-            if (qaList[index] && qaList[index].selectedHeadline) {
-                selectedHead = qaList[index].selectedHeadline;
-            } 
-            // QA 히스토리에서 선택된 headline 확인
-            else if (currentQaId) {
-                const qaItem = qaHistory.find(qa => qa.id === currentQaId);
-                if (qaItem && qaItem.conversations && qaItem.conversations[index] && 
-                    qaItem.conversations[index].selectedHeadline) {
-                    selectedHead = qaItem.conversations[index].selectedHeadline;
+            
+            // 특정 헤드라인이 지정되었으면 해당 헤드라인 선택
+            let selectedHead = specificHeadline || '';
+            
+            // 특정 헤드라인이 지정되지 않은 경우 기존 로직 사용
+            if (!selectedHead) {
+                // 로컬 대화 목록에서 선택된 headline 확인
+                if (qaList[index] && qaList[index].selectedHeadline) {
+                    selectedHead = qaList[index].selectedHeadline;
                 }
-            }
-            // 선택된 headline 없으면 첫 번째 선택
-            if (!selectedHead || !messageHeadlines.includes(selectedHead)) {
-                selectedHead = messageHeadlines[0];
+                // QA 히스토리에서 선택된 headline 확인
+                else if (currentQaId) {
+                    const qaItem = qaHistory.find(qa => qa.id === currentQaId);
+                    if (qaItem && qaItem.conversations && qaItem.conversations[index] && 
+                        qaItem.conversations[index].selectedHeadline) {
+                        selectedHead = qaItem.conversations[index].selectedHeadline;
+                    }
+                }
+                // 선택된 headline 없으면 첫 번째 선택
+                if (!selectedHead || !messageHeadlines.includes(selectedHead)) {
+                    selectedHead = messageHeadlines[0];
+                }
             }
             
             setSelectedHeadline(selectedHead);
-            updatePdfUrl(selectedHead);
-            setShowDocument(true);
-            document.querySelector('.chat-container').classList.add('shift-left');
+            
+            // HWP 파일 확인 후 뷰어 열기 여부 결정
+            const shouldOpenViewer = await updateDocumentUrl(selectedHead);
+            
+            if (shouldOpenViewer) {
+                // HWP 파일이 아닌 경우에만 뷰어 열기
+                setShowDocument(true);
+                document.querySelector('.chat-container').classList.add('shift-left');
+            } else {
+                // HWP 파일인 경우 뷰어를 열지 않고 현재 상태 유지
+                // 이미 updateDocumentUrl에서 다운로드 처리가 완료됨
+                console.log('HWP 파일이므로 뷰어를 열지 않습니다.');
+            }
         } else {
             setDocumentErrorMessage("근거 문서를 찾을 수 없습니다.");
         }
@@ -780,7 +894,7 @@ function ChatPage() {
     // headline 선택
     const handleHeadlineSelect = (headline) => {
         setSelectedHeadline(headline);
-        updatePdfUrl(headline);
+        updateDocumentUrl(headline); // PDF URL 대신 document URL로 업데이트
         
         // 현재 선택된 headline 저장
         if (currentQaId && currentMessageIndex !== null) {
@@ -797,11 +911,81 @@ function ChatPage() {
         }
     };
     
+    const handleDownloadDocument = async (headline) => {
+        if (!headline) return;
+        
+        try {
+            // 특수문자 처리 및 파일명 정리
+            let processedHeadline = headline.trim();
+            const encodedHeadline = encodeURIComponent(processedHeadline);
+            
+            // 다운로드 URL 생성 (기존 document API와 다른 download API 사용)
+            const downloadUrl = `http://localhost:5000/api/download/${encodedHeadline}?page_id=${currentPageId}`;
+            
+            console.log(`문서 다운로드 URL: ${downloadUrl}`);
+            
+            // fetch를 사용하여 서버 응답 확인 후 다운로드
+            const response = await fetch(downloadUrl);
+            
+            if (!response.ok) {
+                throw new Error(`서버 오류: ${response.status}`);
+            }
+            
+            // Content-Disposition 헤더에서 실제 파일명 추출
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let actualFilename = headline; // 기본값
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    actualFilename = filenameMatch[1].replace(/['"]/g, '');
+                    // UTF-8 인코딩된 파일명 처리
+                    if (actualFilename.startsWith('UTF-8\'\'')) {
+                        actualFilename = decodeURIComponent(actualFilename.substring(7));
+                    }
+                }
+            }
+            
+            // Blob으로 파일 데이터 처리
+            const blob = await response.blob();
+            
+            // 다운로드 링크 생성
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = actualFilename; // 서버에서 제공한 실제 파일명 사용
+            link.target = '_blank';
+            
+            // 다운로드 실행
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 메모리 정리
+            window.URL.revokeObjectURL(url);
+            
+            console.log('원본 문서 다운로드 완료:', actualFilename);
+            
+        } catch (error) {
+            console.error('문서 다운로드 중 오류:', error);
+            showAlert("다운로드 오류", `문서 다운로드에 실패했습니다: ${error.message}`);
+        }
+    };
+
     return (
         <div className={`chat-page-container ${showGraph ? "with-graph" : ""}`}>
             <Sidebar 
                 isSidebarOpen={isSidebarOpen} 
                 toggleSidebar={toggleSidebar} 
+            />
+            {/* 모달 컴포넌트 추가 */}
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                onConfirm={handleModalConfirm}
             />
             
             <div className={`chat-container ${showGraph || showDocument ? "shift-left" : ""} ${isSidebarOpen ? "sidebar-open" : ""}`}>
@@ -818,8 +1002,8 @@ function ChatPage() {
                             showGraph={showGraph}
                             handleShowDocument={handleShowDocument}
                             showDocument={showDocument && currentMessageIndex === index}
+                            handleDownloadDocument={handleDownloadDocument}
                             sendQuestion={sendQuestion}
-                            
                         />
                     ))}
                     <div ref={chatEndRef} />
@@ -873,6 +1057,14 @@ function ChatPage() {
                                         <option key={idx} value={headline}>{headline}</option>
                                     ))}
                                 </select>
+                                <button 
+                                    className="download-button"
+                                    onClick={() => handleDownloadDocument(selectedHeadline)}
+                                    title="원본 문서 다운로드"
+                                    disabled={!selectedHeadline}
+                                >
+                                    📥
+                                </button>
                                 <button 
                                     className="close-button"
                                     onClick={() => {

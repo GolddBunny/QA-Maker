@@ -1,0 +1,122 @@
+/* Modal.css */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(2px);
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: modalAppear 0.2s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 20px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.modal-close-btn:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.modal-close-btn:focus {
+    outline: 2px solid #a9a5e1;
+    outline-offset: 2px;
+}
+
+.modal-body {
+    padding: 0 20px 20px 20px;
+}
+
+.modal-message {
+    color: #374151;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    min-width: 80px;
+}
+
+.modal-btn:focus {
+    outline: 2px solid #cbc9e9;
+    outline-offset: 2px;
+}
+
+.modal-btn-cancel {
+    background-color: white;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.modal-btn-cancel:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.modal-btn-confirm {
+    background-color: #a9a5e1;
+    color: white;
+}
+
+.modal-btn-confirm:hover {
+    background-color: #8380af;
+}
+
+.modal-btn:active {
+    transform: translateY(1px);
+}
