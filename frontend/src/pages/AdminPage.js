@@ -56,7 +56,7 @@ const AdminPage = () => {
       systemName, setSystemName, domainName, setDomainName
      } = usePageContext();
     const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
-
+    const [qaHistory, setQaHistory] = useState([]);
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
 
@@ -67,7 +67,13 @@ const AdminPage = () => {
 
       if (graphDataCacheRef.current[cacheKey]) {
         console.log("그래프 데이터 캐시에서 로드됨");
-        setGraphData(graphDataCacheRef.current[cacheKey]);
+        // 변경 있을 때만 setGraphData 호출
+        setGraphData(prev => {
+          if (JSON.stringify(prev) !== JSON.stringify(graphDataCacheRef.current[cacheKey])) {
+            return graphDataCacheRef.current[cacheKey];
+          }
+          return prev;
+        });
         return;
       }
 
@@ -237,12 +243,32 @@ const AdminPage = () => {
     }, [fetchEntities, fetchRelationships]);
 
     useEffect(() => {
+      if (!pageId) {
+        const savedPages = JSON.parse(localStorage.getItem("pages")) || [];
+        if (savedPages.length > 0) {
+          const fallbackPageId = savedPages[0].id;
+          navigate(`/admin/${fallbackPageId}`);
+        }
+        return;
+      }
+
+      const stored = localStorage.getItem("qaHistory");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setQaHistory(parsed);
+        } catch (e) {
+          console.error("qaHistory JSON 파싱 오류:", e);
+        }
+      }
+
       if (currentPageId) {
         const saved = localStorage.getItem(`uploadedDocs_${currentPageId}`);
         setUploadedDocs(saved ? JSON.parse(saved) : []);
       }
       let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
-      
+      console.log("현재 currentPageId:", pageId);
+
       // 페이지 ID가 유효한 경우에만 데이터 로드
       if (savedPageId) {
         // 병렬로 데이터 로드 작업 실행
@@ -251,7 +277,7 @@ const AdminPage = () => {
           fetchSavedUrls(savedPageId),
           checkOutputFolder(savedPageId),
           loadAllData(savedPageId),
-          //fetchGraphData(savedPageId) 
+          fetchGraphData(savedPageId) 
         ]).catch(error => {
           console.error("데이터 로드 중 오류:", error);
         });
@@ -262,7 +288,7 @@ const AdminPage = () => {
           setSystemName(currentPage.sysname || "");
         }
       }
-    }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData, fetchGraphData]);
+    }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
 
 
     const toggleSidebar = () => {
@@ -603,7 +629,11 @@ const AdminPage = () => {
                 type="text"
                 placeholder="도메인 이름을 정해주세요"
                 value={domainName}  // 상태로 관리되는 도메인 이름
-                onChange={(e) => setDomainName(e.target.value)} // input 변화에 따른 상태 업데이트
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setDomainName(newName);
+                  updatePageName(currentPageId, newName); // ← 로컬 스토리지까지 반영!
+                }} // input 변화에 따른 상태 업데이트
               />
             </div>
             <div className="divider"></div>
@@ -904,39 +934,43 @@ const AdminPage = () => {
         </div>
 
         {/* 그래프 보기 */}
-        <h2 className="section-title">그래프 보기</h2>
-        <button
-          className="btn_primary"
-          onClick={handleShowGraph}
-          disabled={isAnyProcessing}
-        >
-          그래프 보기
-        </button>
+        <div className="graph-section">
+          <h2 className="section-title">그래프 보기</h2>
+          <button
+            className="btn_primary"
+            onClick={handleShowGraph}
+            disabled={isAnyProcessing}
+          > ⏵
+          </button>
+        </div>
 
         {showGraph && graphData && (
           <div className="network-chart-wrapper">
             <NetworkChart data={graphData} />
           </div>
         )}
-        <h2 className="section-title">유저 질문 및 만족도 분석</h2>
-        <div className="stat-cards">
-          <div className="card card-total-category">
-            <div className="card-text">
-              많이 묻는 질문 카테고리<br /><strong>장학금</strong>
+        <div className="user-qa-analyze">
+          <h2 className="section-title">유저 질문 및 만족도 분석</h2>
+          <div className="stat-cards">
+            <div className="card card-total-category">
+              <div className="card-text">
+                많이 묻는 질문 카테고리<br /><strong>장학금</strong>
+              </div>
             </div>
-          </div>
-          <div className="card card-total-questions">
-            <div className="card-text">
-              사용자 질문 수<br /><strong>43231</strong>
+            <div className="card card-total-questions">
+              <div className="card-text">
+                사용자 질문 수<br /><strong>43231</strong>
+              </div>
             </div>
-          </div>
-          <div className="card card-avg-satisfaction">
-            <div className="card-text">
-              평균 만족도<br /><strong>4.7 / 5</strong>
+            <div className="card card-avg-satisfaction">
+              <div className="card-text">
+                평균 만족도<br /><strong>4.7 / 5</strong>
+              </div>
             </div>
           </div>
         </div>
 
+        *정보 신뢰성: 제공한 정보의 정확성 평가
         <div className="upload-table-wrapper">
             <table className="user-table">
               <thead>
@@ -948,7 +982,14 @@ const AdminPage = () => {
                 </tr>
               </thead>
               <tbody>
-                
+                {qaHistory.map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.question}</td>
+                    <td>{item.category || "-"}</td>
+                    <td>{item.satisfaction || "-"}</td>
+                    <td>{item.trust || "-"}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

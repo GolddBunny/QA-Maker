@@ -422,6 +422,7 @@ p.loading .bouncing-text {
   overflow-y: auto;
   flex-direction: column;
   z-index: 99;
+  align-items: stretch;
 }
 
 /* 검색 입력창 스타일링 */
@@ -438,6 +439,7 @@ p.loading .bouncing-text {
   resize: none;
   overflow-y: auto;
   line-height: 1.2em;
+  
   box-sizing: border-box;
 }
 #search-input-chat::-webkit-scrollbar {

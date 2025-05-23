@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, json
 from services.graph_service.create_graph import generate_and_save_graph
 from graphrag.config.enums import ModelType
 from graphrag.config.models.language_model_config import LanguageModelConfig
@@ -32,6 +32,7 @@ from graphrag.query.structured_search.global_search.community_context import (
 from graphrag.query.structured_search.global_search.search import GlobalSearch
 
 query_bp = Blueprint('query', __name__)
+BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
 
 # Thread pool for running async code with Flask
 thread_pool = ThreadPoolExecutor(max_workers=5)
@@ -62,7 +63,7 @@ def run_local_query():
     query_text = request.json.get('query', '')
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
-        
+
     # Define input and database paths
     INPUT_DIR = f"../data/input/{page_id}/output"    
     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
@@ -349,3 +350,73 @@ def generate_graph():
     except Exception as e:
         print(f"Error in generate_graph: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@query_bp.route('/admin/all-graph', methods=['POST'])
+def all_graph():
+    page_id = request.json.get('page_id', '')
+
+    try:
+        # 절대 경로로 안전하게 설정
+        base_path = os.path.join(BASE_PATH, str(page_id), "output")
+        #print("base_path:", base_path)
+
+        entities_parquet = os.path.join(base_path, "entities.parquet")
+        relationships_parquet = os.path.join(base_path, "relationships.parquet")
+
+        entities_df = pd.read_parquet(entities_parquet)
+        relationships_df = pd.read_parquet(relationships_parquet)
+
+        # entities: degree 기준 상위 100개
+        top_entities = (
+            entities_df
+            .sort_values(by='degree', ascending=False)
+            .head(120)
+            ['human_readable_id']
+            .astype(int)
+            .tolist()
+        )
+
+        # relationships: weight 기준 상위 100개
+        top_relationships = (
+            relationships_df
+            .sort_values(by='weight', ascending=False)
+            .head(100)
+            ['human_readable_id']
+            .astype(int)
+            .tolist()
+        )
+        # GraphML / JSON 절대 경로
+        graphml_path = os.path.abspath(os.path.join(BASE_PATH, "../../data/graphs", str(page_id), "all_graph.graphml"))
+        json_path = os.path.abspath(os.path.join(BASE_PATH, "../../frontend/public/json", str(page_id), "admin_graphml_data.json"))
+
+        # print(f"graphml_path exists: {os.path.exists(os.path.dirname(graphml_path))}")
+        # print(f"json_path exists: {os.path.exists(os.path.dirname(json_path))}")
+
+        os.makedirs(os.path.dirname(graphml_path), exist_ok=True)
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+
+        # 그래프 생성 및 저장
+        # generate_and_save_graph(
+        #     entities_df['human_readable_id'].astype(int).tolist(),
+        #     relationships_df['human_readable_id'].astype(int).tolist(),
+        #     page_id,
+        #     graphml_path=graphml_path,
+        #     json_path=json_path
+        # )
+        generate_and_save_graph(
+            top_entities,
+            top_relationships,
+            page_id,
+            graphml_path=graphml_path,
+            json_path=json_path
+        )
+
+        # 저장된 JSON 파일을 읽어서 응답
+        with open(json_path, 'r', encoding='utf-8') as f:
+            graph_data = json.load(f)
+
+        return jsonify(graph_data)
+
+    except Exception as e:
+        print(f"[Graph 생성 에러]: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
