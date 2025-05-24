@@ -64,7 +64,8 @@ def run_local_query():
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
 
     # Define input and database paths
-    INPUT_DIR = f"../data/input/{page_id}/output"    
+    #INPUT_DIR = f"../data/input/{page_id}/output"
+    INPUT_DIR = f"../data/input/{page_id}/output"
     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
     COMMUNITY_REPORT_TABLE = "community_reports"
     ENTITY_TABLE = "entities"
@@ -170,7 +171,7 @@ def run_local_query():
         token_encoder=token_encoder,
         model_params=model_params,
         context_builder_params=local_context_params,
-        response_type="multiple paragraphs",
+        response_type="Multi-Page Report",
     )
     
     try:
@@ -294,7 +295,7 @@ def run_global_query():
         json_mode=True,
         context_builder_params=context_builder_params,
         concurrent_coroutines=32,
-        response_type="multiple paragraphs",
+        response_type="Multi-Page Report",
     )
     
     try:

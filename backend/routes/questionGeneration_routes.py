@@ -136,10 +136,11 @@ def generate_related_questions():
 
         Guidelines:
         - Do NOT repeat the same question using different wording.
-        - Explore related **topics, entities, attributes, or policies** that are also covered in the data.
+        - Explore related **topics, entities, attribute** that are also covered in the data.
         - Vary the focus of each question (e.g., graduation criteria → credit, time, departments, exceptions, etc.).
         - Preferably, cover **other departments**, **different graduation requirements**, **credit details**, **internship conditions**, etc.
         - Do not refer to data tables or technical terms directly.
+        - The candidate questions should be answerable using the data tables provided, but should not mention any specific data fields or data tables in the question text.
         - Stay within the scope of the data content.
 
         Your responses must be in Korean.
