@@ -5,6 +5,14 @@ import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
+import { FileDropHandler } from '../api/handleFileDrop';
+import { fetchEntities, fetchRelationships } from '../api/AllParquetView';
+import { fetchGraphData } from '../api/AdminGraph';
+import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
+import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
+import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
+import { processDocuments } from '../api/DocumentApi';
+import { applyIndexing, updateIndexing } from '../api/IndexingButton';
 
 const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
@@ -13,13 +21,6 @@ const UPDATE_URL = `${BASE_URL}/update`;
 const APPLY_URL = `${BASE_URL}/apply`;
 const URL_URL = `${BASE_URL}`;
 
-const allowedFileTypes = [
-  'application/pdf',
-  'text/plain',
-  'application/octet-stream', //hwp
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-  'application/msword' // .doc
-];
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -59,131 +60,20 @@ const AdminPage = () => {
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
 
-    
-    const fetchGraphData = useCallback(async (pageId) => {
-      if (!pageId) return;
-      const cacheKey = `graphData-${pageId}`;
-
-      if (graphDataCacheRef.current[cacheKey]) {
-        console.log("그래프 데이터 캐시에서 로드됨");
-        // 변경 있을 때만 setGraphData 호출
-        setGraphData(prev => {
-          if (JSON.stringify(prev) !== JSON.stringify(graphDataCacheRef.current[cacheKey])) {
-            return graphDataCacheRef.current[cacheKey];
-          }
-          return prev;
-        });
-        return;
-      }
-
-      // 2. 로컬 JSON 파일에서 로딩 시도
-      const loadGraphFromLocalJson = async () => {
-        const filePath = `/json/${pageId}/admin_graphml_data.json`;
-        try {
-          const res = await fetch(filePath, { cache: 'no-store' });
-          if (res.ok) {
-            const data = await res.json();
-            console.log("로컬 JSON 파일에서 그래프 데이터 로드됨");
-            return data;
-          } else {
-            console.log("로컬 JSON 파일 없음 또는 로딩 실패");
-            return null;
-          }
-        } catch (err) {
-          console.error("로컬 JSON 로딩 중 오류:", err);
-          return null;
-        }
-      };
-
-      const generateGraphViaServer = async () => {
-        console.log("서버로 그래프 생성 요청 전송 중...");
-        const res = await fetch(`${BASE_URL}/admin/all-graph`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-          },
-          body: JSON.stringify({ page_id: pageId }),
-        });
-        console.log("서버 응답 상태:", res.status);
-        if (!res.ok) throw new Error(`서버 그래프 생성 실패: ${res.status}`);
-
-        // 응답 결과가 JSON 직접 포함되어 있다고 가정
-        return await res.json();
-      };
-
-      try {
-        let data = await loadGraphFromLocalJson();
-        if (!data) {
-          data = await generateGraphViaServer();
-        }
-
-        if (data) {
-          graphDataCacheRef.current[cacheKey] = data;
-          setGraphData(data);
-        }
-      } catch (err) {
-        console.error("그래프 데이터 로드 중 오류:", err);
-      }
-    }, []);
-
-    const fetchEntities = useCallback(async (id) => {
-      if (!id) return null;
-      
-      try {
-        const res = await fetch(`${BASE_URL}/api/entity/${id}`);
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(`Entity fetch error: ${res.statusText}, Details: ${JSON.stringify(errorData)}`);
-        }
-        const data = await res.json();
-        return data;
-      } catch (err) {
-        console.error("entity fetch error:", err);
-        setDataFetchError("엔티티 데이터 로드 실패");
-        return [];
-      }
-    }, []);
-
-    // 관계 데이터 로드
-    const fetchRelationships = useCallback(async (id) => {
-      if (!id) return null;
-      
-      try {
-        const res = await fetch(`${BASE_URL}/api/relationship/${id}`);
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(`Relationship fetch error: ${res.statusText}, Details: ${JSON.stringify(errorData)}`);
-        }
-        const data = await res.json();
-        return data;
-      } catch (err) {
-        console.error("relationship fetch error:", err);
-        setDataFetchError("관계 데이터 로드 실패");
-        return [];
-      }
-    }, []);
+    const { handleFileDrop } = FileDropHandler({
+      uploadedDocs,
+      setUploadedDocs,
+      setDuplicateFileName,
+      setIsFileLoading,
+      setHasDocuments,
+      isAnyProcessing,
+      currentPageId
+    });
 
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
-      try {
-        const response = await fetch(`${URL_URL}/get-urls/${pageId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          setUploadedUrls(data.urls || []);
-        } else {
-          console.error('URL 목록 불러오기 실패:', data.error);
-        }
-      } catch (error) {
-        console.error('URL 목록 불러오기 오류:', error);
-      }
+      const urls = await fetchSavedUrlsApi(pageId);
+      setUploadedUrls(urls);
     }, []);
 
     // 문서 정보 로드
@@ -202,18 +92,9 @@ const AdminPage = () => {
 
     // Output 폴더 확인
     const checkOutputFolder = useCallback(async (pageId) => {
-      try {
-        const response = await fetch(`${BASE_URL}/has-output/${pageId}`);
-        const data = await response.json();
-
-        if (data.success) {
-          setIsNewPage(!data.has_output);  // 있으면 Update, 없으면 Apply
-        } else {
-          console.warn("서버가 output 폴더 상태를 반환하지 않음.");
-        }
-      } catch (err) {
-        console.error("Output 폴더 확인 실패:", err);
-      }
+      const hasOutput = await checkOutputFolderApi(pageId);
+      if (hasOutput === null) return; // 에러 처리
+      setIsNewPage(!hasOutput);  // 있으면 Update, 없으면 Apply
     }, []);
 
     const loadAllData = useCallback(async (id) => {
@@ -225,8 +106,8 @@ const AdminPage = () => {
       try {
         // 병렬로 데이터 로드
         const [entitiesData, relationshipsData] = await Promise.all([
-          fetchEntities(id),
-          fetchRelationships(id)
+          fetchEntities(id, setDataFetchError),
+          fetchRelationships(id, setDataFetchError)
         ]);
         
         // 데이터 설정
@@ -239,7 +120,7 @@ const AdminPage = () => {
       } finally {
         setLoading(false);
       }
-    }, [fetchEntities, fetchRelationships]);
+    }, []);
 
     useEffect(() => {
       if (!pageId) {
@@ -276,7 +157,11 @@ const AdminPage = () => {
           fetchSavedUrls(savedPageId),
           checkOutputFolder(savedPageId),
           loadAllData(savedPageId),
-          fetchGraphData(savedPageId) 
+          fetchGraphData({
+            pageId: savedPageId,
+            graphDataCacheRef,
+            setGraphData
+          }),
         ]).catch(error => {
           console.error("데이터 로드 중 오류:", error);
         });
@@ -306,76 +191,6 @@ const AdminPage = () => {
 
       setIsDragOver(false);
     };
-
-    const handleFileDrop = async(e) => {
-        e.preventDefault();
-        setIsDragOver(false);
-
-        if (isAnyProcessing) return;
-        setIsFileLoading(true);
-
-        try {
-          const files = Array.from(e.dataTransfer ? e.dataTransfer.files : e.target.files);
-          
-          // 파일 확장자 필터링
-          const filteredFiles = files.filter(file => {
-            const isAllowedType = allowedFileTypes.includes(file.type);
-            const isHwpFile = file.name.toLowerCase().endsWith('.hwp');
-            return isAllowedType || isHwpFile;
-          });
-
-          if (filteredFiles.length === 0) {
-              alert(".pdf, .hwp, .docx, .txt 파일만 업로드할 수 있습니다.");
-              return;
-          }
-
-          // 이미 업로드한 문서가 있는지 확인
-          const existingDocs = uploadedDocs.map(doc => doc.name.toLowerCase());
-          const newFiles = filteredFiles.filter(file => !existingDocs.includes(file.name.toLowerCase()));
-
-          if (newFiles.length === 0) {
-            setDuplicateFileName(filteredFiles[0].name); // 첫 번째 중복 파일 이름만 표시
-            return;
-          }
-
-          const formData = new FormData();
-          newFiles.forEach(file => {
-              formData.append('files', file);
-          });
-
-          const response = await fetch(`${UPLOAD_URL}/${currentPageId}`, {
-            method: 'POST',
-            body: formData
-          });
-
-          const data = await response.json();
-          if (!data.success) {
-            alert('파일 업로드에 실패했습니다.');
-            return;
-          }
-
-          // 오늘 날짜 (YYYY-MM-DD)
-          const today = new Date().toISOString().split('T')[0];
-          // 새로 추가할 문서 객체 리스트
-          const newDocObjs = newFiles.map(file => ({
-            name: file.name,
-            category: '학교',   // 임시로 고정
-            date: today
-          }));
-
-          // 상태 및 로컬스토리지 업데이트
-          const updated = [...uploadedDocs, ...newDocObjs];
-          setUploadedDocs(updated);
-          localStorage.setItem(`uploadedDocs_${currentPageId}`, JSON.stringify(updated));
-          setHasDocuments(true);
-
-        } catch (error) {
-            console.error('파일 업로드 오류:', error);
-            alert('파일 업로드 중 오류가 발생했습니다.');
-        } finally {
-            setIsFileLoading(false);
-        }
-    };
     
     // URL 유효성 검사
     const isValidUrl = (url) => {
@@ -389,42 +204,26 @@ const AdminPage = () => {
     
     // URL 저장
     const handleUrlUpload = async () => {
-      if (urlInput.trim() === '') {
-        return;
-      }
-      
+      if (urlInput.trim() === '') return;
       if (isAnyProcessing) return;
-      
-      // URL 유효성 검사
+
       if (!isValidUrl(urlInput)) {
         alert('유효한 URL을 입력해주세요');
         return;
       }
+
       setIsUrlLoading(true);
-      
+
       try {
-        // URL 저장 및 크롤링 즉시 실행
-        const response = await fetch(`${URL_URL}/add-url/${currentPageId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: urlInput
-          }),
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          console.log('URL 저장 완료:', data);
-          
-          // 처리 완료된 URL을 업로드된 목록에 추가
-          setUploadedUrls(data.urls || []);
+        const result = await uploadUrl(currentPageId, urlInput);
+
+        if (result.success) {
+          console.log('URL 저장 완료:', result.urls);
+          setUploadedUrls(result.urls || []);
           setUrlInput('');
           alert("URL이 등록되었습니다.");
         } else {
-          throw new Error('URL 저장 실패: ' + data.error);
+          throw new Error('URL 저장 실패: ' + result.error);
         }
       } catch (error) {
         console.error('URL 추가 오류:', error);
@@ -444,33 +243,29 @@ const AdminPage = () => {
         alert("먼저 문서를 업로드해주세요.");
         return;
       }
-      
+
       if (isAnyProcessing) return;
-      
+
       setIsProcessLoading(true);
 
       try {
-        // 문서 처리 요청
-        const response = await fetch(`${PROCESS_URL}/${currentPageId}`, {
-            method: 'POST'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            alert('문서 처리 완료');
+        const result = await processDocuments(currentPageId);
+
+        if (result.success) {
+          alert("문서 처리 완료");
         } else {
-            console.error('문서 처리 실패:', data.error);
-            alert('문서 처리에 실패했습니다.');
+          console.error("문서 처리 실패:", result.error);
+          alert("문서 처리에 실패했습니다.");
         }
       } catch (error) {
-          console.error('문서 처리 중 오류:', error);
-          alert('문서 처리 중 오류가 발생했습니다.');
+        console.error("문서 처리 중 오류:", error);
+        alert("문서 처리 중 오류가 발생했습니다.");
       } finally {
-          setIsProcessLoading(false);
+        setIsProcessLoading(false);
       }
     };
 
+    // 인덱싱 버튼
     const handleApply = async () => {
       if (!currentPageId) {
         alert("먼저 페이지를 생성해주세요.");
@@ -480,117 +275,46 @@ const AdminPage = () => {
         alert("먼저 문서나 URL을 업로드해주세요.");
         return;
       }
-      
+
       if (isAnyProcessing) return;
-      
+
       setIsApplyLoading(true);
 
-
-
       try {
-        const response = await fetch(`${APPLY_URL}/${currentPageId}`, {
-          method: 'POST'
-        });
-    
-        const data = await response.json();
-
-        if (data.success) {
+        const result = await applyIndexing(currentPageId);
+        if (result.success) {
           alert("문서 인덱싱 완료");
           setIsNewPage(false);
         } else {
-          alert(`문서 인덱싱 실패: ${data.error}`);
+          alert(`문서 인덱싱 실패: ${result.error}`);
         }
-      } catch (err) {
-        console.error('인덱싱 요청 중 오류:', err);
-        alert("문서 인덱싱 중 오류가 발생했습니다.");
       } finally {
         setIsApplyLoading(false);
       }
     };
 
-    const handleUpdate = async() => {
+    const handleUpdate = async () => {
       if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
         alert("먼저 문서나 URL을 업로드해주세요.");
         return;
       }
 
       if (isAnyProcessing) return;
-      
+
       setIsApplyLoading(true);
 
       try {
-        const response = await fetch(`${UPDATE_URL}/${currentPageId}`, {
-          method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if(data.success) {
-          alert('업데이트 완료');
+        const result = await updateIndexing(currentPageId);
+        if (result.success) {
+          alert("업데이트 완료");
         } else {
-          console.error('update failed');
-          alert('업데이트에 실패했습니다.');
-        } 
-      } catch(error) {
-        console.error('error in try-catch for updating:', error);
-        alert('업데이트 중 오류 발생');
+          alert(`업데이트 실패: ${result.error}`);
+        }
       } finally {
         setIsApplyLoading(false);
       }
     };
 
-    const renderEntityTable = () => (
-      <>
-        <div className="result-table-wrapper">
-          <table className="result-table">
-            <thead>
-              <tr>
-                <th>id</th>
-                <th>title</th>
-                <th>description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEntities.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{item.id}</td>
-                  <td>{item.title}</td>
-                  <td>{item.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </>
-    );
-
-    const renderRelationshipTable = () => (
-      <>
-        <div className="result-table-wrapper">
-          <table className="result-table">
-            <thead>
-              <tr>
-                <th>id</th>
-                <th>source</th>
-                <th>target</th>
-                <th>description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRelationships.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{item.id}</td>
-                  <td>{item.source}</td>
-                  <td>{item.target}</td>
-                  <td>{item.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </>
-    );
-    
     const filteredEntities = entities
       .filter((item) =>
         item.title && item.title.toLowerCase().includes(entitySearchTerm.toLowerCase())
@@ -607,12 +331,14 @@ const AdminPage = () => {
 
     const handleShowGraph = () => {
       if (!graphData && currentPageId) {
-        fetchGraphData(currentPageId);
+        fetchGraphData({
+          pageId: currentPageId,
+          graphDataCacheRef,
+          setGraphData
+        });
       }
       setShowGraph(true);
     };
-    
-
     
 
     return (
@@ -900,36 +626,40 @@ const AdminPage = () => {
               </div>
             </div>
             <div className="search-bar">
-            <div
-              className={`search-wrapper ${isSearchHovered ? "expanded" : ""}`}
-              onMouseEnter={() => setIsSearchHovered(true)}
-              onMouseLeave={() => setIsSearchHovered(false)}
-            >
-              <div className="search-icon">
-                🔍
+              <div
+                className={`search-wrapper ${isSearchHovered ? "expanded" : ""}`}
+                onMouseEnter={() => setIsSearchHovered(true)}
+                onMouseLeave={() => setIsSearchHovered(false)}
+              >
+                  <div className="search-icon">
+                    🔍
+                  </div>
+                  <input
+                    type="text"
+                    placeholder={
+                      activeTab === "entity" ? "title로 검색" : "description 내용 검색"
+                    }
+                    value={activeTab === "entity" ? entitySearchTerm : relationshipSearchTerm}
+                    onChange={(e) =>
+                      activeTab === "entity"
+                        ? setEntitySearchTerm(e.target.value)
+                        : setRelationshipSearchTerm(e.target.value)
+                    }
+                    className="search-input"
+                  />
+                </div>
+              <div className="entity-count">
+                {activeTab === "entity"
+                  ? `총 엔티티 수: ${filteredEntities.length}`
+                  : `총 엣지 수: ${filteredRelationships.length}`}
               </div>
-              <input
-                type="text"
-                placeholder={
-                  activeTab === "entity" ? "title로 검색" : "description 내용 검색"
-                }
-                value={activeTab === "entity" ? entitySearchTerm : relationshipSearchTerm}
-                onChange={(e) =>
-                  activeTab === "entity"
-                    ? setEntitySearchTerm(e.target.value)
-                    : setRelationshipSearchTerm(e.target.value)
-                }
-                className="search-input"
-              />
-            </div>
-            <div className="entity-count">
-              {activeTab === "entity"
-                ? `총 엔티티 수: ${filteredEntities.length}`
-                : `총 엣지 수: ${filteredRelationships.length}`}
             </div>
           </div>
-          </div>
-          {activeTab === "entity" ? renderEntityTable() : renderRelationshipTable()}
+          {activeTab === "entity" ? (
+            <EntityTable entities={filteredEntities} />
+          ) : (
+            <RelationshipTable relationships={filteredRelationships} />
+          )}
         </div>
 
         {/* 그래프 보기 */}
