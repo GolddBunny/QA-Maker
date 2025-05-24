@@ -61,17 +61,12 @@ export const FileDropHandler = ({
         alert('파일 업로드에 실패했습니다.');
         return;
       }
-
-      const today = new Date().toISOString().split('T')[0];
-      const newDocObjs = newFiles.map(file => ({
-        name: file.name,
-        category: '학교',
-        date: today
-      }));
+      
+      const newDocObjs = data.uploaded_files; // ← 서버에서 보낸 firebase 저장 결과
 
       const updated = [...uploadedDocs, ...newDocObjs];
       setUploadedDocs(updated);
-      localStorage.setItem(`uploadedDocs_${currentPageId}`, JSON.stringify(updated));
+      //localStorage.setItem(`uploadedDocs_${currentPageId}`, JSON.stringify(updated));
       setHasDocuments(true);
 
     } catch (error) {
