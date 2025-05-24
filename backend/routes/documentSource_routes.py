@@ -256,7 +256,7 @@ def convert_to_pdf_fast(input_file):
                 pdf_stream.seek(0)
                 return pdf_stream
         
-        print(f"빠른 PDF 변환 시작: {input_file}")
+        print(f"PDF 변환 시작: {input_file}")
         
         # LibreOffice 서비스 확인 및 시작
         if not libreoffice_service.is_running():
@@ -408,7 +408,8 @@ def get_document(filename):
         print(f"요청된 파일명: '{decoded_filename}'")
         
         # 동적 DATA_DIR 경로 구성
-        DATA_DIR = os.path.join(PROJECT_ROOT, f'data/input/{page_id}/input')
+        DATA_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'public', 'data', page_id, 'input')
+
         print(f"데이터 디렉토리: {DATA_DIR}")
         
         if not os.path.exists(DATA_DIR):
@@ -512,8 +513,8 @@ def download_document(filename):
         print(f"다운로드 요청된 파일명: '{decoded_filename}'")
         
         # 동적 DATA_DIR 경로 구성
-        DATA_DIR = os.path.join(PROJECT_ROOT, f'data/input/{page_id}/input')
-        
+        DATA_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'public', 'data', page_id, 'input')
+
         if not os.path.exists(DATA_DIR):
             return jsonify({"error": "데이터 디렉토리를 찾을 수 없습니다"}), 404
         

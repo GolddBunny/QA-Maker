@@ -6,7 +6,6 @@ import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
 
-
 const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 const PROCESS_URL = `${BASE_URL}/process-documents`;
