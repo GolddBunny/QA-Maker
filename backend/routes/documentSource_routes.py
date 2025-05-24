@@ -145,23 +145,23 @@ def get_context_sources():
         with open(CSV_PATH, 'r', encoding='utf-8') as f:
             csv_reader = csv.DictReader(f)
             for row_num, row in enumerate(csv_reader, 1):
-                # print(f"행 {row_num} 처리 중: {row}")
+                #print(f"행 {row_num} 처리 중: {row}")
                 
                 # headline 처리
                 if 'text' in row and row['text']:
                     # headline 추출 시도
                     headline = extract_headline(row['text'])
                     if headline:
-                        # print(f"추출된 headline: '{headline}'")
+                        #print(f"추출된 headline: '{headline}'")
                         headlines.add(headline)
                 
                 # headline 필드가 있는 경우
                 elif 'headline' in row and row['headline'].strip():
                     headline = row['headline'].strip()
-                    print(f"직접 headline: '{headline}'")
+                    #print(f"직접 headline: '{headline}'")
                     headlines.add(headline)
         
-        print(f"최종 headlines: {list(headlines)}")
+        #print(f"최종 headlines: {list(headlines)}")
         
         return jsonify({
             "headlines": list(headlines),
@@ -177,7 +177,7 @@ def extract_headline(text):
         return None
     
     try:
-        # print(f"headline 추출 시도: '{text}'")
+        #print(f"headline 추출 시도: '{text}'")
         
         # 방법 1: headline: 뒤에 오는 텍스트 추출 (영어/한글 모두 지원)
         # 더 포괄적인 정규식 사용
@@ -326,7 +326,7 @@ def convert_to_pdf_fast(input_file):
                             del conversion_cache[oldest_key]
                         
                         conversion_cache[cache_key] = pdf_data
-                        print(f"PDF 캐시에 저장: {len(pdf_data)} bytes")
+                        #print(f"PDF 캐시에 저장: {len(pdf_data)} bytes")
                 
                 pdf_stream = io.BytesIO(pdf_data)
                 pdf_stream.seek(0)
@@ -346,7 +346,7 @@ def get_document(filename):
             return jsonify({"error": "page_id가 제공되지 않았습니다"}), 400
         
         decoded_filename = urllib.parse.unquote(filename)
-        print(f"요청된 파일명: '{decoded_filename}'")
+        #print(f"요청된 파일명: '{decoded_filename}'")
         
         # 동적 DATA_DIR 경로 구성
         DATA_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'public', 'data', page_id, 'input')
@@ -415,11 +415,11 @@ def get_document(filename):
         
         # PDF 파일이면 바로 반환
         if original_ext == '.pdf':
-            print("PDF 파일 직접 반환")
+            #print("PDF 파일 직접 반환")
             return send_file(file_path, mimetype='application/pdf')
         
         # 빠른 변환 시도 (HWP는 이미 제외됨)
-        print(f"PDF 변환 시작: {original_ext} -> PDF")
+        #print(f"PDF 변환 시작: {original_ext} -> PDF")
         start_total = time.time()
         
         pdf_stream = convert_to_pdf_fast(file_path)
@@ -451,7 +451,7 @@ def download_document(filename):
             return jsonify({"error": "page_id가 제공되지 않았습니다"}), 400
         
         decoded_filename = urllib.parse.unquote(filename)
-        print(f"다운로드 요청된 파일명: '{decoded_filename}'")
+        #print(f"다운로드 요청된 파일명: '{decoded_filename}'")
         
         # 동적 DATA_DIR 경로 구성
         DATA_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'public', 'data', page_id, 'input')
