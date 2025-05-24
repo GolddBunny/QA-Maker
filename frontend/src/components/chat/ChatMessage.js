@@ -140,6 +140,16 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         }
     };
 
+    const getCurrentAccuracy = () => {
+        if (currentAnswerType === 'local') {
+            return qa.localConfidence !== null && qa.localConfidence !== undefined ? 
+                qa.localConfidence.toFixed(1) : '계산중';
+        } else {
+            return qa.globalConfidence !== null && qa.globalConfidence !== undefined ? 
+                qa.globalConfidence.toFixed(1) : '계산중';
+        }
+    };
+
     const scrollToBottom = () => {
         if (chatEndRef.current) {
             chatEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -245,7 +255,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     {!showGraph && !showDocument && (
                         <div className="action-button-container">
                         <span className="action-button-left">
-                            정확도 {currentAnswerType === 'local' ? qa.localConfidence : qa.globalConfidence}%
+                            정확도 {getCurrentAccuracy()}%
                         </span>
                         </div>
                     )}
@@ -279,7 +289,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </div>
                     )}
 
-                    {qa.relatedQuestionsVisible && !showGraph && (
+                    {!showGraph && (
                         <div className="related-questions">
                             <div className="related-questions-header">💁🏻‍♀️ 관련 질문</div>
                             {isLoadingRelated ? (
