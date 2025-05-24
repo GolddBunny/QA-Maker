@@ -145,14 +145,14 @@ def get_context_sources():
         with open(CSV_PATH, 'r', encoding='utf-8') as f:
             csv_reader = csv.DictReader(f)
             for row_num, row in enumerate(csv_reader, 1):
-                print(f"행 {row_num} 처리 중: {row}")
+                # print(f"행 {row_num} 처리 중: {row}")
                 
                 # headline 처리
                 if 'text' in row and row['text']:
                     # headline 추출 시도
                     headline = extract_headline(row['text'])
                     if headline:
-                        print(f"추출된 headline: '{headline}'")
+                        # print(f"추출된 headline: '{headline}'")
                         headlines.add(headline)
                 
                 # headline 필드가 있는 경우
@@ -177,7 +177,7 @@ def extract_headline(text):
         return None
     
     try:
-        print(f"headline 추출 시도: '{text}'")
+        # print(f"headline 추출 시도: '{text}'")
         
         # 방법 1: headline: 뒤에 오는 텍스트 추출 (영어/한글 모두 지원)
         # 더 포괄적인 정규식 사용
