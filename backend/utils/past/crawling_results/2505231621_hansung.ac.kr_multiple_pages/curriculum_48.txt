@@ -1,0 +1,15 @@
+Title: 
+
+URL Source: https://hansung.ac.kr/curriculum/CSE/141/2695/artclView.do
+
+Markdown Content:
+
+## 교과목 소개
+
+멀티미디어 분야의 미래 발전 방향인 가상현실의 이론을 학습하고 실습을 통하여 가상환경 및 Object를 제작한다. 가상현실 시스템인 HMD, Tracker, Data Glove 등의 기술적인 내용을 학습한다.
+
+### 교육과정소개
+
+| 교과목코드 | 교과목 | 학점 |
+| --- | --- | --- |
+| V023005 | 가상현실 | 3 |

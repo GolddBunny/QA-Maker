@@ -44,12 +44,11 @@ DOC_EXTENSIONS = ['.pdf', '.docx', '.doc', '.hwp', '.txt', '.hwpx', 'word']
 # 제외할 url 패턴
 EXCLUDE_PATTERNS = [
     '/login', '/logout', '/search?', 'javascript:', '#', 'mailto:', 'tel:',
-    '/api/', '/rss/', 'comment', 'print.do', 'popup', 'redirect', 'captcha', 'admin', 'synapView.do?', '/synapView.do?', '/synap', '/synap/view.do', '/synap/view.do?',
+    '/api/', '/rss/', 'comment', 'print.do', 'popup', 'redirect', 'captcha', 'admin', 'synapView.do?', '/synapView.do?', '/synap', '/synap/view.do', '/synap/view.do?', 'rssList.do',
     '/hansung/8390'  # 추가된 제외 패턴
 ]
 # 제외할 파일 확장자
-EXCLUDE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.tif', '.tiff', '.ico', '.webp', 
-                     '.html', '.htm', '.css', '.js', '.mp3', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv']
+EXCLUDE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.tif', '.tiff', '.ico', '.webp', '.html', '.htm', '.css', '.js', '.mp3', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv']
 # 페이지네이션 감지를 위한 CSS 식별자
 PAGINATION_SELECTORS = [
     ".pagination", "nav.pagination", "ul.pagination", ".paging", "._paging", "_totPage"
@@ -98,6 +97,10 @@ class ScopeLimitedCrawler:
         self.use_requests: bool = use_requests  # requests 라이브러리 사용 여부
         self.session = requests.Session()  # 세션 생성
         self.session.headers.update({"User-Agent": random.choice(USER_AGENTS)})  # 랜덤 User-Agent 설정
+        
+        # 페이지 계층 구조를 추적하기 위한 딕셔너리 추가
+        self.page_hierarchy = {}  # 키: URL, 값: {parent: 부모URL, children: [자식URL 리스트]}
+        self.root_url = None
 
         # 결과 저장 디렉토리
         os.makedirs(BASE_DIR, exist_ok=True)
@@ -134,7 +137,7 @@ class ScopeLimitedCrawler:
         chrome_options.add_argument('--disable-popup-blocking')
         chrome_options.add_argument('--disable-notifications')
         
-        # 성능 최적화 설정
+        # 성능 최적화 설정 - 이미지, 알림, 스타일시트, 쿠키, 자바스크립트, 플러그인, 팝업, 지리정보, 미디어스트림. 1은 허용, 2는 비허용
         prefs = {
             "profile.managed_default_content_settings.images": 2,
             "profile.default_content_setting_values.notifications": 2,
@@ -175,6 +178,19 @@ class ScopeLimitedCrawler:
                 logger.info("웹드라이버가 성공적으로 종료되었습니다")
             except Exception as e:
                 logger.error(f"웹드라이버 종료 중 오류 발생: {e}")
+
+    def check_page_title(self, html_content: str) -> bool:
+        """페이지 제목이 Alert 500인지 확인"""
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            title_tag = soup.find('title')
+            if title_tag and title_tag.string:
+                title_text = title_tag.string.strip()
+                return title_text == "Alert 500"
+            return False
+        except Exception as e:
+            logger.error(f"페이지 제목 확인 중 오류 발생: {e}")
+            return False
 
     def normalize_url(self, url: str) -> str:
         """URL 정규화하여 프래그먼트와 후행 슬래시 제거, 페이지네이션 고려"""
@@ -263,6 +279,10 @@ class ScopeLimitedCrawler:
             # 도메인 확인 - 기본 도메인에 속해야 함
             if self.base_domain not in parsed.netloc:
                 return False
+                
+            # 범위 패턴이 없으면 도메인 전체를 허용 (수정된 부분)
+            if not self.scope_patterns:
+                return True
                 
             # 범위 패턴 일치 여부 확인
             url_path = parsed.path.lower()
@@ -362,10 +382,16 @@ class ScopeLimitedCrawler:
                 # 일반 URL 추가 (제외 패턴 및 범위 확인)
                 if not is_doc and not self.should_exclude_url(full_url) and self.is_in_scope(full_url):
                     links.add(full_url)
+                elif not is_doc and not self.should_exclude_url(full_url) and not self.is_in_scope(full_url):
+                    # 범위 밖 URL 디버깅
+                    logger.debug(f"범위 밖 URL 제외: {full_url}, 범위 패턴: {self.scope_patterns}")
 
             # 2. 첨부파일 추출
             attachment_links = self.extract_attachments(soup, base_url)
             doc_links.update(attachment_links)
+            
+            # 디버깅 로그 추가
+            logger.debug(f"링크 추출 완료 - 일반: {len(links)}개, 문서: {len(doc_links)}개")
                     
             return links, doc_links
             
@@ -457,10 +483,21 @@ class ScopeLimitedCrawler:
                             self.session.headers.update({"User-Agent": random.choice(USER_AGENTS)})
                             
                         response = self.session.get(url, timeout=self.timeout)
+                        
+                        # 여기가 수정된 부분 - raise_for_status() 호출 전에 500 에러 확인
+                        if 500 <= response.status_code < 600:  # 모든 5xx 에러 처리
+                            logger.warning(f"500 에러 페이지 감지, 건너뜁니다: {url}, 상태 코드: {response.status_code}")
+                            return False, None, url
+                            
                         response.raise_for_status()
                         
                         # 자바스크립트가 많은 페이지인지 확인
                         soup = BeautifulSoup(response.text, 'html.parser')
+                        
+                        # 페이지 제목이 "Alert 500"인지 확인
+                        if self.check_page_title(response.text):
+                            logger.warning(f"Alert 500 페이지 제목 감지, 건너뜁니다: {url}")
+                            return False, None, url
                         
                         # 페이지가 자바스크립트를 필요로 하는 것 같으면 Selenium으로 전환
                         noscript_content = soup.find('noscript')
@@ -482,6 +519,11 @@ class ScopeLimitedCrawler:
                         try:
                             self.driver.get(url)
                             
+                            # 로딩 후 페이지의 상태를 확인
+                            if "500 error" in self.driver.page_source.lower() or "500 에러" in self.driver.page_source.lower():
+                                logger.warning(f"500 에러 페이지 감지(Selenium), 건너뜁니다: {url}")
+                                return False, None, url
+                            
                             # 페이지 로드 대기
                             WebDriverWait(self.driver, self.timeout).until(
                                 EC.presence_of_element_located((By.TAG_NAME, 'body'))
@@ -489,6 +531,11 @@ class ScopeLimitedCrawler:
                             
                             html_content = self.driver.page_source
                             current_url = self.driver.current_url
+                            
+                            # 페이지 제목이 "Alert 500"인지 확인
+                            if self.check_page_title(html_content):
+                                logger.warning(f"Alert 500 페이지 제목 감지(Selenium), 건너뜁니다: {url}")
+                                return False, None, url
                             
                             soup = BeautifulSoup(html_content, 'html.parser')
                             return True, soup, current_url
@@ -958,22 +1005,23 @@ class ScopeLimitedCrawler:
         if scope_patterns:
             self.scope_patterns = [p.lower() for p in scope_patterns]
         else:
-            # 시작 URL 경로에서 범위 패턴 추출
-            path_parts = parsed_url.path.lower().split('/')
-            for part in path_parts:
-                if part and part not in ['sites', 'index.do', 'web']:
-                    self.scope_patterns.append(part.lower())
-        
-        # 범위 패턴이 추출되지 않은 경우
-        if not self.scope_patterns:
-            logger.warning("범위 패턴이 지정되지 않았습니다. 도메인 전체 범위 사용.")
+            # scope_patterns가 None이면 전체 도메인 크롤링 (수정된 부분)
+            self.scope_patterns = []
+            logger.info("범위 패턴이 지정되지 않아 전체 도메인을 크롤링합니다.")
         
         # 컬렉션 초기화
         all_page_urls = set()
         self.all_doc_urls = set()  # 모든 문서 URL 추적
-        queue = [start_url]
         self.visited_urls = set()  # 방문한 URL 집합 초기화
         current_page = 0
+        
+        # 페이지 계층 구조 초기화
+        self.page_hierarchy = {}  # 키: URL, 값: {parent: 부모URL, children: [자식URL 리스트]}
+        self.root_url = start_url
+        self.page_hierarchy[start_url] = {'parent': None, 'children': []}
+        
+        # 큐에 (URL, 부모URL) 튜플 형태로 저장
+        queue = [(start_url, None)]
         
         # 파일 이름 생성을 위한 타임스탬프와 범위 이름 생성
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
@@ -999,6 +1047,9 @@ class ScopeLimitedCrawler:
         logger.info(f"범위 패턴: {self.scope_patterns}")
         logger.info(f"최대 페이지: {self.max_pages}")
         
+        # 사이트맵 자동 발견 및 처리 추가
+        self._discover_and_process_sitemaps(queue, processed_sitemaps)
+        
         try:
             # 병렬 처리를 위한 설정
             max_workers = min(10, os.cpu_count() or 4)  # CPU 코어 수에 따라 워커 수 조정 or 4
@@ -1011,9 +1062,10 @@ class ScopeLimitedCrawler:
                     
                     # 배치 처리할 URL 목록
                     batch_urls = []
+                    batch_parents = []
                     for _ in range(batch_size):
                         if queue:
-                            url = queue.pop(0)
+                            url, parent = queue.pop(0)
                             url = self.normalize_url(url)
                             
                             # 이미 방문했거나 범위 밖인 URL 건너뛰기
@@ -1022,6 +1074,7 @@ class ScopeLimitedCrawler:
                                 
                             # 배치에 URL 추가
                             batch_urls.append(url)
+                            batch_parents.append(parent)
                             self.visited_urls.add(url)  # 큐에서 중복 처리 방지를 위해 미리 방문으로 표시
                     
                     if not batch_urls:
@@ -1033,35 +1086,33 @@ class ScopeLimitedCrawler:
                     logger.info(f"{progress} 배치 처리 중: {len(batch_urls)}개 URL")
                     
                     # URL 병렬 처리
-                    future_to_url = {executor.submit(self._process_url, url): url for url in batch_urls}
+                    future_to_url = {executor.submit(self._process_url, url, parent): url 
+                                    for url, parent in zip(batch_urls, batch_parents)}
                     
                     for future in as_completed(future_to_url):
                         url = future_to_url[future]
                         try:
                             result = future.result()
                             if result:
-                                page_links, doc_links, pagination_links = result
+                                page_links, doc_links, pagination_links, current_url = result
                                 
                                 # 페이지 URL 저장
                                 all_page_urls.add(url)
                                 page_urls_batch.append(url)
                                 
                                 # 문서 URL 저장
-                                for doc_url in doc_links:
-                                    if doc_url not in self.all_doc_urls:
-                                        self.all_doc_urls.add(doc_url)
-                                        doc_urls_batch.append(doc_url)
-                                        logger.info(f"{progress} Document found: {doc_url}")
+                                self.all_doc_urls.update(doc_links)
+                                doc_urls_batch.extend(doc_links)
                                 
-                                # 새 URL을 큐에 추가 (중복 URL 방지를 위해 정규화 적용)
+                                # 새 URL을 큐에 추가 (현재 URL을 부모로 설정)
                                 for link in page_links + pagination_links:
                                     normalized_link = self.normalize_url(link)
-                                    if normalized_link not in self.visited_urls and normalized_link not in queue:
-                                        queue.append(normalized_link)
+                                    if normalized_link not in self.visited_urls and normalized_link not in [u for u, _ in queue]:
+                                        queue.append((normalized_link, current_url))
                         except Exception as e:
-                            logger.error(f"{progress} URL 처리 실패: {url}, 오류: {e}")
+                            logger.error(f"URL 처리 결과 처리 중 오류 발생: {url}, {e}")
                     
-                    # 50개씩 증분 저장
+                    # 증분 URL 저장
                     if len(page_urls_batch) >= increment_size:
                         self._save_incrementally(page_urls_batch, page_urls_file)
                         page_urls_batch = []
@@ -1101,12 +1152,19 @@ class ScopeLimitedCrawler:
             
             logger.info(f"\nURL 발견 완료:")
             logger.info(f"발견된 페이지: {len(all_page_urls)}개, 문서: {len(self.all_doc_urls)}개")
-            logger.info(f"결과 저장: {domain_dir}")
+            logger.info(f"결과 저장 위치: {domain_dir}")
             logger.info(f"실행 시간: {execution_time:.1f}초")
+            
+            # 계층 구조 보완 및 저장
+            self.analyze_url_path_hierarchy()
+            hierarchy_file = os.path.join(domain_dir, f"hierarchy_{datetime.now().strftime('%Y%m%d_%H%M')}.json")
+            self.save_hierarchy_json(hierarchy_file)
+            logger.info(f"계층 구조 저장 완료: {hierarchy_file}")
             
             return {
                 "page_urls": all_page_urls,
                 "doc_urls": self.all_doc_urls,
+                "page_hierarchy": self.page_hierarchy,
                 "results_dir": domain_dir,
                 "json_file": json_file,
                 "execution_time": execution_time
@@ -1117,6 +1175,7 @@ class ScopeLimitedCrawler:
             return {
                 "page_urls": all_page_urls,
                 "doc_urls": self.all_doc_urls,
+                "page_hierarchy": self.page_hierarchy,
                 "error": str(e),
                 "execution_time": time.time() - start_time
             }
@@ -1246,21 +1305,31 @@ class ScopeLimitedCrawler:
             logger.error(f"XML 사이트맵 파싱 중 오류 발생 {url}: {e}")
             return xml_links
 
-    def _process_url(self, url: str) -> Optional[Tuple[List[str], List[str], List[str]]]:
+    def _process_url(self, url: str, parent_url: Optional[str] = None) -> Optional[Tuple[List[str], List[str], List[str], str]]:
         """URL을 처리하고 발견된 링크, 문서 URL, 페이지네이션 URL을 반환합니다.
         병렬 처리를 위해 독립적인 메서드로 구현됨.
         
         Args:
             url: 처리할 URL
+            parent_url: 현재 URL의 부모 URL
             
         Returns:
-            (일반 링크 목록, 문서 링크 목록, 페이지네이션 링크 목록) 튜플 또는 None (오류 시)
+            (일반 링크 목록, 문서 링크 목록, 페이지네이션 링크 목록, 현재 URL) 튜플 또는 None (오류 시)
         """
         try:
+            # 부모-자식 관계 추적
+            if url not in self.page_hierarchy:
+                self.page_hierarchy[url] = {'parent': parent_url, 'children': []}
+            
+            if parent_url and parent_url in self.page_hierarchy:
+                if url not in self.page_hierarchy[parent_url]['children']:
+                    self.page_hierarchy[parent_url]['children'].append(url)
+                    
             # 사이트맵 URL 처리
             if self.is_sitemap_url(url):
                 sitemap_links = self.handle_sitemap(url)
-                return list(sitemap_links), [], []
+                logger.info(f"사이트맵 처리 완료: {url}, 발견된 링크: {len(sitemap_links)}개")
+                return list(sitemap_links), [], [], url
             
             # 페이지 가져오기
             success, content, current_url = self.fetch_page(url)
@@ -1286,12 +1355,121 @@ class ScopeLimitedCrawler:
             # 페이지네이션 처리
             pagination_urls = self.handle_pagination(soup, url)
             
-            return list(links), list(documents), list(pagination_urls)
+            return list(links), list(documents), list(pagination_urls), url
             
         except Exception as e:
             logger.error(f"URL 처리 중 오류 발생: {url}, {e}")
             return None
 
+    def get_url_tree(self, start_url=None):
+        """계층적 URL 구조를 트리 형태로 반환"""
+        if start_url is None:
+            start_url = self.root_url
+        
+        tree = {"url": start_url, "children": []}
+        
+        # 현재 URL의 자식 URL들 처리
+        if start_url in self.page_hierarchy:
+            for child_url in self.page_hierarchy[start_url]['children']:
+                child_tree = self.get_url_tree(child_url)
+                tree["children"].append(child_tree)
+        
+        return tree
+
+    def save_hierarchy_json(self, output_file):
+        """계층 구조를 JSON 파일로 저장"""
+        tree = self.get_url_tree()
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(tree, f, ensure_ascii=False, indent=2)
+            
+    def analyze_url_path_hierarchy(self):
+        """URL 경로 분석을 통한 계층 구조 보완"""
+        # 모든 URL의 경로 구조 분석
+        for url in self.page_hierarchy:
+            parsed = urlparse(url)
+            path_parts = parsed.path.strip('/').split('/')
+            
+            # 각 URL에 depth 정보 추가
+            self.page_hierarchy[url]['depth'] = len(path_parts)
+            self.page_hierarchy[url]['path_parts'] = path_parts
+            
+            # 경로 기반 부모-자식 관계 추론
+            if len(path_parts) > 1:
+                potential_parent_path = '/' + '/'.join(path_parts[:-1])
+                potential_parent = f"{parsed.scheme}://{parsed.netloc}{potential_parent_path}"
+                
+                # 발견된 URL 중에 잠재적 부모가 있는지 확인
+                if potential_parent in self.page_hierarchy:
+                    # 부모 관계가 없는 경우에만 설정
+                    if not self.page_hierarchy[url]['parent']:
+                        self.page_hierarchy[url]['parent'] = potential_parent
+                        self.page_hierarchy[potential_parent]['children'].append(url)
+
+    def _discover_and_process_sitemaps(self, queue, processed_sitemaps):
+        """사이트맵 자동 발견 및 처리"""
+        base_url = f"https://{self.base_domain}"
+        
+        # 1. 표준 사이트맵 URL들 확인
+        sitemap_urls = [
+            f"{base_url}/sitemap.xml",
+            f"{base_url}/sitemap_index.xml",
+            f"{base_url}/sitemaps.xml",
+            f"{base_url}/sitemap/index.xml"
+        ]
+        
+        logger.info("사이트맵 자동 발견 시작...")
+        
+        # 2. robots.txt에서 사이트맵 찾기
+        try:
+            robots_url = f"{base_url}/robots.txt"
+            response = self.session.get(robots_url, timeout=self.timeout)
+            if response.status_code == 200:
+                for line in response.text.split('\n'):
+                    line = line.strip()
+                    if line.lower().startswith('sitemap:'):
+                        sitemap_url = line.split(':', 1)[1].strip()
+                        if sitemap_url not in sitemap_urls:
+                            sitemap_urls.append(sitemap_url)
+                            logger.info(f"robots.txt에서 사이트맵 발견: {sitemap_url}")
+        except Exception as e:
+            logger.debug(f"robots.txt 확인 중 오류: {e}")
+        
+        # 3. 각 사이트맵 URL 처리
+        for sitemap_url in sitemap_urls:
+            if sitemap_url not in processed_sitemaps:
+                processed_sitemaps.add(sitemap_url)
+                
+                # XML 사이트맵인 경우 직접 파싱
+                if sitemap_url.endswith('.xml'):
+                    try:
+                        xml_links = self.parse_xml_sitemap(sitemap_url)
+                        if xml_links:
+                            logger.info(f"XML 사이트맵에서 {len(xml_links)}개 URL 발견: {sitemap_url}")
+                            for link in xml_links:
+                                if link not in [u for u, _ in queue]:
+                                    queue.append((link, None))
+                    except Exception as e:
+                        logger.debug(f"XML 사이트맵 처리 중 오류 {sitemap_url}: {e}")
+                else:
+                    # HTML 사이트맵인 경우 큐에 추가
+                    if sitemap_url not in [u for u, _ in queue]:
+                        queue.append((sitemap_url, None))
+                        logger.info(f"HTML 사이트맵 큐에 추가: {sitemap_url}")
+        
+        # 4. 일반적인 사이트맵 페이지 URL들도 확인
+        common_sitemap_pages = [
+            f"{base_url}/sitemap",
+            f"{base_url}/site-map", 
+            f"{base_url}/sitemap.html",
+            f"{base_url}/map"
+        ]
+        
+        for page_url in common_sitemap_pages:
+            if page_url not in [u for u, _ in queue]:
+                queue.append((page_url, None))
+                logger.debug(f"사이트맵 페이지 후보 추가: {page_url}")
+        
+        logger.info(f"사이트맵 자동 발견 완료. 총 {len(sitemap_urls)}개 사이트맵 URL 처리됨.")
 
 def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_requests=True, verbose=False):
     """매개변수로 크롤러 실행
@@ -1332,6 +1510,12 @@ def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_reque
             logger.info(f"발견된 문서: {len(results['doc_urls'])}개")
             logger.info(f"결과 저장 위치: {results['results_dir']}")
             logger.info(f"실행 시간: {results.get('execution_time', 0):.1f}초")
+            
+            # 계층 구조 보완 및 저장
+            crawler.analyze_url_path_hierarchy()
+            hierarchy_file = os.path.join(results['results_dir'], f"hierarchy_{datetime.now().strftime('%Y%m%d_%H%M')}.json")
+            crawler.save_hierarchy_json(hierarchy_file)
+            logger.info(f"계층 구조 저장 완료: {hierarchy_file}")
         
         return results
 
@@ -1352,7 +1536,7 @@ if __name__ == "__main__":
             # start_url="https://hansung.ac.kr/sites/CSE/index.do",
             start_url="https://hansung.ac.kr/sites/hansung/index.do",
             # scope=["CSE", "cse"],
-            max_pages=10000,
+            max_pages=100000,
             delay=1.0,
             timeout=20,
             use_requests=True,

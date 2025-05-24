@@ -52,6 +52,11 @@ __pycache__/
 /data/parquet/update_output/*
 !/data/parquet/output/.gitkeep
 !/data/parquet/update_output/.gitkeep
+/data/input_past/*
+!/data/input_past/.gitkeep
+/data/crawling/*
+!/data/crawling/.gitkeep
+
 
 # 임시 파일
 *.swp
