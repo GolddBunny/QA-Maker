@@ -294,7 +294,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </div>
                     )}
 
-                    {!showGraph && (
+                    {!showGraph && !showDocument && (
                         <div className="related-questions">
                             <div className="related-questions-header">💁🏻‍♀️ 관련 질문</div>
                             {isLoadingRelated ? (

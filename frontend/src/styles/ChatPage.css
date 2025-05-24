@@ -10,7 +10,7 @@
   position: sticky;
   text-align: center;
   height: 60px;
-  border-bottom: 1px solid #ccc;
+  /* border-bottom: 1px solid #ccc; */
   font-size: 14px;
   padding: 1px 0;
   margin-bottom: 0px;
@@ -19,6 +19,7 @@
   top: 0;                /* 위쪽에 붙임 */
   z-index: 99;           /* 다른 요소 위에 오도록 */
   background-color: #fff;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
 }
 
 .chat-container.sidebar-open {
@@ -82,7 +83,7 @@
 /* 서버 답변 박스 (왼쪽 정렬) */
 .answer-box {
   background-color: var(--light-purple);
-  padding: 20px 15px;
+  padding: 1px 13.5px;
   border-radius: var(--border-radius);
   border-top-left-radius: 0;
   box-shadow: var(--box-shadow);
@@ -109,7 +110,7 @@
 
 .answer-text {
   flex: 1;
-  padding: 0 15px;
+  padding: 0 10px;
   line-height: 1.6;
 }
 
