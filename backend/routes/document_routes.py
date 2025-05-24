@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import subprocess
 import tempfile
@@ -6,6 +7,9 @@ from flask import Blueprint, jsonify, request
 from services.document_service.hwp2txt import convert_hwp_file
 from services.document_service.pdf2txt import extract_text_and_tables
 from services.document_service.convert2txt import convert2txt, convert_docx
+from firebase_config import bucket
+from werkzeug.utils import secure_filename
+import uuid
 
 document_bp = Blueprint('document', __name__)
 
@@ -22,10 +26,10 @@ def has_output_folder(page_id):
         'has_output': has_output
     })
 
+# 문서 업로드 api
 @document_bp.route('/upload-documents/<page_id>', methods=['POST'])
 def upload_documents(page_id):
-    """document 업로드"""
-    base_path, input_path, upload_path = ensure_page_directory(page_id)
+    """Firebase Storage에 문서 업로드"""
     
     if 'files' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -37,18 +41,67 @@ def upload_documents(page_id):
         if file.filename == '':
             continue
         
-        if file:
-            original_filename = file.filename.strip()
-            sanitized_filename = original_filename.replace(' ', '_')
-            file_path = os.path.join(upload_path, os.path.basename(sanitized_filename))
-            file.save(file_path)
-            uploaded_files.append(file_path)
-            print(f"파일 업로드 완료: {file_path}")
-    
+        original_filename = file.filename
+        ext = os.path.splitext(original_filename)[1]
+        uuid_name = f"{uuid.uuid4().hex}{ext}"
+        upload_path = f"pages/{page_id}/documents/{uuid_name}"
+
+        # 날짜 포맷 지정
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
+         # 1. Firebase blob 생성
+        blob = bucket.blob(upload_path)
+
+        # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
+        blob.metadata = {
+            "original_filename": original_filename,
+            "category": "학교",
+            "date": today_str
+        }
+
+        # 3. 파일 업로드
+        blob.upload_from_file(file.stream, content_type=file.content_type)
+        blob.make_public()
+
+        uploaded_files.append({
+            'original_filename': original_filename,
+            'firebase_filename': uuid_name,
+            'download_url': blob.public_url
+        })
+
+        print(f"Uploaded 문서 to Firebase: {blob.public_url} (원본 이름: {original_filename})")
+
     return jsonify({
         'success': True,
         'uploaded_files': uploaded_files
     })
+
+# adminPage에서 문서 목록 보기
+@document_bp.route('/documents/<page_id>', methods=['GET'])
+def get_uploaded_documents(page_id):
+    try:
+        blobs = bucket.list_blobs(prefix=f"pages/{page_id}/documents")
+        uploaded_files = []
+        for blob in blobs:
+            # 메타데이터에서 original_filename 가져오기
+            blob.reload()  # 메타데이터 최신화
+            original_filename = blob.metadata.get('original_filename')
+            category = blob.metadata.get('category', '학교')
+            date = blob.metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
+
+            if original_filename:
+                uploaded_files.append({
+                    'original_filename': original_filename,
+                    'category': category,
+                    'date': date
+                })
+
+        return jsonify({'success': True, 'uploaded_files': uploaded_files})
+
+    except Exception as e:
+        print("Firebase 오류:", str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
 
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):

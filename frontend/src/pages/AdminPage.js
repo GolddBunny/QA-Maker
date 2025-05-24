@@ -11,9 +11,8 @@ import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
-import { processDocuments } from '../api/DocumentApi';
+import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
 import { applyIndexing, updateIndexing } from '../api/IndexingButton';
-
 const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 const PROCESS_URL = `${BASE_URL}/process-documents`;
@@ -81,10 +80,17 @@ const AdminPage = () => {
       if (!id) return;
       
       try {
-        const savedDocs = JSON.parse(localStorage.getItem(`uploadedDocs_${id}`)) || [];
-        setUploadedDocs(savedDocs);
-        setHasDocuments(savedDocs.length > 0);
-        setIsNewPage(savedDocs.length === 0);
+        const res = await fetch(`${BASE_URL}/documents/${id}`);  // 문서 목록 api
+        const data = await res.json();
+
+        if (data.success) {
+          const uploaded = data.uploaded_files; // [{ original_filename, firebase_filename, download_url }]
+          setUploadedDocs(uploaded);
+          setHasDocuments(uploaded.length > 0);
+          setIsNewPage(uploaded.length === 0);
+        } else {
+          console.error("문서 목록 로드 실패:", data.error);
+        }
       } catch (error) {
         console.error("문서 정보 로드 실패:", error);
       }
@@ -143,9 +149,14 @@ const AdminPage = () => {
       }
 
       if (currentPageId) {
-        const saved = localStorage.getItem(`uploadedDocs_${currentPageId}`);
-        setUploadedDocs(saved ? JSON.parse(saved) : []);
+        loadUploadedDocs(currentPageId)
+        .then(docs => setUploadedDocs(docs))
+        .catch(error => {
+          console.error("문서 목록 로드 중 오류:", error);
+          setUploadedDocs([]);
+        });
       }
+
       let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
       console.log("현재 currentPageId:", pageId);
 
@@ -461,10 +472,8 @@ const AdminPage = () => {
                   +
                 </button>
               )}
-              
               </div>
 
-            
               <table className="upload-table">
                 <thead>
                   <tr>
@@ -472,7 +481,7 @@ const AdminPage = () => {
                     <th>업로드 날짜</th>
                   </tr>
                 </thead>
-                </table>
+              </table>
               <div className="upload-table-wrapper">
                 <table className="upload-table">
                 <tbody>
@@ -539,15 +548,6 @@ const AdminPage = () => {
                   </>
                 )}
               </div>
-              {!isAnyProcessing && (
-                <button
-                  onClick={handleProcessDocuments}
-                  disabled={isAnyProcessing}
-                  className="process-button"
-                >
-                  +
-                </button>
-              )}
             </div>
 
             <table className="document-table">
@@ -565,7 +565,7 @@ const AdminPage = () => {
                       {uploadedDocs.length > 0 ? (
                         uploadedDocs.map((doc, index) => (
                           <tr key={index}>
-                            <td>{doc.name}</td>
+                            <td>{doc.original_filename}</td>
                             <td><span className="category-pill">{doc.category}</span></td>
                             <td>{doc.date}</td>
                           </tr>
