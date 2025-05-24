@@ -56,7 +56,9 @@ class LLMEvaluator:
     def extract_statements(self, text: str) -> List[str]:
         """LLM을 사용하여 텍스트에서 진술 추출"""
         prompt = f"""
-                다음 텍스트에서 개별적인 사실적 진술들을 추출해주세요. 각 진술은 하나의 완전한 정보를 담고 있어야 합니다.
+                다음 텍스트에서 개별적인 사실적 진술들을 추출해주세요.
+                - 각 진술은 하나의 완전한 정보를 담고 있어야 합니다.
+                - 단순한 조언, 권유, 제안의 문장은 포함하지 마세요.
 
                 텍스트: {text}
 
@@ -97,26 +99,35 @@ class LLMEvaluator:
         sentences = re.split(r'[.!?。]', text)
         return [s.strip() for s in sentences if len(s.strip()) > 10]
     
-    def check_statement_support(self, statement: str, contexts: List[str]) -> float:
-        """LLM을 사용하여 진술이 컨텍스트에서 얼마나 직접적으로 지원되는지 점수화 (0.0 ~ 1.0)"""
+    def check_statement_support(self, statements: str, contexts: List[str]) -> float:
+        """여러 진술을 한번에 평가하여 지원 점수 반환"""
         contexts_text = "\n".join(contexts)
+        statements_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(statements)])
 
         prompt = f"""
-        Statement와 Context가 주어졌습니다. Statement가 Context에 얼마나 잘 뒷받침되는지 다음 기준에 따라 점수를 0.0~1.0 사이로 매겨 주세요.
+    다음은 여러 개의 Statement와 하나의 Context입니다. 각 Statement가 Context에서 얼마나 뒷받침되는지를 다음 기준에 따라 점수를 0.0~1.0 사이로 매겨주세요.
 
-        Statement: "{statement}"
+    Context:
+    {contexts_text}
 
-        Context:
-        {contexts_text}
+    Statements:
+    {statements_text}
 
-        판정 기준:
-        - 완전히 동일한 문장이 있거나, 사실적으로 명시되어 있으면 1.0점
-        - 추론을 약간 요구하지만, 뒷받침이 분명하면 0.9점
-        - 복잡한 추론이 필요한 경우 0.8점
-        - 약간 관련은 있지만 불확실하거나 일부 누락된 경우 0.6점
-        - 전혀 언급되지 않았거나 모순되는 경우 0.0점
+    판정 기준:
+    - 완전히 동일한 문장이 있거나, 사실적으로 명시되어 있으면 1.0점
+    - 추론을 약간 요구하지만, 뒷받침이 분명하면 0.9점
+    - 관련이 있는 경우 0.8점
+    - 약간 관련은 있지만 불확실하거나 일부 누락된 경우 0.6점
+    - 전혀 언급되지 않았거나 모순되는 경우 0.0점
 
-        형식: 점수만 숫자 형태로 반환 (예: "0.8")
+    - 형식은 반드시 아래 예시처럼 번호와 점수를 한 줄씩 출력해주세요.
+
+    예시 출력:
+    1. 1.0
+    2. 0.9
+    3. 0.6
+    ...
+
         """
 
         try:
@@ -126,16 +137,20 @@ class LLMEvaluator:
                 temperature=0
             )
             content = response.choices[0].message.content.strip()
-            print("지원 점수 응답 내용:", content)
+            print("🧮 다중 지원 점수 응답:", content)
 
-            # 점수 파싱
-            score = float(re.findall(r"([0-1](?:\.\d+)?)", content)[0])
-            return max(0.0, min(score, 1.0))
-
+            lines = content.splitlines()
+            scores = []
+            for i, line in enumerate(lines):
+                match = re.match(rf"{i+1}\.\s*([01](?:\.\d+)?)", line)
+                if match:
+                    scores.append(float(match.group(1)))
+            # 길이 안 맞는 경우 fallback 고려
+            return scores if len(scores) == len(statements) else [self._fallback_check_support(s, contexts) for s in statements]
+        
         except Exception as e:
-            print(f"LLM 지원 점수 확인 오류: {e}")
-            # fallback: 키워드 기반 유사도
-            return self._fallback_check_support(statement, contexts)
+            print(f"LLM 다중 진술 평가 오류: {e}")
+            return [self._fallback_check_support(s, contexts) for s in statements]
     
     def _fallback_check_support(self, statement: str, contexts: List[str]) -> bool:
         """LLM 실패 시 폴백 지원 확인"""
@@ -182,7 +197,7 @@ class AccuracyCalculator:
     """정확도 계산 메인 클래스"""
     
     def __init__(self, llm_evaluator: LLMEvaluator = None):
-        self.weights = [0.45, 0.35, 0.20]  # faithfulness, relevancy, recall
+        self.weights = [0.40, 0.35, 0.25]  # faithfulness, relevancy, recall
         self.metric_names = ['faithfulness', 'answer_relevancy','context_recall']
         self.llm_evaluator = llm_evaluator or LLMEvaluator()
         self.vectorizer = TfidfVectorizer()
@@ -219,13 +234,12 @@ class AccuracyCalculator:
             return 1.0  # 진술이 없으면 완벽한 신실성
         
         # LLM으로 각 진술의 지원 여부 확인
-        total_score = 0.0
-        for statement in statements:
-            score = self.llm_evaluator.check_statement_support(statement, contexts)
-            print(f"🧾 진술: {statement} → 점수: {score}")
-            total_score += score
+        scores = self.llm_evaluator.check_statement_support(statements, contexts)
 
-        faithfulness = total_score / len(statements)
+        for s, sc in zip(statements, scores):
+            print(f"🧾 진술: {s} → 점수: {sc}")
+
+        faithfulness = sum(scores) / len(statements)
         print(f"✅ 신실성 점수 (정량): {faithfulness:.3f}")
         print(f"⏱️ 완료 시간: {time.time() - start_time:.2f}초")
         return round(faithfulness, 3)
@@ -364,31 +378,14 @@ class AccuracyCalculator:
             print(f"\n--- 핵심 정보 {i+1}: '{info}' 검증 ---")
             
             # 단계 2: 핵심 정보가 컨텍스트에 있는지 확인
-            context_has_info = self._check_info_in_context(info, contexts_combined)
+            #context_has_info = self._check_info_in_context(info, contexts_combined)
             #print(f"컨텍스트에 정보 존재: {context_has_info}")
-            
-            if not context_has_info:
-                print(f"❌ 컨텍스트에 '{info}' 정보 없음 - 0점")
-                continue
             
             # 단계 3: 컨텍스트의 정보가 답변에 제대로 반영되었는지 확인
             answer_accuracy = self._check_answer_accuracy(info, contexts_combined, answer)
             print(f"답변 정확도: {answer_accuracy}")
             
-            if answer_accuracy >= 0.8:  # 80% 이상 정확
-                score = 1.0
-                print(f"✅ 완전한 정보 반영 - 1점")
-            elif answer_accuracy >= 0.5:  # 50% 이상 정확 (부분적)
-                score = 0.7
-                print(f"⚠️ 부분적 정보 반영 - 0.5점")
-            elif answer_accuracy >= 0.2:
-                score = 0.4
-                print("부정확 (많은 오류 또는 왜곡)")
-            else:  # 50% 미만
-                score = 0.0
-                print(f"❌ 부정확한 정보 반영 - 0점")
-            
-            total_score += score
+            total_score += answer_accuracy
         
         # 최종 recall 계산
         recall = total_score / max_score if max_score > 0 else 1.0
@@ -435,55 +432,56 @@ class AccuracyCalculator:
             return self._semantic_similarity(info, contexts) > 0.3
 
     def _check_answer_accuracy(self, info: str, context: str, answer: str) -> float:
-        """컨텍스트의 정보가 답변에 정확히 반영되었는지 확인"""
-        
-        prompt = f"""
-        다음 상황을 분석해주세요:
-        
-        요구된 정보: "{info}"
-        컨텍스트의 정보: "{context}"
-        AI의 답변: "{answer}"
-        
-        AI의 답변이 컨텍스트의 정보를 얼마나 정확하게 반영했는지 평가해주세요.
-        
-        평가 기준:
-        1. 컨텍스트의 정보를 정확히 그대로 사용했는가?
-        2. 컨텍스트에 없는 내용을 추가했는가? (감점 요소)
-        3. 컨텍스트의 정보를 왜곡했는가? (감점 요소)
-        4. 컨텍스트의 일부 정보만 사용했는가? (감점 요소)
-        
-        점수를 0.0에서 1.0 사이로 평가해주세요.
-        - 1.0: 완벽하게 정확
-        - 0.8: 대부분 정확 (약간의 표현 차이)
-        - 0.5: 부분적으로 정확 (일부 정보 누락 또는 추가)
-        - 0.2: 부정확 (많은 오류 또는 왜곡)
-        - 0.0: 완전히 틀림
-        
-        점수만 숫자로 답해주세요 (예: 0.8)
         """
-        
+        핵심 정보(info)가 context에 존재하는지 + context 기반으로 answer가 info를 잘 반영했는지를 GPT로 판단.
+        반환 점수는 0.0 ~ 1.0 사이.
+        1) context 포함 여부: 정확히 포함(+0.5), 유사 포함(+0.4), 미포함(0.0)
+        2) answer 반영 여부: 정확히 반영(+0.5), 추론(+0.4), 유사 표현(+0.3), 미반영(0.0)
+        """
+        prompt = f"""
+    다음 정보(info)가 context에 존재하는지, 그리고 answer에서 잘 반영되었는지 각각 평가해주세요.
+
+    1단계) info가 context에 포함되어 있는지:
+    - 정확히 같은 문장이 있으면: +0.5
+    - 비슷한 의미(유사한 말로 표현)로 있으면: +0.4
+    - 관련이 없거나 없으면: +0.0
+
+    2단계) context 내용 중 info와 관련된 문장이 answer에서 반영되었는지:
+    - 정확히 반영되어 있으면: +0.5
+    - 추론이 가능할 정도로 반영되어 있으면: +0.4
+    - 비슷한 말로 표현되어 있으면: +0.3
+    - 반영 안되었으면: +0.0
+
+    각 단계별 점수를 따로 숫자로만 "0.5, 0.5"처럼 콤마로 구분해서 출력해주세요.
+
+    info: "{info}"
+    context: "{context}"
+    answer: "{answer}"
+    """
+
         try:
             response = client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0
             )
-            
-            score_text = response.choices[0].message.content.strip()
-            
-            # 숫자 추출
+
+            result = response.choices[0].message.content.strip()
             import re
-            score_match = re.search(r'(\d+\.?\d*)', score_text)
-            if score_match:
-                score = float(score_match.group(1))
-                return min(1.0, max(0.0, score))  # 0.0~1.0 범위로 제한
+            numbers = re.findall(r'\d+\.?\d*', result)
+            if len(numbers) == 2:
+                score1 = float(numbers[0])
+                score2 = float(numbers[1])
+                return round(min(score1 + score2, 1.0), 3)
             else:
-                return 0.5  # 기본값
-                
+                print(f"[경고] GPT 응답에서 점수 2개 못 찾음: {result}")
+                return 0.0
+
         except Exception as e:
             print(f"답변 정확도 확인 실패: {e}")
             # 폴백: 의미적 유사도
             return self._semantic_similarity(context, answer)
+                
 
     def _semantic_similarity(self, text1: str, text2: str) -> float:
         """의미적 유사도 계산 (임베딩 기반)"""
@@ -537,7 +535,7 @@ class AccuracyCalculator:
         - 날짜, 숫자, 시기 등 구체적인 수치나 값은 제외합니다.
         - 질문에 직접적으로 등장한 개념어(명사 중심)를 중심으로, 답변을 위해 필요한 주요 정보 항목을 일반화된 형태로 추출합니다.
         - 정보는 "무엇에 대한 정보인가?"를 기준으로 간결하고 일반화된 형태로 기술해주세요.
-        - 단어 중심, 개념 중심의 추출을 목표로 하며, 설명이나 범주는 포함하지 마세요.
+        - 질문에 들어있는 단어만을 추출해야 하며, 설명이나 범주는 포함하지 마세요.
 
         예시:
         질문: "한성대학교 컴퓨터공학과 교수진은 몇 명이고, 주요 연구분야는 무엇인가요?"
@@ -549,14 +547,14 @@ class AccuracyCalculator:
         질문: "파이썬 리스트의 특징과 사용법은 무엇인가요?"
         핵심 정보:
         1. 리스트 특징
-        2. 리스트 사용법
+        2. 사용법
         3. 파이썬
 
         질문: "2023학년 2월 입학생은 몇 년도에 졸업이야?"
         핵심 정보:
         1. 입학생
         2. 졸업
-        3. 연도
+        3. 년도
 
         결과는 아래 형식으로 반환해주세요:
         1. [핵심 정보 1]
@@ -674,215 +672,180 @@ def read_csv_as_text_list(file_path: str) -> list[str]:
         print(f"CSV 읽기 오류 ({file_path}): {e}")
         return []
 
-thread_pool = ThreadPoolExecutor(max_workers=5)
+# thread_pool = ThreadPoolExecutor(max_workers=5)
 
-GRAPHRAG_API_KEY = os.getenv("GRAPHRAG_API_KEY")
-GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
-GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
+# GRAPHRAG_API_KEY = os.getenv("GRAPHRAG_API_KEY")
+# GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
+# GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
-def run_async(coro):
-    """Run a coroutine in a new event loop in a separate thread"""
-    loop = asyncio.new_event_loop()
+# def run_async(coro):
+#     """Run a coroutine in a new event loop in a separate thread"""
+#     loop = asyncio.new_event_loop()
     
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+#     try:
+#         return loop.run_until_complete(coro)
+#     finally:
+#         loop.close()
         
-def run_local_query(query_text):
-    # INPUT_DIR 하드코딩 제거
-    INPUT_DIR = "/Users/jy/Documents/Domain_QA_Gen/data/input/1747480728566_학교/output"
-    LANCEDB_URI = f"{INPUT_DIR}/lancedb"
+# def run_local_query(query_text):
+#     # INPUT_DIR 하드코딩 제거
+#     INPUT_DIR = "/Users/jy/Documents/Domain_QA_Gen/data/input/1747480728566_학교/output"
+#     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
     
-    # Load data
-    entity_df = pd.read_parquet(f"{INPUT_DIR}/entities.parquet")
-    community_df = pd.read_parquet(f"{INPUT_DIR}/communities.parquet")
-    entities = read_indexer_entities(entity_df, community_df, 2)
+#     # Load data
+#     entity_df = pd.read_parquet(f"{INPUT_DIR}/entities.parquet")
+#     community_df = pd.read_parquet(f"{INPUT_DIR}/communities.parquet")
+#     entities = read_indexer_entities(entity_df, community_df, 2)
 
-    description_embedding_store = LanceDBVectorStore(collection_name="default-entity-description")
-    description_embedding_store.connect(db_uri=LANCEDB_URI)
+#     description_embedding_store = LanceDBVectorStore(collection_name="default-entity-description")
+#     description_embedding_store.connect(db_uri=LANCEDB_URI)
 
-    relationship_df = pd.read_parquet(f"{INPUT_DIR}/relationships.parquet")
-    relationships = read_indexer_relationships(relationship_df)
+#     relationship_df = pd.read_parquet(f"{INPUT_DIR}/relationships.parquet")
+#     relationships = read_indexer_relationships(relationship_df)
 
-    report_df = pd.read_parquet(f"{INPUT_DIR}/community_reports.parquet")
-    reports = read_indexer_reports(report_df, community_df, 2)
+#     report_df = pd.read_parquet(f"{INPUT_DIR}/community_reports.parquet")
+#     reports = read_indexer_reports(report_df, community_df, 2)
 
-    text_unit_df = pd.read_parquet(f"{INPUT_DIR}/text_units.parquet")
-    text_units = read_indexer_text_units(text_unit_df)
+#     text_unit_df = pd.read_parquet(f"{INPUT_DIR}/text_units.parquet")
+#     text_units = read_indexer_text_units(text_unit_df)
 
-    # 모델 설정
-    chat_config = LanguageModelConfig(
-        api_key=GRAPHRAG_API_KEY,
-        type=ModelType.OpenAIChat,
-        model=GRAPHRAG_LLM_MODEL,
-        max_retries=20,
-    )
-    chat_model = ModelManager().get_or_create_chat_model(
-        name="local_search",
-        model_type=ModelType.OpenAIChat,
-        config=chat_config,
-    )
-    token_encoder = tiktoken.encoding_for_model(GRAPHRAG_LLM_MODEL)
+#     # 모델 설정
+#     chat_config = LanguageModelConfig(
+#         api_key=GRAPHRAG_API_KEY,
+#         type=ModelType.OpenAIChat,
+#         model=GRAPHRAG_LLM_MODEL,
+#         max_retries=20,
+#     )
+#     chat_model = ModelManager().get_or_create_chat_model(
+#         name="local_search",
+#         model_type=ModelType.OpenAIChat,
+#         config=chat_config,
+#     )
+#     token_encoder = tiktoken.encoding_for_model(GRAPHRAG_LLM_MODEL)
 
-    embedding_config = LanguageModelConfig(
-        api_key=GRAPHRAG_API_KEY,
-        type=ModelType.OpenAIEmbedding,
-        model=GRAPHRAG_EMBEDDING_MODEL,
-        max_retries=20,
-    )
-    text_embedder = ModelManager().get_or_create_embedding_model("local_search_embedding", ModelType.OpenAIEmbedding, config=embedding_config,)
+#     embedding_config = LanguageModelConfig(
+#         api_key=GRAPHRAG_API_KEY,
+#         type=ModelType.OpenAIEmbedding,
+#         model=GRAPHRAG_EMBEDDING_MODEL,
+#         max_retries=20,
+#     )
+#     text_embedder = ModelManager().get_or_create_embedding_model("local_search_embedding", ModelType.OpenAIEmbedding, config=embedding_config,)
 
-    context_builder = LocalSearchMixedContext(
-        community_reports=reports,
-        text_units=text_units,
-        entities=entities,
-        relationships=relationships,
-        entity_text_embeddings=description_embedding_store,
-        embedding_vectorstore_key=EntityVectorStoreKey.ID,
-        text_embedder=text_embedder,
-        token_encoder=token_encoder,
-    )
+#     context_builder = LocalSearchMixedContext(
+#         community_reports=reports,
+#         text_units=text_units,
+#         entities=entities,
+#         relationships=relationships,
+#         entity_text_embeddings=description_embedding_store,
+#         embedding_vectorstore_key=EntityVectorStoreKey.ID,
+#         text_embedder=text_embedder,
+#         token_encoder=token_encoder,
+#     )
 
-    search_engine = LocalSearch(
-        model=chat_model,
-        context_builder=context_builder,
-        token_encoder=token_encoder,
-        model_params={"max_tokens": 2000, "temperature": 0.0},
-        context_builder_params={
-            "text_unit_prop": 0.5,
-            "community_prop": 0.1,
-            "conversation_history_max_turns": 0,
-            "conversation_history_user_turns_only": True,
-            "top_k_mapped_entities": 10,
-            "top_k_relationships": 10,
-            "include_entity_rank": True,
-            "include_relationship_weight": True,
-            "include_community_rank": False,
-            "return_candidate_context": False,
-            "embedding_vectorstore_key": EntityVectorStoreKey.ID,
-            "max_tokens": 12000,
-        },
-        response_type="multiple paragraphs",
-    )
+#     search_engine = LocalSearch(
+#         model=chat_model,
+#         context_builder=context_builder,
+#         token_encoder=token_encoder,
+#         model_params={"max_tokens": 2000, "temperature": 0.0},
+#         context_builder_params={
+#             "text_unit_prop": 0.5,
+#             "community_prop": 0.1,
+#             "conversation_history_max_turns": 0,
+#             "conversation_history_user_turns_only": True,
+#             "top_k_mapped_entities": 10,
+#             "top_k_relationships": 10,
+#             "include_entity_rank": True,
+#             "include_relationship_weight": True,
+#             "include_community_rank": False,
+#             "return_candidate_context": False,
+#             "embedding_vectorstore_key": EntityVectorStoreKey.ID,
+#             "max_tokens": 12000,
+#         },
+#         response_type="multiple paragraphs",
+#     )
 
-    #result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
-    result = run_async(search_engine.search(query_text))
+#     #result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
+#     result = run_async(search_engine.search(query_text))
 
-    # context 저장
-    context_files = {}
-    for key, df in result.context_data.items():
-        if isinstance(df, pd.DataFrame):
-            output_file = f"context_data_{key}.csv"
-            df.to_csv(output_file, index=False, encoding='utf-8-sig')
-            context_files[key] = output_file
+#     # context 저장
+#     context_files = {}
+#     for key, df in result.context_data.items():
+#         if isinstance(df, pd.DataFrame):
+#             output_file = f"context_data_{key}.csv"
+#             df.to_csv(output_file, index=False, encoding='utf-8-sig')
+#             context_files[key] = output_file
 
-    return {
-        'response': result.response
-    }
+#     return {
+#         'response': result.response
+#     }
+
+# def main():
+#     """사용자 인터페이스"""
+#     print("🚀 QAGen 범용 정확도 계산기")
+#     print("=" * 50)
     
-def main():
-    """사용자 인터페이스"""
-    print("🚀 QAGen 범용 정확도 계산기")
-    print("=" * 50)
+#     load_dotenv()
+#     api_key = os.getenv("GRAPHRAG_API_KEY", "").strip()
     
-    load_dotenv()
-    api_key = os.getenv("GRAPHRAG_API_KEY", "").strip()
+#     # 계산기 초기화
+#     if api_key:
+#         llm_evaluator = LLMEvaluator(api_key=api_key)
+#     else:
+#         print("API 키 없이 폴백 모드로 실행합니다.")
+#         llm_evaluator = LLMEvaluator()
     
-    # 계산기 초기화
-    if api_key:
-        llm_evaluator = LLMEvaluator(api_key=api_key)
-    else:
-        print("API 키 없이 폴백 모드로 실행합니다.")
-        llm_evaluator = LLMEvaluator()
+#     calculator = AccuracyCalculator(llm_evaluator)
     
-    calculator = AccuracyCalculator(llm_evaluator)
-    
-    while True:
-        print("\n" + "="*50)
-        print("새로운 QA 평가 (종료: 'quit')")
-        print("="*50)
+#     while True:
+#         print("\n" + "="*50)
+#         print("새로운 QA 평가 (종료: 'quit')")
+#         print("="*50)
         
-        # 사용자 입력
-        question = input("📝 질문: ").strip()
-        if question.lower() == 'quit':
-            break
+#         # 사용자 입력
+#         question = input("📝 질문: ").strip()
+#         if question.lower() == 'quit':
+#             break
         
-        # answer = input("💬 답변: ").strip()
-        # if answer.lower() == 'quit':
-        #     break
-        result = run_local_query(question)
+#         result = run_local_query(question)
 
-        answer = result.get('response')
-        print("서버 답변:", answer)
+#         answer = result.get('response')
+#         print("서버 답변:", answer)
         
-        # 컨텍스트 입력
-        # print("📚 컨텍스트 (빈 줄로 종료):")
-        # contexts = []
-        # while True:
-        #     context = input().strip()
-        #     if not context:
-        #         break
-        #     contexts.append(context)
-        # CSV 파일들 읽기 (서버가 생성했다고 가정하고, 같은 경로에 있다고 가정)
-        context_files = [
-            "./context_data_entities.csv",
-            "./context_data_relationships.csv",
-            "./context_data_reports.csv",
-            "./context_data_sources.csv"
-        ]
-        contexts = []
-        for file in context_files:
-            contexts.extend(read_csv_as_text_list(file))
+#         context_files = [
+#             "./context_data_entities.csv",
+#             "./context_data_relationships.csv",
+#             "./context_data_reports.csv",
+#             "./context_data_sources.csv"
+#         ]
+#         contexts = []
+#         for file in context_files:
+#             contexts.extend(read_csv_as_text_list(file))
 
-        # Ground truth (선택사항)
-        # ground_truth = input("🎯 정답 참고 (선택사항): ").strip()
-        # ground_truth = ground_truth if ground_truth else None
-        #ground_truth = '. '.join(calculator._extract_key_information(answer))
+#         try:
+#             print("\n⏳ 계산 중...")
+#             result = calculator.calculate_accuracy(question, answer, contexts)
+            
+#             # 결과 출력
+#             print("\n" + "🎯 평가 결과")
+#             print("="*30)
+#             print(f"최종 정확도: {result['percentage']}%")
+#             print(f"등급: {result['grade']} ({result['level']})")
+            
+#             print("\n📊 세부 점수:")
+#             for name, score in result['metrics'].items():
+#                 weight = result['weights'][name]
+#                 print(f"  • {name}: {score} (가중치: {weight})")
+            
+#             print("\n🧮 계산 과정:")
+#             for breakdown in result['detailed_breakdown'].values():
+#                 print(f"  • {breakdown}")
+            
+#             total_sum = sum(result['weights'][name] * result['metrics'][name] 
+#                            for name in result['metric_names'])
+#             print(f"  = {round(total_sum, 3)}")
+            
+#         except Exception as e:
+#             print(f"❌ 오류 발생: {e}")
 
-        # 정확도 계산
-        try:
-            print("\n⏳ 계산 중...")
-            result = calculator.calculate_accuracy(question, answer, contexts)
-            
-            # 결과 출력
-            print("\n" + "🎯 평가 결과")
-            print("="*30)
-            print(f"최종 정확도: {result['percentage']}%")
-            print(f"등급: {result['grade']} ({result['level']})")
-            
-            print("\n📊 세부 점수:")
-            for name, score in result['metrics'].items():
-                weight = result['weights'][name]
-                print(f"  • {name}: {score} (가중치: {weight})")
-            
-            print("\n🧮 계산 과정:")
-            for breakdown in result['detailed_breakdown'].values():
-                print(f"  • {breakdown}")
-            
-            total_sum = sum(result['weights'][name] * result['metrics'][name] 
-                           for name in result['metric_names'])
-            print(f"  = {round(total_sum, 3)}")
-            
-        except Exception as e:
-            print(f"❌ 오류 발생: {e}")
-
-# 테스트 실행
-if __name__ == "__main__":
-    # 간단한 테스트
-    #print("🧪 테스트 실행")
-    
-    # calculator = AccuracyCalculator()  # API 키 없이 테스트
-    
-    # test_result = calculator.calculate_accuracy(
-    #     question="파이썬에서 리스트와 튜플의 차이점은?",
-    #     answer="리스트는 변경 가능하고 튜플은 변경 불가능합니다. 리스트는 []로 표현하고 튜플은 ()로 표현합니다.",
-    #     contexts=["파이썬 리스트는 mutable하고 튜플은 immutable합니다.", "리스트 문법: [1,2,3], 튜플 문법: (1,2,3)"],
-    #     ground_truth="리스트는 mutable, 튜플은 immutable"
-    # )
-    
-    # print(json.dumps(test_result, ensure_ascii=False, indent=2))
-    
-    # print("\n" + "="*50)
-    # print("실제 사용: main() 함수 실행")
-    main()  # 주석 해제하여 대화형 모드 실행
+# if __name__ == "__main__":
+#     main() 
