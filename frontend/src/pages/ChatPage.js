@@ -1063,7 +1063,10 @@ function ChatPage() {
                                     title="원본 문서 다운로드"
                                     disabled={!selectedHeadline}
                                 >
-                                    📥
+                                    <img 
+                                        src="/assets/download2.png" 
+                                        alt="다운로드" 
+                                    />
                                 </button>
                                 <button 
                                     className="close-button"

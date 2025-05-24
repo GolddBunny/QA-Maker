@@ -202,43 +202,48 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </div>
 
                         {/* 근거 문서 목록 박스 */}
-                        <div className="source-docs-container">
-                            <div className="source-docs-header">
-                                <span>📄 근거 문서 목록</span>
-                            </div>
-                            
-                            {qa.isDocumentLoading ? (
-                                <div className="source-docs-loading">로딩 중...</div>
-                            ) : (
-                                <div className="source-docs-list">
-                                {qa.headlines && qa.headlines.length > 0 ? (
-                                    qa.headlines.map((headline, i) => (
-                                    <div 
-                                        key={i} 
-                                        className={`source-doc-item ${selectedHeadlineIndex === i ? 'selected' : ''}`}
-                                        onClick={() => handleHeadlineClick(headline, i)}
-                                    >
-                                        <span className="source-doc-title">
-                                        {headline}
-                                        </span>
-                                        
-                                        {/* 다운로드 버튼 */}
-                                        <button className="download-button" title="원본 문서 다운"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDownloadDocument(headline);
-                                        }}
-                                        >
-                                            📥
-                                        </button>
-                                    </div>
-                                    ))
-                                ) : (
-                                    <div className="source-docs-empty">근거 문서가 없습니다.</div>
-                                )}
+                        {(qa.headlines && qa.headlines.length > 0) || qa.isDocumentLoading ? (
+                            <div className="source-docs-container">
+                                <div className="source-docs-header">
+                                    <span>📄 근거 문서 목록</span>
                                 </div>
-                            )}
-                        </div>
+                                
+                                {qa.isDocumentLoading ? (
+                                    <div className="source-docs-loading">로딩 중...</div>
+                                ) : (
+                                    <div className="source-docs-list">
+                                    {qa.headlines && qa.headlines.length > 0 ? (
+                                        qa.headlines.map((headline, i) => (
+                                        <div 
+                                            key={i} 
+                                            className={`source-doc-item ${selectedHeadlineIndex === i ? 'selected' : ''}`}
+                                            onClick={() => handleHeadlineClick(headline, i)}
+                                        >
+                                            <span className="source-doc-title">
+                                            {headline}
+                                            </span>
+                                            
+                                            {/* 다운로드 버튼 */}
+                                            <button className="download-button" title="원본 문서 다운"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDownloadDocument(headline);
+                                            }}
+                                            >
+                                                <img 
+                                                    src="/assets/download2.png" 
+                                                    alt="다운로드" 
+                                                />
+                                            </button>
+                                        </div>
+                                        ))
+                                    ) : (
+                                        <div className="source-docs-empty">근거 문서가 없습니다.</div>
+                                    )}
+                                    </div>
+                                )}
+                            </div>
+                        ) : null}
                     </div>
 
                     <div className="answer-side-panel">
@@ -250,7 +255,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </div>
                     )}
 
-                    {!showGraph && (
+                    {!showGraph && !showDocument && (
                         <div className="satisfaction-button-container">
                         <button type="button" className="action-button-left">
                             <span className="button-icon">
@@ -271,7 +276,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </div>
                     )}
 
-                    {!showGraph && (
+                    {!showGraph && !showDocument && (
                         <div className="graph-button-wrapper">
                         <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
                             <span className="button-icon">지식 그래프 보기 <img src="/assets/graph_button.png" alt="Graph icon" /></span>
@@ -279,7 +284,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </div>
                     )}
 
-                    {qa.relatedQuestionsVisible && !showGraph && (
+                    {qa.relatedQuestionsVisible && !showGraph && !showDocument && (
                         <div className="related-questions">
                             <div className="related-questions-header">💁🏻‍♀️ 관련 질문</div>
                             {isLoadingRelated ? (
