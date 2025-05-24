@@ -172,7 +172,7 @@ def get_context_sources():
         return jsonify({"error": str(e)}), 500
 
 def extract_headline(text):
-    """텍스트에서 headline 정보 추출 (개선된 버전)"""
+    """텍스트에서 headline 정보 추출"""
     if not text or not isinstance(text, str):
         return None
     
@@ -190,7 +190,7 @@ def extract_headline(text):
             headline_match = re.search(pattern, text, re.IGNORECASE)
             if headline_match and headline_match.group(1):
                 headline = headline_match.group(1).strip()
-                print(f"정규식으로 추출된 headline: '{headline}'")
+                print(f"추출된 headline: '{headline}'")
                 return headline
         
         print("headline 추출 실패")
@@ -236,7 +236,7 @@ def is_hwp_file(file_path):
     return file_path.lower().endswith('.hwp')
 
 def convert_to_pdf_fast(input_file):
-    """빠른 PDF 변환 (서비스 모드 + 캐시) - HWP 파일 제외"""
+    """빠른 PDF 변환 (서비스 모드 + 캐시)"""
     # HWP 파일은 변환하지 않음
     if is_hwp_file(input_file):
         print(f"HWP 파일은 PDF 변환을 지원하지 않습니다: {input_file}")
@@ -262,13 +262,16 @@ def convert_to_pdf_fast(input_file):
         if not libreoffice_service.is_running():
             print("LibreOffice 서비스 시작 중...")
             if not libreoffice_service.start_service():
-                print("서비스 모드 실패, 일반 모드로 전환")
-                return convert_to_pdf_fallback(input_file)
+                print("LibreOffice 서비스 시작 실패")
+                return None
         
         # 임시 디렉토리에서 빠른 변환
         with tempfile.TemporaryDirectory(prefix="fast_convert_") as temp_dir:
-            # 더 간단한 명령어로 빠른 변환
             libreoffice_path = check_libreoffice_installation()
+            if not libreoffice_path:
+                print("LibreOffice 실행 파일을 찾을 수 없습니다")
+                return None
+                
             cmd = [
                 libreoffice_path,
                 '--headless',
@@ -282,7 +285,7 @@ def convert_to_pdf_fast(input_file):
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=20,  # 20초로 단축
+                timeout=20,  # 20초 타임아웃
                 cwd=temp_dir
             )
             
@@ -290,8 +293,8 @@ def convert_to_pdf_fast(input_file):
             print(f"변환 시간: {conversion_time:.2f}초")
             
             if process.returncode != 0:
-                print("빠른 변환 실패, 폴백 모드로 전환")
-                return convert_to_pdf_fallback(input_file)
+                print(f"PDF 변환 실패: {process.stderr}")
+                return None
             
             # PDF 파일 찾기
             input_filename = os.path.basename(input_file)
@@ -307,7 +310,7 @@ def convert_to_pdf_fast(input_file):
             
             if not os.path.exists(temp_pdf_file):
                 print("PDF 파일 생성 실패")
-                return convert_to_pdf_fallback(input_file)
+                return None
             
             # PDF 데이터 읽기 및 캐시 저장
             with open(temp_pdf_file, 'rb') as pdf_file:
@@ -330,74 +333,12 @@ def convert_to_pdf_fast(input_file):
                 return pdf_stream
     
     except Exception as e:
-        print(f"빠른 변환 오류: {str(e)}")
-        return convert_to_pdf_fallback(input_file)
-
-def convert_to_pdf_fallback(input_file):
-    """폴백 PDF 변환 (기존 방식) - HWP 파일 제외"""
-    # HWP 파일은 변환하지 않음
-    if is_hwp_file(input_file):
-        print(f"HWP 파일은 PDF 변환을 지원하지 않습니다: {input_file}")
-        return None
-        
-    try:
-        print(f"폴백 모드로 PDF 변환: {input_file}")
-        
-        libreoffice_path = check_libreoffice_installation()
-        if not libreoffice_path:
-            return None
-        
-        with tempfile.TemporaryDirectory(prefix="fallback_convert_") as temp_dir:
-            env = os.environ.copy()
-            env['HOME'] = temp_dir
-            env['TMPDIR'] = temp_dir
-            
-            cmd = [
-                libreoffice_path,
-                '--headless',
-                '--convert-to', 'pdf',
-                '--outdir', temp_dir,
-                input_file
-            ]
-            
-            process = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=30,
-                env=env,
-                cwd=temp_dir
-            )
-            
-            if process.returncode != 0:
-                return None
-            
-            input_filename = os.path.basename(input_file)
-            base_name = os.path.splitext(input_filename)[0]
-            temp_pdf_file = os.path.join(temp_dir, f"{base_name}.pdf")
-            
-            max_wait = 10
-            wait_time = 0
-            while not os.path.exists(temp_pdf_file) and wait_time < max_wait:
-                time.sleep(0.5)
-                wait_time += 0.5
-            
-            if not os.path.exists(temp_pdf_file):
-                return None
-            
-            with open(temp_pdf_file, 'rb') as pdf_file:
-                pdf_data = pdf_file.read()
-                pdf_stream = io.BytesIO(pdf_data)
-                pdf_stream.seek(0)
-                return pdf_stream
-    
-    except Exception as e:
-        print(f"폴백 변환 오류: {str(e)}")
+        print(f"PDF 변환 오류: {str(e)}")
         return None
 
 @source_bp.route('/api/document/<path:filename>')
 def get_document(filename):
-    """문서 파일 제공 (PDF 뷰어용 - 고속 변환, HWP 제외)"""
+    """문서 파일 제공 (PDF 뷰어용, HWP 제외)"""
     try:
         # 요청에서 page_id 파라미터 가져오기
         page_id = request.args.get('page_id')
@@ -419,7 +360,7 @@ def get_document(filename):
         # print(f"디렉토리 내 전체 파일: {all_files}")
         
         # 파일 찾기 (HWP 제외)
-        extensions = ['.pdf', '.docx']  # HWP 제거
+        extensions = ['.pdf', '.docx']
         file_path = None
         original_ext = None
         
@@ -519,7 +460,7 @@ def download_document(filename):
             return jsonify({"error": "데이터 디렉토리를 찾을 수 없습니다"}), 404
         
         all_files = os.listdir(DATA_DIR)
-        extensions = ['.docx', '.hwp', '.pdf']  # HWP 포함 (다운로드용)
+        extensions = ['.docx', '.hwp', '.pdf']
         file_path = None
         original_ext = None
         
@@ -577,13 +518,3 @@ def download_document(filename):
 def get_pdf(filename):
     """PDF 파일 제공 (호환성을 위한 별칭)"""
     return get_document(filename)
-
-# 서비스 상태 확인 API
-@source_bp.route('/api/libreoffice-status')
-def get_libreoffice_status():
-    """LibreOffice 서비스 상태 확인"""
-    return jsonify({
-        "service_running": libreoffice_service.is_running(),
-        "cache_count": len(conversion_cache),
-        "service_port": libreoffice_service.service_port
-    })
