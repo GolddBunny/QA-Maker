@@ -1,0 +1,69 @@
+import os
+import subprocess
+import time
+from flask import Blueprint, jsonify, request
+from services.document_service.convert2txt import convert2txt
+
+generate_bp = Blueprint('generate', __name__)
+
+@generate_bp.route('/apply/<page_id>', methods=['POST'])
+def apply_documents(page_id):
+    """GraphRAG 인덱싱 처리"""
+    try:
+        base_path, input_path, upload_path = ensure_page_directory(page_id)
+
+        # graphrag index 명령어 실행
+        start_time = time.time()
+        process = subprocess.run(['graphrag', 'index', '--root', base_path])
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(execution_time)
+
+        return jsonify({
+            'success': True,
+            'execution_time': execution_time
+        })
+
+    except Exception as e:
+        print("Flask 서버 오류:", str(e))
+        return jsonify({
+            'success': False, 
+            'error': str(e)
+        }), 500
+
+@generate_bp.route('/update/<page_id>', methods=['POST'])
+def update(page_id):
+    """document 업데이트"""
+    try:
+        base_path, input_path, upload_path = ensure_page_directory(page_id)
+        
+        convert2txt(upload_path, input_path)
+        print("모든 파일 .txt로 변환 완료")
+        
+        start_time = time.time()
+        subprocess.run(['graphrag', 'update', '--root', base_path])
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f'execution_time: {execution_time}')
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print("Flask update 오류: ", str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
+# 공통 디렉토리 유틸리티 함수
+def ensure_page_directory(page_id):
+    """페이지 디렉토리 확인"""
+    base_path = f'../data/input/{page_id}'
+    input_path = os.path.join(base_path, 'input')
+    upload_path = f'../frontend/public/data/{page_id}/input'
+    
+    os.makedirs(base_path, exist_ok=True)
+    os.makedirs(input_path, exist_ok=True)
+    os.makedirs(upload_path, exist_ok=True)
+    
+    return base_path, input_path, upload_path 
