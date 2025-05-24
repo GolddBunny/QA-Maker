@@ -15,7 +15,6 @@ function MainPage() {
   const navigate = useNavigate(); // 페이지 이동을 위한 useNavigate
   const location = useLocation();
   const fileInputRef = useRef(null);
-  const { getCurrentPageSysName } = usePageContext(); //검색 시스템 이름
 
   const [urlInput, setUrlInput] = useState('');
   const [addedUrls, setAddedUrls] = useState([]);
