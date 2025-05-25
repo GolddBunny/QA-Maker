@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import "../../styles/Sidebar.css";
 import { usePageContext } from "../../utils/PageContext";
+import { savePages, getPages, changePageType } from '../../utils/storage';
 const BASE_URL = 'http://localhost:5000';
 
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
@@ -170,15 +171,26 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     };
 
     const handleSetMainPage = (pageId) => {
-        const updatedPages = pages.map(page => ({
+    console.log('handleSetMainPage 실행 - pageId:', pageId, typeof pageId);
+    console.log('변경 전 pages:', pages);
+    
+    // pageId를 문자열로 변환하여 비교
+    const targetPageId = String(pageId);
+    
+    const updatedPages = pages.map(page => {
+        console.log('비교:', page.id, '===', targetPageId, '?', page.id === targetPageId);
+        return {
             ...page,
-            type: page.id === pageId ? 'main' : 'normal'
-        }));
-        
-        updatePages(updatedPages);
-        localStorage.setItem('pages', JSON.stringify(updatedPages));
-        setShowDeleteModal(false);
-    };
+            type: page.id === targetPageId ? 'main' : 'normal'
+        };
+    });
+    
+    console.log('변경 후 updatedPages:', updatedPages);
+    
+    savePages(updatedPages);
+    updatePages(updatedPages);
+    setShowDeleteModal(false);
+};
 
     const handleDeletePage = async () => {
         setIsLoading(true);
@@ -300,11 +312,19 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
             {showDeleteModal && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h3>페이지 삭제</h3>
+                        <button 
+                            className="set-main-button" 
+                            onClick={() => handleSetMainPage(selectedPageId)}
+                        >
+                            메인으로 설정
+                        </button>
+                        <h3 style={{ textAlign: 'center' }}>페이지 삭제</h3>
+                        
                         <div className="modal-buttons">
                             <button onClick={handleDeletePage} disabled={isLoading}>
                                 {isLoading ? '삭제 중...' : '삭제'}
                             </button>
+                            
                             <button onClick={closeModal} disabled={isLoading}>취소</button>
                         </div>
                     </div>
