@@ -56,7 +56,7 @@ def find_url_and_title_from_source_id(parquet_path: str, source_id: int) -> Opti
                 }
                         
         # 일치하는 데이터가 없으면 ID를 하나씩 줄여가며 찾기
-        for i in range(1, 5):  # 최대 5개까지 줄여서 찾기
+        for i in range(1, 3):  # 최대 5개까지 줄여서 찾기
             prev_id = source_id - i
             row = df[df['human_readable_id'] == prev_id]
             if not row.empty:
