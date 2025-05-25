@@ -1,4 +1,5 @@
 import os
+import tempfile
 import pandas as pd
 import docx 
 import shutil
@@ -6,54 +7,62 @@ import shutil
 from .hwp2txt import convert_hwp_file
 from .pdf2txt import extract_text_and_tables
 
-
-def convert2txt(folder_path, output_folder):
+def convert2txt(firebase_path, output_folder, bucket):
     """
     지정된 폴더 내의 HWP, PDF, DOCX, Excel 파일을 TXT로 변환합니다.
     
     Args:
-        folder_path (str): 변환할 파일들이 있는 폴더 경로
+        folder_path (str): 변환할 파일들이 있는 폴더 경로 - firebase storage 
         output_folder (str, optional): 변환된 TXT 파일을 저장할 폴더 (기본값: 원본 폴더에 저장)
     
     Returns:
         None
     """
-
+    blobs = bucket.list_blobs(prefix=firebase_path)
     os.makedirs(output_folder, exist_ok=True)
 
     def get_output_path(file_name):
         base_name = os.path.splitext(file_name)[0]
         return os.path.join(output_folder, f"{base_name}.txt")
 
-    # 폴더 내 모든 파일 확인
-    for file_name in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file_name)
+    for blob in blobs:
+        file_name = os.path.basename(blob.name)
         lower_name = file_name.lower()
-        output_path = get_output_path(file_name)
 
-        # 이미 변환된 파일이 있다면 스킵
+        # 무시할 항목 필터링
+        if not lower_name.endswith(('.pdf', '.docx', '.hwp', '.txt')):
+            continue
+        if not file_name or file_name.startswith('.'):
+            continue
+
+        output_path = get_output_path(file_name)
         if os.path.exists(output_path):
             print(f"[스킵됨] 이미 존재: {output_path}")
             continue
 
         try:
+            # Firebase 파일을 임시 경로로 다운로드
+            temp_path = os.path.join(tempfile.gettempdir(), file_name)
+            blob.download_to_filename(temp_path)
+
+            # 파일 형식별 변환 처리
             if lower_name.endswith('.hwp'):
-                convert_hwp_file(file_path, output_path)
+                convert_hwp_file(temp_path, output_path)
 
             elif lower_name.endswith('.pdf'):
-                extract_text_and_tables(file_path, output_path)
+                extract_text_and_tables(temp_path, output_path)
 
             elif lower_name.endswith('.docx'):
-                convert_docx(file_path, output_path)
+                convert_docx(temp_path, output_path)
 
             elif lower_name.endswith('.txt'):
                 try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
+                    with open(temp_path, 'r', encoding='utf-8') as f:
                         text = f.read()
                     base_name = os.path.splitext(file_name)[0]
                     with open(output_path, 'w', encoding='utf-8') as out:
                         out.write(f"headline: {base_name}\ncontent:\n{text}")
-                    print(f"[TXT 변환] {file_path} → {output_path}")
+                    print(f"[TXT 변환] {temp_path} → {output_path}")
                 except Exception as e:
                     print(f"[오류] {file_name} 변환 실패: {e}")
 

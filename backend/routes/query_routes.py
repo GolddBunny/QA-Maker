@@ -1,4 +1,6 @@
+import io
 import os
+import tempfile
 import pandas as pd
 import tiktoken
 import asyncio
@@ -7,6 +9,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request, json
+from routes.parquet import download_parquet_from_firebase
 from services.graph_service.create_graph import generate_and_save_graph
 from graphrag.config.enums import ModelType
 from graphrag.config.models.language_model_config import LanguageModelConfig
@@ -30,6 +33,7 @@ from graphrag.query.structured_search.global_search.community_context import (
     GlobalCommunityContext,
 )
 from graphrag.query.structured_search.global_search.search import GlobalSearch
+from firebase_config import bucket
 
 query_bp = Blueprint('query', __name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
@@ -63,8 +67,20 @@ def run_local_query():
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
 
-    # Define input and database paths
-    #INPUT_DIR = f"../data/input/{page_id}/output"
+    # 1. Firebase Storage에서 output 폴더 파일들 다운로드
+    prefix = f'pages/{page_id}/results/'
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    if not blobs:
+        return jsonify({'error': 'output 폴더에 파일이 없습니다.'}), 404
+
+    blob_dict = {}
+    for blob in blobs:
+        filename = blob.name.replace(prefix, '')
+        if filename:
+            blob_dict[filename] = blob.download_as_bytes()
+            
+
     INPUT_DIR = f"../data/input/{page_id}/output"
     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
     COMMUNITY_REPORT_TABLE = "community_reports"
@@ -76,10 +92,19 @@ def run_local_query():
     COMMUNITY_LEVEL = 2
 
     # Read nodes table to get community and degree data
-    entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
-    community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
-    entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
+    # entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
+    # community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
+    # entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
+    entity_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
+    community_df = pd.read_parquet(io.BytesIO(blob_dict["communities.parquet"]))
+    relationship_df = pd.read_parquet(io.BytesIO(blob_dict["relationships.parquet"]))
+    report_df = pd.read_parquet(io.BytesIO(blob_dict["community_reports.parquet"]))
+    text_unit_df = pd.read_parquet(io.BytesIO(blob_dict["text_units.parquet"]))
 
+    entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
+    relationships = read_indexer_relationships(relationship_df)
+    reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
+    text_units = read_indexer_text_units(text_unit_df)
     # Load description embeddings to an in-memory lancedb vectorstore
     # To connect to a remote db, specify url and port values
     description_embedding_store = LanceDBVectorStore(
@@ -88,16 +113,16 @@ def run_local_query():
     description_embedding_store.connect(db_uri=LANCEDB_URI)
 
     # Load relationship data
-    relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
-    relationships = read_indexer_relationships(relationship_df)
+    # relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
+    # relationships = read_indexer_relationships(relationship_df)
 
-    # Load report data
-    report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
-    reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
+    # # Load report data
+    # report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
+    # reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
 
-    # Load text unit data
-    text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
-    text_units = read_indexer_text_units(text_unit_df)
+    # # Load text unit data
+    # text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
+    # text_units = read_indexer_text_units(text_unit_df)
 
     # Configure the language model
     api_key = GRAPHRAG_API_KEY
@@ -176,8 +201,10 @@ def run_local_query():
     
     try:
         # Run the async search in a separate thread with a dedicated event loop
-        result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
-        
+        #result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
+        search_task = search_engine.search(query_text)
+        result = thread_pool.submit(run_async, search_task).result()
+
         # 결과 저장
         context_files = {}
         for key, df in result.context_data.items():
@@ -187,18 +214,17 @@ def run_local_query():
                 print(f"{key} 데이터가 {output_file}에 저장되었습니다.")
                 context_files[key] = output_file
         
-        entities_df = pd.read_csv('context_data_entities.csv')
-        relationships_df = pd.read_csv('context_data_relationships.csv')
+        entities_df = result.context_data.get("entities", pd.DataFrame())
+        relationships_df = result.context_data.get("relationships", pd.DataFrame())
 
-        # 엔티티 ID 리스트 추출
-        entities_list = entities_df['id'].astype(int).tolist()
-        
-        # 관계 ID 리스트 추출 
-        # 관계 데이터프레임의 구조에 따라 필드명 조정 필요
-        relationships_list = relationships_df['id'].astype(int).tolist()
-        
+        entities_list = entities_df['id'].astype(int).tolist() if not entities_df.empty else []
+        relationships_list = relationships_df['id'].astype(int).tolist() if not relationships_df.empty else []
+
+        print("entities_list:", entities_list)
+        print("relationships_list:", relationships_list)
+
         print("entities_list: ", entities_list, 
-              "relationships_list: ", relationships_list)
+            "relationships_list: ", relationships_list)
 
         # 서브 그래프 생성
         generate_and_save_graph(entities_list, relationships_list, page_id)
@@ -239,15 +265,31 @@ def run_global_query():
     token_encoder = tiktoken.encoding_for_model(llm_model)
 
     # 경로
+    # 1. Firebase Storage에서 output 폴더 파일들 다운로드
+    prefix = f'pages/{page_id}/results/'
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    if not blobs:
+        return jsonify({'error': 'output 폴더에 파일이 없습니다.'}), 404
+
+    memory_files = {}
+    for blob in blobs:
+        filename = blob.name.replace(prefix, '')
+        if not filename.endswith('.parquet'):
+            continue
+        file_bytes = blob.download_as_bytes()
+        memory_files[filename] = io.BytesIO(file_bytes)
+
+
     INPUT_DIR = f"../data/input/{page_id}/output"
     COMMUNITY_TABLE = "communities"
     COMMUNITY_REPORT_TABLE = "community_reports"
     ENTITY_TABLE = "entities"
     COMMUNITY_LEVEL = 2
 
-    community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
-    entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
-    report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
+    community_df = pd.read_parquet(memory_files[f"{COMMUNITY_TABLE}.parquet"])
+    entity_df = pd.read_parquet(memory_files[f"{ENTITY_TABLE}.parquet"])
+    report_df = pd.read_parquet(memory_files[f"{COMMUNITY_REPORT_TABLE}.parquet"])
 
     communities = read_indexer_communities(community_df, report_df)
     reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
@@ -300,7 +342,9 @@ def run_global_query():
     
     try:
         # Run the async search in a separate thread with a dedicated event loop
-        result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
+        #result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
+        search_task = search_engine.search(query_text)
+        result = thread_pool.submit(run_async, search_task).result()
         
         # 결과 저장
         context_files = {}
@@ -319,34 +363,31 @@ def run_global_query():
         print(f"Error in run_global_query: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@query_bp.route('/generate-graph', methods=['POST'])
-def generate_graph():    
-    try:
-        return jsonify({
-            'success': True,
-            # 'entities_count': len(entities_list),
-            # 'relationships_count': len(relationships_list)
-        })
-    except FileNotFoundError as e:
-        return jsonify({'error': f'필요한 CSV 파일을 찾을 수 없습니다: {str(e)}'}), 404
-    except Exception as e:
-        print(f"Error in generate_graph: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+    @query_bp.route('/generate-graph', methods=['POST'])
+    def generate_graph():    
+        try:
+            return jsonify({
+                'success': True,
+                # 'entities_count': len(entities_list),
+                # 'relationships_count': len(relationships_list)
+            })
+        except FileNotFoundError as e:
+            return jsonify({'error': f'필요한 CSV 파일을 찾을 수 없습니다: {str(e)}'}), 404
+        except Exception as e:
+            print(f"Error in generate_graph: {str(e)}")
+            return jsonify({'error': str(e)}), 500
 
 @query_bp.route('/admin/all-graph', methods=['POST'])
 def all_graph():
     page_id = request.json.get('page_id', '')
-
     try:
-        # 절대 경로로 안전하게 설정
-        base_path = os.path.join(BASE_PATH, str(page_id), "output")
-        #print("base_path:", base_path)
+        # Firebase 경로 설정
+        entities_path = f"pages/{page_id}/results/entities.parquet"
+        relationships_path = f"pages/{page_id}/results/relationships.parquet"
 
-        entities_parquet = os.path.join(base_path, "entities.parquet")
-        relationships_parquet = os.path.join(base_path, "relationships.parquet")
-
-        entities_df = pd.read_parquet(entities_parquet)
-        relationships_df = pd.read_parquet(relationships_parquet)
+        # Firebase에서 parquet 파일 다운로드 및 로드
+        entities_df = download_parquet_from_firebase(entities_path)
+        relationships_df = download_parquet_from_firebase(relationships_path)
 
         # entities: degree 기준 상위 100개
         top_entities = (
@@ -377,14 +418,6 @@ def all_graph():
         os.makedirs(os.path.dirname(graphml_path), exist_ok=True)
         os.makedirs(os.path.dirname(json_path), exist_ok=True)
 
-        # 그래프 생성 및 저장
-        # generate_and_save_graph(
-        #     entities_df['human_readable_id'].astype(int).tolist(),
-        #     relationships_df['human_readable_id'].astype(int).tolist(),
-        #     page_id,
-        #     graphml_path=graphml_path,
-        #     json_path=json_path
-        # )
         generate_and_save_graph(
             top_entities,
             top_relationships,

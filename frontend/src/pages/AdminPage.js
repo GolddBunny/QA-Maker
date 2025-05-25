@@ -58,6 +58,8 @@ const AdminPage = () => {
     const [qaHistory, setQaHistory] = useState([]);
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
+    const [hasOutput, setHasOutput] = useState(null);
+    const [isCheckingOutput, setIsCheckingOutput] = useState(false);
 
     const { handleFileDrop } = FileDropHandler({
       uploadedDocs,
@@ -84,7 +86,7 @@ const AdminPage = () => {
         const data = await res.json();
 
         if (data.success) {
-          const uploaded = data.uploaded_files; // [{ original_filename, firebase_filename, download_url }]
+          const uploaded = data.uploaded_files;
           setUploadedDocs(uploaded);
           setHasDocuments(uploaded.length > 0);
           setIsNewPage(uploaded.length === 0);
@@ -98,9 +100,18 @@ const AdminPage = () => {
 
     // Output 폴더 확인
     const checkOutputFolder = useCallback(async (pageId) => {
-      const hasOutput = await checkOutputFolderApi(pageId);
-      if (hasOutput === null) return; // 에러 처리
-      setIsNewPage(!hasOutput);  // 있으면 Update, 없으면 Apply
+      if (!pageId) return;
+      
+      setIsCheckingOutput(true);
+      try {
+        const hasOutputResult = await checkOutputFolderApi(pageId);
+        setHasOutput(hasOutputResult); // true/false/null
+      } catch (error) {
+        console.error("Output 폴더 확인 중 오류:", error);
+        setHasOutput(null);
+      } finally {
+        setIsCheckingOutput(false);
+      }
     }, []);
 
     const loadAllData = useCallback(async (id) => {
@@ -341,14 +352,17 @@ const AdminPage = () => {
       .sort((a, b) => a.id - b.id);
 
     const handleShowGraph = () => {
-      if (!graphData && currentPageId) {
-        fetchGraphData({
-          pageId: currentPageId,
-          graphDataCacheRef,
-          setGraphData
-        });
+      if (!showGraph) {
+        // 그래프를 처음 여는 경우에만 fetch
+        if (!graphData && currentPageId) {
+          fetchGraphData({
+            pageId: currentPageId,
+            graphDataCacheRef,
+            setGraphData
+          });
+        }
       }
-      setShowGraph(true);
+      setShowGraph(prev => !prev); // 토글
     };
     
 
@@ -548,6 +562,15 @@ const AdminPage = () => {
                   </>
                 )}
               </div>
+              {!isAnyProcessing && (
+                <button
+                  onClick={handleProcessDocuments}
+                  disabled={isAnyProcessing}
+                  className="process-button"
+                >
+                  +
+                </button>
+              )}
             </div>
 
             <table className="document-table">
@@ -599,8 +622,8 @@ const AdminPage = () => {
         <div className="apply-btn-row">
           <button 
             className="btn-apply-update"
-            onClick={isNewPage ? handleApply : handleUpdate}
-            disabled={isAnyProcessing}
+            onClick={hasOutput ? handleUpdate : handleApply}
+            disabled={isAnyProcessing || isCheckingOutput || hasOutput === null}
           > 
             {isAnyProcessing ? 'QA 생성 중' : 'QA 생성 시작'}
           </button>
@@ -669,7 +692,8 @@ const AdminPage = () => {
             className="btn_primary"
             onClick={handleShowGraph}
             disabled={isAnyProcessing}
-          > ⏵
+          >
+            {showGraph ? "𝗑" : "⏵"}
           </button>
         </div>
 

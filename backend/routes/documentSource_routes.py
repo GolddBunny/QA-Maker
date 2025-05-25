@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, send_file, request
+from flask import Blueprint, Response, jsonify, send_file, request
 import os
 import csv
 import re
@@ -13,8 +13,11 @@ import uuid
 import atexit
 import signal
 import psutil
-
+from firebase_config import bucket
 source_bp = Blueprint('source', __name__)
+from firebase_admin import firestore
+from firebase_config import bucket
+db = firestore.client()
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
@@ -128,7 +131,7 @@ atexit.register(cleanup_service)
 
 @source_bp.route('/api/context-sources', methods=['GET'])
 def get_context_sources():
-    """CSV 파일에서 추출한 headline 반환"""
+    """CSV 파일에서 추출한 headline 반환 - firestore의 original_filename 반환"""
     try:
         # 요청에서 page_id 파라미터 가져오기
         page_id = request.args.get('page_id')
@@ -161,10 +164,46 @@ def get_context_sources():
                     #print(f"직접 headline: '{headline}'")
                     headlines.add(headline)
         
-        #print(f"최종 headlines: {list(headlines)}")
+        print(f"최종 headlines: {list(headlines)}")
+        filename_mapping = {}
+        try:
+            docs = db.collection('document_files').where('page_id', '==', page_id).stream()
+            for doc in docs:
+                data = doc.to_dict()
+                firebase_filename = data.get('firebase_filename')
+                original_filename = data.get('original_filename')
+                
+                if firebase_filename and original_filename:
+                    filename_mapping[firebase_filename] = original_filename
+                    print(f"매핑 추가: {firebase_filename} -> {original_filename}")
+        
+        except Exception as e:
+            print(f"Firestore 조회 오류: {e}")
+        
+        print(f"filename_mapping: {filename_mapping}")
+        print(f"headlines: {list(headlines)}")
+        
+        # headlines 순서에 맞춰 original_filenames 배열 생성
+        original_filenames = []
+        for headline in headlines:
+            # 확장자 붙여서 시도 (.pdf, .docx, .hwp 등)
+            candidates = [
+                headline + ".pdf",
+                headline + ".docx",
+                headline + ".hwp",
+                headline + ".txt"
+            ]
+            
+            # 매핑에 존재하는 파일명을 찾음
+            original_name = next((filename_mapping[f] for f in candidates if f in filename_mapping), headline)
+            
+            original_filenames.append(original_name)
+            print(f"headline: {headline} -> original: {original_name}")
+        
+        print(f"최종 original_filenames: {original_filenames}")
         
         return jsonify({
-            "headlines": list(headlines),
+            "headlines": original_filenames
         })
     
     except Exception as e:
@@ -348,88 +387,55 @@ def get_document(filename):
         decoded_filename = urllib.parse.unquote(filename)
         #print(f"요청된 파일명: '{decoded_filename}'")
         
-        # 동적 DATA_DIR 경로 구성
-        DATA_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'public', 'data', page_id, 'input')
+        # Firestore에서 firebase_filename 조회
+        docs = db.collection('document_files') \
+                 .where('page_id', '==', page_id) \
+                 .where('original_filename', '==', decoded_filename) \
+                 .stream()
 
-        print(f"데이터 디렉토리: {DATA_DIR}")
-        
-        if not os.path.exists(DATA_DIR):
-            return jsonify({"error": "데이터 디렉토리를 찾을 수 없습니다"}), 404
-        
-        all_files = os.listdir(DATA_DIR)
-        # print(f"디렉토리 내 전체 파일: {all_files}")
-        
-        # 파일 찾기 (HWP 제외)
-        extensions = ['.pdf', '.docx']
-        file_path = None
-        original_ext = None
-        
-        # 정확한 파일명 매칭
-        for ext in extensions:
-            exact_path = os.path.join(DATA_DIR, f"{decoded_filename}{ext}")
-            if os.path.exists(exact_path):
-                file_path = exact_path
-                original_ext = ext
-                break
-        
-        # 부분 매칭
-        if not file_path:
-            for file in all_files:
-                file_lower = file.lower()
-                filename_lower = decoded_filename.lower()
-                
-                if filename_lower in file_lower:
-                    for ext in extensions:
-                        if file_lower.endswith(ext):
-                            file_path = os.path.join(DATA_DIR, file)
-                            original_ext = ext
-                            break
-                    if file_path:
-                        break
-        
-        # HWP 파일인지 확인하고 오류 응답
-        if not file_path:
-            # HWP 파일 존재 여부 확인
-            hwp_extensions = ['.hwp']
-            for ext in hwp_extensions:
-                exact_path = os.path.join(DATA_DIR, f"{decoded_filename}{ext}")
-                if os.path.exists(exact_path):
-                    return jsonify({
-                        "error": f"HWP 파일은 뷰어에서 지원하지 않습니다. 다운로드하여 확인해주세요: {decoded_filename}"
-                    }), 400
-            
-            # 부분 매칭으로 HWP 파일 확인
-            for file in all_files:
-                file_lower = file.lower()
-                filename_lower = decoded_filename.lower()
-                
-                if filename_lower in file_lower and file_lower.endswith('.hwp'):
-                    return jsonify({
-                        "error": f"HWP 파일은 뷰어에서 지원하지 않습니다. 다운로드하여 확인해주세요: {decoded_filename}"
-                    }), 400
-            
+        firebase_filename = None
+        for doc in docs:
+            firebase_filename = doc.to_dict().get('firebase_filename')
+            break
+
+        if not firebase_filename:
+            return jsonify({"error": "Firebase에 등록된 파일명을 찾을 수 없습니다."}), 404
+
+        # 확장자 확인 (hwp면 제외)
+        if firebase_filename.lower().endswith('.hwp'):
             return jsonify({
-                "error": f"파일을 찾을 수 없습니다: {decoded_filename}",
-                "available_files": all_files
-            }), 404
+                "error": f"HWP 파일은 뷰어에서 지원하지 않습니다. 다운로드하여 확인해주세요: {decoded_filename}"
+            }), 400
+
+        # Firebase Storage 경로 구성
+        blob_path = f"pages/{page_id}/documents/{firebase_filename}"
+        blob = bucket.blob(blob_path)
+
+        if not blob.exists():
+            return jsonify({"error": f"Storage에 파일이 존재하지 않습니다: {firebase_filename}"}), 404
+
+        # 임시 파일로 다운로드
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            blob.download_to_filename(temp_file.name)
+            temp_path = temp_file.name
+
+        print(f"[임시 다운로드 완료] {temp_path}")
+
+        ext = os.path.splitext(firebase_filename)[1].lower()
+
+        if ext == '.pdf':
+            return send_file(temp_path, mimetype='application/pdf')
         
-        # PDF 파일이면 바로 반환
-        if original_ext == '.pdf':
-            #print("PDF 파일 직접 반환")
-            return send_file(file_path, mimetype='application/pdf')
-        
-        # 빠른 변환 시도 (HWP는 이미 제외됨)
-        #print(f"PDF 변환 시작: {original_ext} -> PDF")
-        start_total = time.time()
-        
-        pdf_stream = convert_to_pdf_fast(file_path)
-        
+        # PDF 변환
+        start = time.time()
+        pdf_stream = convert_to_pdf_fast(temp_path)
+        os.remove(temp_path)
+
         if not pdf_stream:
             return jsonify({"error": "문서 변환에 실패했습니다."}), 500
-        
-        total_time = time.time() - start_total
-        print(f"전체 처리 시간: {total_time:.2f}초")
-        
+
+        print(f"[PDF 변환 완료] 소요 시간: {time.time() - start:.2f}s")
+
         return send_file(
             pdf_stream,
             mimetype='application/pdf',
@@ -453,60 +459,43 @@ def download_document(filename):
         decoded_filename = urllib.parse.unquote(filename)
         #print(f"다운로드 요청된 파일명: '{decoded_filename}'")
         
-        # 동적 DATA_DIR 경로 구성
-        DATA_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'public', 'data', page_id, 'input')
-
-        if not os.path.exists(DATA_DIR):
-            return jsonify({"error": "데이터 디렉토리를 찾을 수 없습니다"}), 404
-        
-        all_files = os.listdir(DATA_DIR)
-        extensions = ['.docx', '.hwp', '.pdf']
-        file_path = None
+        # Firestore에서 firebase_filename 조회
+        doc_ref = db.collection('document_files').where('page_id', '==', page_id).where('original_filename', '==', decoded_filename)
+        docs = doc_ref.stream()
+        firebase_filename = None
         original_ext = None
-        
-        # 파일 찾기
-        for ext in extensions:
-            exact_path = os.path.join(DATA_DIR, f"{decoded_filename}{ext}")
-            if os.path.exists(exact_path):
-                file_path = exact_path
-                original_ext = ext
-                break
-        
-        if not file_path:
-            for file in all_files:
-                file_lower = file.lower()
-                filename_lower = decoded_filename.lower()
-                
-                if filename_lower in file_lower:
-                    for ext in extensions:
-                        if file_lower.endswith(ext):
-                            file_path = os.path.join(DATA_DIR, file)
-                            original_ext = ext
-                            break
-                    if file_path:
-                        break
-        
-        if not file_path:
-            return jsonify({
-                "error": f"파일을 찾을 수 없습니다: {decoded_filename}",
-                "available_files": all_files
-            }), 404
-        
+
+        for doc in docs:
+            data = doc.to_dict()
+            firebase_filename = data.get('firebase_filename')
+            original_ext = os.path.splitext(decoded_filename)[1] or os.path.splitext(firebase_filename)[1]
+            break
+
+        if not firebase_filename:
+            return jsonify({"error": f"'{decoded_filename}'에 해당하는 파일을 찾을 수 없습니다"}), 404
+
+        firebase_path = f"pages/{page_id}/documents/{firebase_filename}"
+        blob = bucket.blob(firebase_path)
+
+        if not blob.exists():
+            return jsonify({"error": f"Firebase Storage에 파일이 존재하지 않습니다: {firebase_path}"}), 404
+
+        file_data = blob.download_as_bytes()
+
         # MIME 타입 설정
         mime_types = {
             '.pdf': 'application/pdf',
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             '.hwp': 'application/x-hwp'
         }
-        
-        mime_type = mime_types.get(original_ext, 'application/octet-stream')
-        original_filename = os.path.basename(file_path)
-        
-        return send_file(
-            file_path,
+        mime_type = mime_types.get(original_ext.lower(), 'application/octet-stream')
+
+        return Response(
+            file_data,
             mimetype=mime_type,
-            as_attachment=True,
-            download_name=original_filename
+            headers={
+                'Content-Disposition': f"attachment; filename*=UTF-8''{urllib.parse.quote(decoded_filename)}"
+            }
         )
     
     except Exception as e:

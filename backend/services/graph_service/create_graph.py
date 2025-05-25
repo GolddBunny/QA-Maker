@@ -1,3 +1,4 @@
+import io
 import pandas as pd
 import networkx as nx
 import asyncio
@@ -15,13 +16,8 @@ sys.path.append(str(backend_dir))
 from utils.graphml2json import convert_graphml_to_json
 
 # 엔티티와 관계 데이터를 기반으로 그래프를 생성하는 함수
-def create_graph(entities_list, relationships_list, entities_file, relationships_file, communities_file):
+def create_graph(entities_list, relationships_list, entities_df, relationships_df, communities_df):
     G = nx.DiGraph()
-
-    # Parquet 파일에서 데이터 읽기
-    entities_df = pd.read_parquet(entities_file)
-    relationships_df = pd.read_parquet(relationships_file)
-    communities_df = pd.read_parquet(communities_file)
 
     # 추가할 엔티티 ID 세트 생성 (중복 방지)
     all_entity_ids = set(entities_list)
@@ -132,6 +128,19 @@ def snapshot_graphml(input_graph: nx.Graph, name: str):
     nx.write_graphml(input_graph, name, encoding='utf-8')
 
 # 생성된 그래프를 GraphML로 저장하는 함수
+def read_parquet_from_firebase(firebase_path):
+    """
+    Firebase Storage에서 parquet 파일을 메모리로 바로 읽어 pandas DataFrame으로 반환
+    """
+    blob = bucket.blob(firebase_path)
+    if not blob.exists():
+        raise FileNotFoundError(f"Firebase에 파일이 존재하지 않음: {firebase_path}")
+
+    parquet_bytes = blob.download_as_bytes()
+    parquet_io = io.BytesIO(parquet_bytes)
+    return pd.read_parquet(parquet_io)
+
+from firebase_config import bucket
 def generate_and_save_graph(entities_list, relationships_list, page_id, 
                             graphml_path=None, 
                             json_path=None):
@@ -148,23 +157,27 @@ def generate_and_save_graph(entities_list, relationships_list, page_id,
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir, exist_ok=True)
         
-    # # .json 파일이 이미 존재하면 삭제
-    if os.path.exists(json_path):
-        os.remove(json_path)
-        print(f"기존의 .json 파일 {json_path} 삭제됨.")
+    # .json 파일이 이미 존재하면 삭제
+    # if os.path.exists(json_path):
+    #     os.remove(json_path)
+    #     print(f"기존의 .json 파일 {json_path} 삭제됨.")
 
-    base_output_folder = os.path.join(backend_dir, "..", "data", "input", str(page_id), "output")
+    # ✅ Firebase Storage에서 parquet 파일 경로 지정
+    entities_firebase_path = f"pages/{page_id}/results/entities.parquet"
+    relationships_firebase_path = f"pages/{page_id}/results/relationships.parquet"
+    communities_firebase_path = f"pages/{page_id}/results/communities.parquet"
 
-    entities_file = os.path.join(base_output_folder, "entities.parquet")
-    relationships_file = os.path.join(base_output_folder, "relationships.parquet")
-    communities_file = os.path.join(base_output_folder, "communities.parquet")
+    # Firebase에서 parquet 파일을 메모리에서 바로 DataFrame으로 읽기
+    entities_df = read_parquet_from_firebase(entities_firebase_path)
+    relationships_df = read_parquet_from_firebase(relationships_firebase_path)
+    communities_df = read_parquet_from_firebase(communities_firebase_path)
 
-    graph = create_graph(entities_list, relationships_list, 
-                         entities_file, relationships_file, communities_file)
+    # 기존 create_graph 함수 수정: 파일 경로 대신 DataFrame 직접 전달 버전 작성 필요
+    graph = create_graph(entities_list, relationships_list, entities_df, relationships_df, communities_df)
 
     snapshot_graphml(graph, graphml_path)
     
-    # graphml2json.py 실행
+    # graphml을 JSON으로 변환
     convert_graphml_to_json(graphml_path, json_path)
 
 # 테스트

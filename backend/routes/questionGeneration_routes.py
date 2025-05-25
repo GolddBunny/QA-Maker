@@ -1,3 +1,4 @@
+from io import BytesIO
 from flask import Blueprint, jsonify, request
 import os
 import pandas as pd
@@ -20,7 +21,7 @@ from graphrag.query.structured_search.local_search.mixed_context import LocalSea
 from graphrag.vector_stores.lancedb import LanceDBVectorStore
 
 from routes.query_routes import run_async
-
+from firebase_config import bucket
 
 thread_pool = ThreadPoolExecutor(max_workers=5)
 question_bp = Blueprint('questionGeneration', __name__)
@@ -31,6 +32,18 @@ api_key = os.getenv("GRAPHRAG_API_KEY")
 llm_model = "gpt-4o-mini"
 embedding_model = "text-embedding-3-small"
 
+def read_parquet_from_firebase(bucket_path: str) -> pd.DataFrame:
+    """
+    Firebase Storage에서 parquet 파일을 직접 읽어 BytesIO로 처리 후 DataFrame으로 반환
+    """
+    blob = bucket.blob(bucket_path)
+
+    if not blob.exists():
+        raise FileNotFoundError(f"Firebase path does not exist: {bucket_path}")
+
+    data = blob.download_as_bytes()  # Blob을 byte stream으로 읽음
+    return pd.read_parquet(BytesIO(data))  # 메모리 버퍼로 읽기
+    
 @question_bp.route('/generate-related-questions', methods=['POST'])
 def generate_related_questions():
     data = request.get_json()
@@ -41,12 +54,13 @@ def generate_related_questions():
         input_dir = f"../data/input/{page_id}/output"
         db_dir = f"{input_dir}/lancedb/default-entity-description.lance"
 
-        # Load data
-        entity_df = pd.read_parquet(f"{input_dir}/entities.parquet")
-        community_df = pd.read_parquet(f"{input_dir}/communities.parquet")
-        relationship_df = pd.read_parquet(f"{input_dir}/relationships.parquet")
-        report_df = pd.read_parquet(f"{input_dir}/community_reports.parquet")
-        text_unit_df = pd.read_parquet(f"{input_dir}/text_units.parquet")
+        firebase_prefix = f"pages/{page_id}/results"
+
+        entity_df = read_parquet_from_firebase(f"{firebase_prefix}/entities.parquet")
+        community_df = read_parquet_from_firebase(f"{firebase_prefix}/communities.parquet")
+        relationship_df = read_parquet_from_firebase(f"{firebase_prefix}/relationships.parquet")
+        report_df = read_parquet_from_firebase(f"{firebase_prefix}/community_reports.parquet")
+        text_unit_df = read_parquet_from_firebase(f"{firebase_prefix}/text_units.parquet")
 
         # Preprocess
         entities = read_indexer_entities(entity_df, community_df, 0)
