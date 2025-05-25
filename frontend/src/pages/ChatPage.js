@@ -713,12 +713,23 @@ function ChatPage() {
             return;
         }
 
+        // 가장 최근 메시지(마지막 메시지) 가져오기
+        if (!qaList || qaList.length === 0) {
+            console.error("질문 목록이 없습니다.");
+            showAlert("오류", "질문 데이터를 찾을 수 없습니다.");
+            return;
+        }
+
+        const latestMessage = qaList[qaList.length - 1];
+        const messageEntities = latestMessage.entities || "";
+        const messageRelationships = latestMessage.relationships || "";
+
         try {
             setIsLoading(true);
-            console.log("그래프 데이터 로딩 시작");
+            console.log(`최신 메시지의 그래프 데이터 로딩 시작`);
 
-            const cacheKey = `${entities}-${relationships}`;
-            
+            const cacheKey = `${messageEntities}-${messageRelationships}`;
+                        
             if (graphDataCacheRef.current[cacheKey]) {
                 console.log("메모리 캐시에서 그래프 데이터 로드");
                 setGraphData(graphDataCacheRef.current[cacheKey]);
