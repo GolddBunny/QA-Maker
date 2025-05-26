@@ -150,43 +150,39 @@ const AdminPage = () => {
         }
         return;
       }
+      console.log("현재 admin pageId:", pageId);
 
-      if (currentPageId) {
-        loadUploadedDocs(currentPageId)
-        .then(docs => setUploadedDocs(docs))
-        .catch(error => {
-          console.error("문서 목록 로드 중 오류:", error);
-          setUploadedDocs([]);
-        });
-      }
+      loadUploadedDocs(pageId)
+    .then(docs => setUploadedDocs(docs))
+    .catch(error => {
+      console.error("문서 목록 로드 중 오류:", error);
+      setUploadedDocs([]);
+    });
 
-      let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
-      console.log("현재 currentPageId:", pageId);
+  // 페이지 ID가 유효한 경우에만 데이터 로드
+  if (pageId) {
+    Promise.all([
+      loadDocumentsInfo(pageId),
+      fetchSavedUrls(pageId),
+      checkOutputFolder(pageId),
+      loadAllData(pageId),
+      fetchGraphData({
+        pageId,
+        graphDataCacheRef,
+        setGraphData
+      }),
+    ]).catch(error => {
+      console.error("데이터 로드 중 오류:", error);
+    });
 
-      // 페이지 ID가 유효한 경우에만 데이터 로드
-      if (savedPageId) {
-        // 병렬로 데이터 로드 작업 실행
-        Promise.all([
-          loadDocumentsInfo(savedPageId),
-          fetchSavedUrls(savedPageId),
-          checkOutputFolder(savedPageId),
-          loadAllData(savedPageId),
-          fetchGraphData({
-            pageId: savedPageId,
-            graphDataCacheRef,
-            setGraphData
-          }),
-        ]).catch(error => {
-          console.error("데이터 로드 중 오류:", error);
-        });
-        const pages = JSON.parse(localStorage.getItem('pages')) || [];
-        const currentPage = pages.find(page => page.id === savedPageId);
-        if (currentPage) {
-          setDomainName(currentPage.name || "");
-          setSystemName(currentPage.sysname || "");
-        }
-      }
-    }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
+    const pages = JSON.parse(localStorage.getItem('pages')) || [];
+    const currentPage = pages.find(page => page.id === pageId);
+    if (currentPage) {
+      setDomainName(currentPage.name || "");
+      setSystemName(currentPage.sysname || "");
+    }
+  }
+}, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
 
 
     const toggleSidebar = () => {
@@ -741,7 +737,6 @@ return (
                   // 모든 QA 항목의 conversations를 펼쳐서 개별 행으로 표시
                   qaHistory.flatMap((qaItem) => 
                     qaItem.conversations?.map((conversation, convIndex) => (
-                      <tr key={`${qaItem.id}-${convIndex}`}>
                         <td>{conversation.question}</td>
                         <td>{conversation.category || qaItem.category || "-"}</td>
                         <td>{conversation.satisfaction || qaItem.satisfaction || "-"}</td>
