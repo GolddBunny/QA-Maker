@@ -259,7 +259,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     <div className="answer-side-panel">
                     {!showGraph && !showDocument && (
                         <div className="action-button-container">
-                        <span className="action-button-left">
+                        <span className="action-button-left-graph">
                             정확도 {getCurrentAccuracy()}%
                         </span>
                         </div>
@@ -288,7 +288,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
 
                     {!showGraph && !showDocument && (
                         <div className="graph-button-wrapper">
-                        <button type="button" className="action-button-left" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
+                        <button type="button" className="action-button-left-graph" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
                             <span className="button-icon">지식 그래프 보기 <img src="/assets/graph_button.png" alt="Graph icon" /></span>
                         </button>
                         </div>

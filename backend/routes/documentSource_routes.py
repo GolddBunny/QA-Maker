@@ -10,6 +10,7 @@ import time
 import io
 import threading
 import uuid
+import unicodedata
 import atexit
 import signal
 import psutil
@@ -377,59 +378,73 @@ def convert_to_pdf_fast(input_file):
 
 @source_bp.route('/api/document/<path:filename>')
 def get_document(filename):
-    """문서 파일 제공 (PDF 뷰어용, HWP 제외)"""
+    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외)"""
     try:
-        # 요청에서 page_id 파라미터 가져오기
+        # page_id 쿼리 파라미터 필수
         page_id = request.args.get('page_id')
         if not page_id:
             return jsonify({"error": "page_id가 제공되지 않았습니다"}), 400
-        
+
+        # 파일 이름 URL 디코딩 + 확장자 제거
         decoded_filename = urllib.parse.unquote(filename)
-        #print(f"요청된 파일명: '{decoded_filename}'")
-        
-        # Firestore에서 firebase_filename 조회
+        base_filename = os.path.splitext(decoded_filename)[0]
+
+        print(f"[요청] filename: '{decoded_filename}', page_id: '{page_id}'")
+
+        # Firestore에서 해당 page_id의 문서들 가져오기
         docs = db.collection('document_files') \
-                 .where('page_id', '==', page_id) \
-                 .where('original_filename', '==', decoded_filename) \
-                 .stream()
+                .where('page_id', '==', page_id) \
+                .stream()
 
-        firebase_filename = None
-        for doc in docs:
-            firebase_filename = doc.to_dict().get('firebase_filename')
-            break
+        matched_doc = next(
+            (doc for doc in docs
+            if unicodedata.normalize('NFC', os.path.splitext(doc.to_dict().get('original_filename', ''))[0])
+                == unicodedata.normalize('NFC', base_filename)),
+            None
+        )
 
+        if not matched_doc:
+            return jsonify({
+                "error": f"Firestore에서 page_id={page_id}, filename='{decoded_filename}'에 해당하는 문서를 찾을 수 없습니다."
+            }), 404
+
+        firebase_filename = matched_doc.to_dict().get('firebase_filename')
         if not firebase_filename:
-            return jsonify({"error": "Firebase에 등록된 파일명을 찾을 수 없습니다."}), 404
+            return jsonify({"error": "Firebase 파일명이 누락되었습니다."}), 404
 
-        # 확장자 확인 (hwp면 제외)
+        print(f"[파이어스토어 조회 완료] firebase_filename: '{firebase_filename}'")
+
+        # HWP 파일 예외 처리
         if firebase_filename.lower().endswith('.hwp'):
             return jsonify({
                 "error": f"HWP 파일은 뷰어에서 지원하지 않습니다. 다운로드하여 확인해주세요: {decoded_filename}"
             }), 400
 
-        # Firebase Storage 경로 구성
+        # Firebase Storage 경로 지정
         blob_path = f"pages/{page_id}/documents/{firebase_filename}"
         blob = bucket.blob(blob_path)
 
         if not blob.exists():
+            print(f"[경고] Storage에 존재하지 않는 경로: {blob_path}")
             return jsonify({"error": f"Storage에 파일이 존재하지 않습니다: {firebase_filename}"}), 404
 
-        # 임시 파일로 다운로드
+        # 파일을 임시 디렉토리에 다운로드
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             blob.download_to_filename(temp_file.name)
             temp_path = temp_file.name
 
-        print(f"[임시 다운로드 완료] {temp_path}")
+        print(f"[파일 다운로드 성공] 경로: {temp_path}")
 
         ext = os.path.splitext(firebase_filename)[1].lower()
 
+        # PDF면 바로 반환
         if ext == '.pdf':
             return send_file(temp_path, mimetype='application/pdf')
-        
-        # PDF 변환
+
+        # PDF로 변환 시도
         start = time.time()
         pdf_stream = convert_to_pdf_fast(temp_path)
-        os.remove(temp_path)
+        os.remove(temp_path)  # 변환 후 원본 삭제
 
         if not pdf_stream:
             return jsonify({"error": "문서 변환에 실패했습니다."}), 500
@@ -442,37 +457,50 @@ def get_document(filename):
             as_attachment=False,
             download_name=f"{decoded_filename}.pdf"
         )
-    
+
     except Exception as e:
-        print(f"문서 제공 중 오류: {str(e)}")
+        print(f"[오류 발생] {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 @source_bp.route('/api/download/<path:filename>')
 def download_document(filename):
     """원본 문서 파일 다운로드 (DOCX, HWP, PDF)"""
     try:
-        # 요청에서 page_id 파라미터 가져오기
         page_id = request.args.get('page_id')
         if not page_id:
             return jsonify({"error": "page_id가 제공되지 않았습니다"}), 400
         
         decoded_filename = urllib.parse.unquote(filename)
-        #print(f"다운로드 요청된 파일명: '{decoded_filename}'")
-        
-        # Firestore에서 firebase_filename 조회
-        doc_ref = db.collection('document_files').where('page_id', '==', page_id).where('original_filename', '==', decoded_filename)
-        docs = doc_ref.stream()
-        firebase_filename = None
-        original_ext = None
+        requested_name_no_ext, requested_ext = os.path.splitext(decoded_filename)
 
+        docs = db.collection('document_files').where('page_id', '==', page_id).stream()
+
+        matched_doc = None
         for doc in docs:
             data = doc.to_dict()
-            firebase_filename = data.get('firebase_filename')
-            original_ext = os.path.splitext(decoded_filename)[1] or os.path.splitext(firebase_filename)[1]
-            break
+            original_fn = data.get('original_filename', '')
 
-        if not firebase_filename:
+            original_name_no_ext, original_ext = os.path.splitext(original_fn)
+
+            # 한글 정규화해서 비교 (확장자 없이 비교)
+            if requested_ext:
+                # 요청 파일명에 확장자가 있으면 전체 비교
+                if unicodedata.normalize('NFC', original_fn) == unicodedata.normalize('NFC', decoded_filename):
+                    matched_doc = data
+                    break
+            else:
+                # 요청 파일명에 확장자가 없으면 Firestore 파일명 확장자 제거 후 비교
+                if unicodedata.normalize('NFC', original_name_no_ext) == unicodedata.normalize('NFC', requested_name_no_ext):
+                    matched_doc = data
+                    break
+
+        if not matched_doc:
             return jsonify({"error": f"'{decoded_filename}'에 해당하는 파일을 찾을 수 없습니다"}), 404
+
+        firebase_filename = matched_doc.get('firebase_filename')
+        if not firebase_filename:
+            return jsonify({"error": "Firebase 파일명이 누락되었습니다."}), 404
 
         firebase_path = f"pages/{page_id}/documents/{firebase_filename}"
         blob = bucket.blob(firebase_path)
@@ -482,7 +510,9 @@ def download_document(filename):
 
         file_data = blob.download_as_bytes()
 
-        # MIME 타입 설정
+        # 다운로드 시 확장자 기준은 Firestore 원본 파일명 사용
+        _, original_ext = os.path.splitext(matched_doc.get('original_filename', ''))
+
         mime_types = {
             '.pdf': 'application/pdf',
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -494,14 +524,14 @@ def download_document(filename):
             file_data,
             mimetype=mime_type,
             headers={
-                'Content-Disposition': f"attachment; filename*=UTF-8''{urllib.parse.quote(decoded_filename)}"
+                'Content-Disposition': f"attachment; filename*=UTF-8''{urllib.parse.quote(matched_doc.get('original_filename', decoded_filename))}"
             }
         )
     
     except Exception as e:
         print(f"파일 다운로드 중 오류: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
+    
 # 기존 PDF API 엔드포인트 (호환성 유지)
 @source_bp.route('/api/pdf/<path:filename>')
 def get_pdf(filename):

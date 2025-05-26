@@ -103,8 +103,8 @@ const ChatInput = ({
             </button>
 
             <div className="bottom-left-buttons">
-            <button className="url-btn" onClick={handleUrlOptionClick}>URL 추가하기</button>
-            <button className="doc-btn" onClick={handleDocumentOptionClick}>문서 추가하기</button>
+                <button className="url-btn" onClick={handleUrlOptionClick}>URL 추가하기</button>
+                <button className="doc-btn" onClick={handleDocumentOptionClick}>문서 추가하기</button>
             </div>
         </div>
     );

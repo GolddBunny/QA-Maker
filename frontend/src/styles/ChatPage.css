@@ -8,18 +8,20 @@
 
 .domain-name {
   position: sticky;
-  text-align: center;
+  top: 0;
+  z-index: 99;
   height: 60px;
-  /* border-bottom: 1px solid #ccc; */
-  font-size: 14px;
-  padding: 1px 0;
-  margin-bottom: 0px;
-  font-weight: 600;
-  align-items: center;
-  top: 0;                /* 위쪽에 붙임 */
-  z-index: 99;           /* 다른 요소 위에 오도록 */
   background-color: #fff;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+
+  display: flex;              /* flex 컨테이너로 지정 */
+  align-items: center;        /* 세로 방향 가운데 정렬 */
+  justify-content: center;    /* 가로 방향 가운데 정렬 (필요 시) */
+
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 1px 0;
 }
 
 .chat-container.sidebar-open {
@@ -29,7 +31,7 @@
 .chat-container {
   height: calc(100vh - 130px); /* 필요 시 전체 높이 조절 */
   overflow-y: auto;
-  max-height: calc(100vh - 130px);
+  max-height: calc(100vh - 147px);
 }
 
 /* 개별 메시지 박스 */
@@ -40,7 +42,7 @@
   width: 99%;
   margin: 0 auto;
   position: relative;
-  gap: 20px;
+  gap: 15px;
 }
 
 .answer-and-action {
@@ -57,26 +59,26 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-left: 32%;
-  width: 30%;
+  margin-left: 28%;
+  width: 38%;
   margin-bottom: 40px;
 }
 
 /* 사용자 질문 박스 (오른쪽 정렬) */
 .question-box {
   background-color: var(--main-purple);
-  color: #000;
+  color: #0e0d0d;
   padding: 15px 22px;
   border-radius: var(--border-radius);
   border-top-right-radius: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   text-align: justify;
   box-shadow: var(--box-shadow);
   max-width: 60%;
   margin-left: auto;
-  margin-right: 30%;
-  margin-top: 45px;
+  margin-right: 28%;
+  margin-top: 25px;
   border: 1px solid #DBD8FF;
 }
 
@@ -87,6 +89,7 @@
   border-radius: var(--border-radius);
   border-top-left-radius: 0;
   box-shadow: var(--box-shadow);
+  font-size: 17px;
   text-align: justify;
   position: relative;
   width: 100%; /* 부모 컨테이너 너비에 맞춤 */
@@ -170,12 +173,25 @@
   width: 100%;
 }
 
-/* 그래프 버튼 스타일 */
+/* 정확도, 만족도 버튼 스타일 */
 .action-button-left {
   background-color: white;
   border: 1px solid #d4c9e3;
   border-radius: 30px;
   padding: 5px 15px;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 5px #d4c9e3;
+  margin-bottom: 3px;
+}
+
+.action-button-left-graph {
+  background-color: white;
+  border: 1px solid #d4c9e3;
+  border-radius: 30px;
+  padding: 8px 15px;
   font-size: 15px;
   cursor: pointer;
   display: flex;
@@ -237,7 +253,7 @@
 .related-questions {
   width: 90%;
   background-color: #ffffff;
-  border-radius: var(--border-radius);
+  border-radius: 5px;
   overflow: hidden;
   margin-bottom: 20px;
   border: 1px solid #e8e0f3;
@@ -246,7 +262,7 @@
 }
 
 .related-questions-header {
-  background-color: #f0edf9;
+  background-color: #faf8ff;
   color: #333;
   padding: 12px 16px;
   font-weight: 500;
@@ -387,9 +403,9 @@ p.loading .bouncing-text {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
   overflow-x: auto;
-  padding-bottom: 5px;
+  padding-bottom: 0px;
   flex-wrap: nowrap;
   white-space: nowrap;
 }
@@ -403,7 +419,6 @@ p.loading .bouncing-text {
   background-color: #ccbbea;
   border-radius: 3px;
 }
-
 /* 검색 컨테이너 스타일링 */
 .search-container-chat {
   position: fixed; /* relative → fixed */
@@ -461,7 +476,7 @@ p.loading .bouncing-text {
 
 /* 검색 입력창 포커스 상태 */
 .search-container-chat:focus-within {
-  border: 2px solid #a58dd0;
+  border: 2px solid #b7a0e2;
   box-shadow: 0 0 8px rgba(165, 141, 208, 0.5);
 }
 

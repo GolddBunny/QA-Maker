@@ -13,6 +13,8 @@ import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
 import { applyIndexing, updateIndexing } from '../api/IndexingButton';
+import AdminHeader from '../services/AdminHeader';
+
 const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 const PROCESS_URL = `${BASE_URL}/process-documents`;
@@ -68,7 +70,7 @@ const AdminPage = () => {
       setIsFileLoading,
       setHasDocuments,
       isAnyProcessing,
-      currentPageId
+      pageId
     });
 
     // URL 목록 불러오기
@@ -237,7 +239,8 @@ const AdminPage = () => {
       setIsUrlLoading(true);
 
       try {
-        const result = await uploadUrl(currentPageId, urlInput);
+        console.log("pageId: ", pageId);
+        const result = await uploadUrl(pageId, urlInput);
 
         if (result.success) {
           console.log('URL 저장 완료:', result.urls);
@@ -257,7 +260,7 @@ const AdminPage = () => {
 
     // 문서 처리 함수
     const handleProcessDocuments = async () => {
-      if (!currentPageId) {
+      if (!pageId) {
         alert("먼저 페이지를 생성해주세요.");
         return;
       }
@@ -271,7 +274,7 @@ const AdminPage = () => {
       setIsProcessLoading(true);
 
       try {
-        const result = await processDocuments(currentPageId);
+        const result = await processDocuments(pageId);
 
         if (result.success) {
           alert("문서 처리 완료");
@@ -289,7 +292,7 @@ const AdminPage = () => {
 
     // 인덱싱 버튼
     const handleApply = async () => {
-      if (!currentPageId) {
+      if (!pageId) {
         alert("먼저 페이지를 생성해주세요.");
         return;
       }
@@ -303,10 +306,23 @@ const AdminPage = () => {
       setIsApplyLoading(true);
 
       try {
-        const result = await applyIndexing(currentPageId);
+        const result = await applyIndexing(pageId);
         if (result.success) {
           alert("문서 인덱싱 완료");
           setIsNewPage(false);
+
+          // 인덱싱 완료 후 데이터 다시 로드
+          await Promise.all([
+            loadAllData(pageId),
+            fetchSavedUrls(pageId).then(setUploadedUrls),
+            loadDocumentsInfo(pageId),
+            checkOutputFolder(pageId),
+            fetchGraphData({
+              pageId,
+              graphDataCacheRef,
+              setGraphData,
+            })
+          ]);
         } else {
           alert(`문서 인덱싱 실패: ${result.error}`);
         }
@@ -326,9 +342,22 @@ const AdminPage = () => {
       setIsApplyLoading(true);
 
       try {
-        const result = await updateIndexing(currentPageId);
+        const result = await updateIndexing(pageId);
         if (result.success) {
           alert("업데이트 완료");
+
+          // 업데이트 완료 후 데이터 다시 로드
+          await Promise.all([
+            loadAllData(pageId),
+            fetchSavedUrls(pageId).then(setUploadedUrls),
+            loadDocumentsInfo(pageId),
+            checkOutputFolder(pageId),
+            fetchGraphData({
+              pageId,
+              graphDataCacheRef,
+              setGraphData,
+            })
+          ]);
         } else {
           alert(`업데이트 실패: ${result.error}`);
         }
@@ -337,13 +366,24 @@ const AdminPage = () => {
       }
     };
 
-    const filteredEntities = entities
+    const sortedDocs = [...uploadedDocs].sort((a, b) => {
+  const dateA = new Date(a.date);
+  const dateB = new Date(b.date);
+  
+  if (dateA.getTime() === dateB.getTime()) {
+    return a.original_filename.localeCompare(b.original_filename);
+  }
+
+  return dateB - dateA; // 최근 날짜가 먼저 오도록 (내림차순)
+});
+
+    const filteredEntities = (entities || [])
       .filter((item) =>
         item.title && item.title.toLowerCase().includes(entitySearchTerm.toLowerCase())
       )
       .sort((a, b) => a.id - b.id);
 
-    const filteredRelationships = relationships
+    const filteredRelationships = (relationships|| [])
       .filter(
         (item) =>
           item.description &&
@@ -354,103 +394,66 @@ const AdminPage = () => {
     const handleShowGraph = () => {
       if (!showGraph) {
         // 그래프를 처음 여는 경우에만 fetch
-        if (!graphData && currentPageId) {
+        if (!graphData && pageId) {
           fetchGraphData({
-            pageId: currentPageId,
+            pageId: pageId,
             graphDataCacheRef,
             setGraphData
           });
         }
       }
-      setShowGraph(prev => !prev); // 토글
+      setShowGraph(prev => !prev);
     };
     
 
-    return (
-      <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        <SidebarAdmin isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+return (
+  <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+    <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
+    {/* 사이드바는 AdminPage 안에서만 조건부 렌더링 */}
+    {isSidebarOpen && (
+      <SidebarAdmin
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
+    )}
+
+    <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         {/* 상단 입력부 */}
-        <div className="input-container">
+        <div className="input-container" id="name">
           <div className="input-group">
             <div className="input-field">
               <label>도메인 이름</label>
               <input
                 type="text"
                 placeholder="도메인 이름을 정해주세요"
-                value={domainName}  // 상태로 관리되는 도메인 이름
+                value={domainName}
                 onChange={(e) => {
                   const newName = e.target.value;
                   setDomainName(newName);
-                  updatePageName(currentPageId, newName); // ← 로컬 스토리지까지 반영!
-                }} // input 변화에 따른 상태 업데이트
+                  updatePageName(pageId, newName);
+                }}
               />
             </div>
             <div className="divider"></div>
             <div className="input-field">
-              <label>검색 시스템 이름</label>
+              <label>QA 시스템 이름</label>
               <input
                 type="text"
-                placeholder="검색 시스템 이름을 정해주세요"
+                placeholder="QA 시스템 이름을 정해주세요"
                 value={systemName}
                 onChange={(e) => setSystemName(e.target.value)}
               />
             </div>
             <button className="apply-button-admin" onClick={() => {
-              // 도메인 이름 업데이트
-              const nameResult = updatePageName(currentPageId, domainName);
-              // 시스템 이름 업데이트
-              const sysNameResult = updatePageSysName(currentPageId, systemName);
-              // 각 업데이트 결과에 따라 개별적으로 상태 업데이트
-                if (nameResult.success) {
-                  console.log("[적용 버튼] 도메인 이름 업데이트 성공:", domainName);
-                } else {
-                  console.error("[적용 버튼] 도메인 이름 업데이트 실패:", nameResult.error);
-                }
-                
-                if (sysNameResult.success) {
-                  console.log("[적용 버튼] 시스템 이름 업데이트 성공:", systemName);
-                } else {
-                  console.error("[적용 버튼] 시스템 이름 업데이트 실패:", sysNameResult.error);
-                }
+              const nameResult = updatePageName(pageId, domainName);// 도메인 이름 업데이트
+              const sysNameResult = updatePageSysName(pageId, systemName);// 시스템 이름 업데이트
               }}>적용하기
             </button>
           </div>
-          
         </div>
-
-        {/* 상단 통계 카드
-        <div className="stat-cards">
-        <div className="card card-total-url">
-          <div className="card-text">
-            총 URL 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-total-docs">
-          <div className="card-text">
-            총 문서 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-total-entities">
-          <div className="card-text">
-            총 엔티티 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-total-questions">
-          <div className="card-text">
-            사용자 질문 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-avg-satisfaction">
-          <div className="card-text">
-            평균 만족도<br /><strong>4.7 / 5</strong>
-          </div>
-        </div>
-      </div> */}
-        
-        {/* <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1> */}
-
-        <div className="upload-section-wrapper">
+      
+        <div className="upload-section-wrapper" id="register">
           {/* 왼쪽 URL 섹션 */}
           <div className="url-upload">
             <h2 className="section-title">URL 등록</h2>
@@ -461,7 +464,7 @@ const AdminPage = () => {
                 type="text"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder={"https://example.com"}
+                placeholder={isAnyProcessing ? '' : 'https://example.com'}
                 className="url-input-field"
                 disabled={isAnyProcessing}
                 style={{ color: isAnyProcessing ? 'transparent' : 'inherit' }}
@@ -586,7 +589,8 @@ const AdminPage = () => {
                   <table className="document-table">
                     <tbody>
                       {uploadedDocs.length > 0 ? (
-                        uploadedDocs.map((doc, index) => (
+                        
+                        sortedDocs.map((doc, index) => (
                           <tr key={index}>
                             <td>{doc.original_filename}</td>
                             <td><span className="category-pill">{doc.category}</span></td>
@@ -629,7 +633,7 @@ const AdminPage = () => {
           </button>
         </div>
         
-        <div className="result-table-section">
+        <div className="result-table-section" id="info">
           <div className="header-bar">
             <div className="left-group">
               <h2 className="section-title">QA 시스템 정보 보기</h2>
@@ -687,13 +691,13 @@ const AdminPage = () => {
 
         {/* 그래프 보기 */}
         <div className="graph-section">
-          <h2 className="section-title">그래프 보기</h2>
+          <h2 className="section-title">QA 시스템 그래프 보기</h2>
           <button
             className="btn_primary"
             onClick={handleShowGraph}
             disabled={isAnyProcessing}
           >
-            {showGraph ? "𝗑" : "⏵"}
+            {showGraph ? "×" : "⏵"}
           </button>
         </div>
 
@@ -702,9 +706,9 @@ const AdminPage = () => {
             <NetworkChart data={graphData} />
           </div>
         )}
-        <div className="user-qa-analyze">
-          <h2 className="section-title">유저 질문 및 만족도 분석</h2>
-          <div className="stat-cards">
+        <div className="user-qa-analyze" id="user-questions">
+          <h2 className="section-title">유저 질문 분석</h2>
+          {/* <div className="stat-cards">
             <div className="card card-total-category">
               <div className="card-text">
                 많이 묻는 질문 카테고리<br /><strong>장학금</strong>
@@ -720,10 +724,10 @@ const AdminPage = () => {
                 평균 만족도<br /><strong>4.7 / 5</strong>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
-        *정보 신뢰성: 제공한 정보의 정확성 평가
+        <span className='user-table-info'>*정보 신뢰성: 제공한 정보의 정확성 평가</span>
         <div className="upload-table-wrapper">
             <table className="user-table">
               <thead>
@@ -746,8 +750,16 @@ const AdminPage = () => {
               </tbody>
             </table>
           </div>
-
+        </div>
+        <footer className="site-footer">
+          <div className="footer-content">
+            <p className="team-name">© 2025 황금토끼 팀</p>
+            <p className="team-members">개발자: 옥지윤, 성주연, 김민서</p>
+            <p className="footer-note">본 시스템은 한성대학교 QA 시스템 구축 프로젝트의 일환으로 제작되었습니다.</p>
+          </div>
+        </footer>
       </div>
+      
     );
 };
 

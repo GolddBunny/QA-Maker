@@ -73,14 +73,17 @@ def get_hwp_text(filename):
 
     return text
 
-def convert_hwp_file(file_path, output_path):
+def convert_hwp_file(file_path, output_path, original_filename):
     """
     HWP 파일을 output_path에 .txt로 저장하는 외부 호출용 함수
     """
     text = get_hwp_text(file_path)
 
     cleaned_text = re.sub(r'[^\x00-\x7F\uAC00-\uD7AF]', '', text)
-    headline = os.path.splitext(os.path.basename(file_path))[0]
+    if original_filename:
+        headline = os.path.splitext(original_filename)[0]
+    else:
+        headline = os.path.splitext(os.path.basename(file_path))[0]
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(f"headline: {headline}\ncontent:\n{cleaned_text}")
 

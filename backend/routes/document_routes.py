@@ -122,26 +122,27 @@ def process_documents(page_id):
     """document 처리"""
     try:
         base_path, input_path, _ = ensure_page_directory(page_id)
-        
         firebase_path = f"pages/{page_id}/documents"
-        convert2txt(firebase_path, input_path, bucket)
 
-
-        #convert2txt(upload_path, input_path)  # 문서 -> txt 변경
-        print("모든 파일 .txt로 변환 완료")
+        # 🔸 Firestore에서 filename 매핑 가져오기
+        filename_mapping = {}  # {firebase_filename: original_filename}
+        docs = db.collection('document_files').where('page_id', '==', page_id).stream()
+        for doc in docs:
+            data = doc.to_dict()
+            fb = data.get('firebase_filename')
+            orig = data.get('original_filename')
+            if fb and orig:
+                filename_mapping[fb] = orig
         
-        return jsonify({
-            'success': True,
-            'message': '문서 변환 완료'
-        })
+        convert2txt(firebase_path, input_path, bucket, filename_mapping)  # 🔸 매핑 전달
+
+        print("모든 파일 .txt로 변환 완료")
+        return jsonify({'success': True, 'message': '문서 변환 완료'})
     
     except Exception as e:
         print("Flask 서버 오류:", str(e))
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
 @document_bp.route('/process-document-direct', methods=['POST'])
 def process_document_direct():
     if 'file' not in request.files:

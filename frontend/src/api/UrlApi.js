@@ -25,6 +25,7 @@ export const fetchSavedUrls = async (pageId) => {
 
 export const uploadUrl = async (pageId, url) => {
   try {
+    console.log("pageId:", pageId);
     const response = await fetch(`${BASE_URL}/add-url/${pageId}`, {
       method: 'POST',
       headers: {

@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import "../../styles/Sidebar.css";
 import { usePageContext } from "../../utils/PageContext";
 import { savePages, getPages, changePageType } from '../../utils/storage';
+import { usePageHandlers } from '../hooks/usePageHandlers';
+
 const BASE_URL = 'http://localhost:5000';
 
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
@@ -14,7 +16,8 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const [selectedPageId, setSelectedPageId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const { pages, currentPageId, setCurrentPageId, updatePages } = usePageContext();
-
+    const { handleAddPage } = usePageHandlers(pages, updatePages, setCurrentPageId);
+    
     useEffect(() => {
         const initializePages = async () => {
             let savedPages = JSON.parse(localStorage.getItem('pages')) || [];
@@ -109,54 +112,6 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
         initializePages();
     }, [setCurrentPageId]);
 
-    const handleAddPage = async() => {
-        console.log('새 페이지 추가 버튼이 클릭되었습니다.');
-        if (newPageName.trim()) {
-            setIsLoading(true);
-            const newPageId = Date.now().toString();
-
-            try {
-                // 서버에 새 페이지 초기화 요청
-                const response = await fetch(`${BASE_URL}/init/${newPageId}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // 새 페이지 추가
-                    const newPage = {
-                        id: newPageId,
-                        name: newPageName,
-                        sysname: newSysName,
-                        type: 'normal',
-                        createdAt: new Date().toISOString()
-                    };
-                    
-                    const updatedPages = [...pages, newPage];
-                    updatePages(updatedPages);
-                    localStorage.setItem('pages', JSON.stringify(updatedPages));
-                    setNewPageName('');  // 입력창 초기화
-                    setNewSysName('');
-                    
-                    // 새 페이지로 이동
-                    localStorage.setItem('currentPageId', newPageId);
-                    setCurrentPageId(newPageId);
-                    navigate(`/admin/${newPageId}`);
-                } else {
-                    console.error('페이지 초기화 실패:', data.error);
-                    alert('페이지 초기화에 실패했습니다.');
-                }
-            } catch (error) {
-                console.error('페이지 초기화 중 오류:', error);
-                alert('페이지 초기화 중 오류가 발생했습니다.');
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    };
-    
-
     const handlePageClick = (pageId) => {
         // 클릭된 페이지로 이동
         localStorage.setItem('currentPageId', pageId);
@@ -250,27 +205,8 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
 
     return (
         <div>
-            {!isSidebarOpen && (
-                <div className="sidebar-toggle-button" onClick={toggleSidebar}>
-                    <img
-                    src="/assets/sidebar_right.png"
-                    alt="사이드바 열기"
-                    className="sidebar-toggle-icon"
-                    />
-                </div>
-                )}
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-            {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
-            {isSidebarOpen && (
-                <div className="sidebar-close-button" onClick={toggleSidebar}>
-                <img
-                    src="/assets/sidebar_left.png"
-                    alt="사이드바 닫기"
-                    className="sidebar-toggle-icon"
-                />
-                </div>
-            )}
-            <div className="new-page-title"><strong>새 도메인 페이지 추가하기</strong></div>
+            <div className="new-page-title"><strong>새 QA 시스템 추가하기</strong></div>
 
             <div className="new-page-container">
                 <input
@@ -290,7 +226,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                 </button>
             </div>
 
-            <div className="page-list-title">도메인 페이지 목록</div>
+            <div className="page-list-title">QA 시스템 목록</div>
 
             <div className="page-list">
                 {pages.length > 0 ? (

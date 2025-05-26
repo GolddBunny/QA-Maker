@@ -302,6 +302,7 @@ function ChatPage() {
             //     setAddedUrls([]);
             // }
             
+            
             // 문서 처리
             if (selectedFile) {
                 try {
@@ -318,7 +319,7 @@ function ChatPage() {
                     //console.log("문서 처리 결과:", documentData);
 
                     if (documentData.success && documentData.content) {
-                        additionalContext += "\n아래는 답변에 참조할 문서 내용입니다. \n" + documentData.content + "\n\n";
+                        additionalContext += "\n아래는 답변에 참조할 문서 내용입니다. 반드시 아래 문서도 참조해서 답변을 해주세요.\n" + documentData.content + "\n\n";
                         //console.log(additionalContext);
                     } else {
                         console.warn("문서 내용이 비어 있거나 실패:", documentData.message);
@@ -1204,12 +1205,12 @@ function ChatPage() {
                     handleAddUrl={handleAddUrl}
                 />
                 {/* 숨겨진 파일 입력 필드 */}
-                <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-                accept=".pdf,.doc,.docx,.txt"
+                    <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                    accept=".pdf,.doc,.docx,.txt"
                 />
                 {showGraph && graphData && (
                     <div className="graph-container">

@@ -1,12 +1,22 @@
 .admin-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 15px;
+  display: flex;
+  flex-direction: column; 
   font-family: 'Arial', sans-serif;
+  height: 100vh;
 }
 
-.admin-container.sidebar-open {
-  margin-left: 270px; /* 사이드바 크기만큼 밀기 */
+.admin-content {
+  margin-top: 30px; /* header height */
+  margin-left: 0;
+  transition: margin-left 0.3s ease;
+  flex: 1;
+  padding: 0 40px;  /* 왼쪽, 오른쪽 여백 추가 */
+  box-sizing: border-box; /* padding 포함한 크기 계산 */
+}
+
+
+.admin-content.sidebar-open {
+  margin-left: 300px;
 }
 
 .input-container {
@@ -37,7 +47,7 @@
   font-weight: bold;
   margin-top: 2px;
   margin-bottom: 5px;
-  font-size: 16px;
+  font-size: 18px;
   text-align: left;
 }
 
@@ -45,7 +55,7 @@
   width: 100%;
   border: none;
   outline: none;
-  font-size: 15px;
+  font-size: 17px;
   color: #333;
   background-color: transparent;
   position: relative;
@@ -96,14 +106,14 @@
 
 .btn_primary {
 background-color: #e2dbf0;
-  color: #5e3fb2;
+  color: #9d88d7;
   font-weight: bold;
-  font-size: 40px;
+  font-size: 35px;
   border: none;
   padding: 0px 15px;
   border-radius: 15px;
   cursor: pointer;
-  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 3px rgba(0, 0, 0, 0.15);
   position: static; /* 또는 relative */
   z-index: 1;
   will-change: transform;
@@ -385,14 +395,14 @@ background-color: #e2dbf0;
   max-height: 245px;
   overflow-y: auto;
   border: 1px solid #EBE0FA;
-  border-radius: 0.5rem;
+  border-radius: 0 0 0.5rem 0.5rem;
   scrollbar-color: #EBE0FA #ffffff; 
 }
 .document-table-scroll {
   max-height: 245px;
   overflow-y: auto;
   border: 1px solid #EBE0FA;
-  border-radius: 0.5rem;
+  border-radius: 0 0 0.5rem 0.5rem;
   scrollbar-color: #EBE0FA #ffffff; 
 }
 
@@ -412,7 +422,7 @@ background-color: #e2dbf0;
 }
 
 .document-table td {
-  padding: 4px;
+  padding: 8px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -434,7 +444,7 @@ background-color: #e2dbf0;
   top: 0;
   z-index: 1;
   padding: 10px;
-  background-color: #EBE0FA;
+  background-color: #e0d5f3;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -547,7 +557,7 @@ background-color: #e2dbf0;
 }
 
 .tab.active {
-  background: #bb9beb;
+  background: #beabef;
   color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.30);
   animation: tabActivate 0.4s forwards;
@@ -794,4 +804,44 @@ background-color: #e2dbf0;
   100% {
     transform: translateY(0rem);
   }
+}
+/* 유저 질문 테이블에 정보 신뢰성 글자 */
+.user-table-info {
+  display: block;
+  text-align: right;
+
+}
+/* 푸터 */
+.site-footer {
+  margin-top: 60px;
+  padding: 10px 0px;
+  background-color: #f2f0f5;
+  border-top: 0.5px solid #e0d5f8;
+  font-size: 14px;
+  color: #5f5f5f;
+  text-align: center;
+  border-radius: 0 0 8px 8px;
+}
+
+.footer-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.footer-content p {
+  margin: 6px 0;
+}
+
+.team-name {
+  font-weight: bold;
+  color: #575071;
+}
+
+.team-members {
+  font-style: italic;
+}
+
+.footer-note {
+  font-size: 12px;
+  color: #999;
 }
