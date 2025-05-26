@@ -125,6 +125,11 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
         setShowDeleteModal(true);
     };
 
+    const onAddPageClick = async () => {
+        await handleAddPage(newPageName.trim());
+        setNewPageName('');  // 이름 초기화
+    };
+
     const handleSetMainPage = (pageId) => {
     console.log('handleSetMainPage 실행 - pageId:', pageId, typeof pageId);
     console.log('변경 전 pages:', pages);
@@ -218,7 +223,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                 disabled={isLoading}
                 />
                 <button
-                onClick={handleAddPage}
+                onClick={onAddPageClick}
                 className="add-page-btn"
                 disabled={isLoading || !newPageName.trim()}
                 >
