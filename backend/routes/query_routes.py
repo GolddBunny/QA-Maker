@@ -5,7 +5,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from pathlib import Path
-
+import io
 from flask import Blueprint, jsonify, request, json
 from services.graph_service.create_graph import generate_and_save_graph
 from graphrag.config.enums import ModelType
@@ -30,6 +30,7 @@ from graphrag.query.structured_search.global_search.community_context import (
     GlobalCommunityContext,
 )
 from graphrag.query.structured_search.global_search.search import GlobalSearch
+from firebase_config import bucket
 
 query_bp = Blueprint('query', __name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
@@ -74,11 +75,20 @@ def run_local_query():
     COVARIATE_TABLE = "covariates"
     TEXT_UNIT_TABLE = "text_units"
     COMMUNITY_LEVEL = 2
+    prefix = f'pages/{page_id}/results/'
 
-    # Read nodes table to get community and degree data
-    entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
-    community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    blob_dict = {}
+    for blob in blobs:
+        filename = blob.name.replace(prefix, '')
+        if filename:
+            blob_dict[filename] = blob.download_as_bytes()
+
+    entity_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
+    community_df = pd.read_parquet(io.BytesIO(blob_dict["communities.parquet"]))
     entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
+
 
     # Load description embeddings to an in-memory lancedb vectorstore
     # To connect to a remote db, specify url and port values
@@ -87,16 +97,13 @@ def run_local_query():
     )
     description_embedding_store.connect(db_uri=LANCEDB_URI)
 
-    # Load relationship data
-    relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
+    relationship_df = pd.read_parquet(io.BytesIO(blob_dict["relationships.parquet"]))
     relationships = read_indexer_relationships(relationship_df)
 
-    # Load report data
-    report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
+    report_df = pd.read_parquet(io.BytesIO(blob_dict["community_reports.parquet"]))
     reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
 
-    # Load text unit data
-    text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
+    text_unit_df = pd.read_parquet(io.BytesIO(blob_dict["text_units.parquet"]))
     text_units = read_indexer_text_units(text_unit_df)
 
     # Configure the language model
@@ -245,9 +252,18 @@ def run_global_query():
     ENTITY_TABLE = "entities"
     COMMUNITY_LEVEL = 2
 
-    community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
-    entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
-    report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
+    prefix = f'pages/{page_id}/results/'
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    blob_dict = {}
+    for blob in blobs:
+        filename = blob.name.replace(prefix, '')
+        if filename:
+            blob_dict[filename] = blob.download_as_bytes()
+
+    entity_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
+    community_df = pd.read_parquet(io.BytesIO(blob_dict["communities.parquet"]))
+    report_df = pd.read_parquet(io.BytesIO(blob_dict["community_reports.parquet"]))
 
     communities = read_indexer_communities(community_df, report_df)
     reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)

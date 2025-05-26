@@ -345,13 +345,16 @@ h1 span:nth-child(12) { animation-delay: 1.2s; }
 }
 
 .stats {
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #666;
+  color: #494949;
   margin-top: 4px;
   text-align: center;
 }
-
+.stats-divider {
+  color: #494949;
+  margin-top: 2px;
+}
 .url-input-box-main {
   display: flex;
   align-items: center;

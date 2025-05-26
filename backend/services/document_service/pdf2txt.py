@@ -83,7 +83,7 @@ def split_sections(text):
     flush_content()
     return extracted_data
 
-def extract_text_and_tables(pdf_path, output_path):
+def extract_text_and_tables(pdf_path, output_path, original_filename=None):
     start_time = time.time()  # ⏱️ 시작 시간 기록
 
     with suppress_stderr():
@@ -91,7 +91,10 @@ def extract_text_and_tables(pdf_path, output_path):
     n_pages = len(pdf)
     all_entries = []
 
-    headline = os.path.splitext(os.path.basename(pdf_path))[0]
+    if original_filename:
+        headline = os.path.splitext(original_filename)[0]
+    else:
+        headline = os.path.splitext(os.path.basename(pdf_path))[0]
     current_chapter = ""
     current_section = ""
     last_chapter_logged = ""

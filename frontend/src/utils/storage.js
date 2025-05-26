@@ -120,31 +120,24 @@ export const getPage = (pageId) => {
 
 // 페이지 저장하기
 export const savePage = (page) => {
-  const pages = getPages();
+  let pages = getPages();
   const index = pages.findIndex(p => p.id === page.id);
-  
-  // 페이지를 'main' 타입으로 변경하는 경우
+
   if (page.type === 'main') {
-    // 다른 'main' 타입 페이지를 'normal'로 변경
-    const updatedPages = pages.map(p => 
-      p.id !== page.id && p.type === 'main' ? { ...p, type: 'normal' } : p
-    );
-    
+    // 모든 페이지의 type을 'normal'로 초기화
+    pages = pages.map(p => ({
+      ...p,
+      type: p.id === page.id ? 'main' : 'normal'
+    }));
+  } else {
+    // 그냥 업데이트만
     if (index >= 0) {
-      updatedPages[index] = page;
+      pages[index] = page;
     } else {
-      updatedPages.push(page);
+      pages.push(page);
     }
-    
-    return savePages(updatedPages);
   }
 
-  if (index >= 0) {
-    pages[index] = page;
-  } else {
-    pages.push(page);
-  }
-  
   return savePages(pages);
 };
 

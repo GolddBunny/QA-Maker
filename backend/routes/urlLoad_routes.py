@@ -70,7 +70,7 @@ def add_url(page_id):
         start_time = time.time()
         
         try:
-            saved_files, saved_attachments = crawl_main(url)
+            saved_files, saved_attachments = crawl_main(url, page_id)
             
             crawl_result = {
                 "url": url,

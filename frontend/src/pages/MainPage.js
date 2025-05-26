@@ -11,7 +11,7 @@ function MainPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchType, setSearchType] = useState('url');
   const [selectedFile, setSelectedFile] = useState(null);
-
+  const { systemName } = usePageContext();
   const navigate = useNavigate(); // 페이지 이동을 위한 useNavigate
   const location = useLocation();
   const fileInputRef = useRef(null);
@@ -101,22 +101,15 @@ function MainPage() {
       {/* 상단 버튼 추가 */}
       <div className="top-buttons">
         <div>
-          <button className="top-button">
-            🌐
-          </button>
-          <div className="stats">URL 수<br />43231</div>
+          <div className="stats">URL 수 43231</div>
         </div>
+        <span className="stats-divider">|</span>
         <div>
-          <button className="top-button">
-            📑
-          </button>
-          <div className="stats">문서 수<br />5308</div>
+          <div className="stats">문서 수 5308</div>
         </div>
+        <span className="stats-divider">|</span>
         <div>
-          <button className="top-button">
-            🙆🏻‍♀️
-          </button>
-          <div className="stats">엔티티 수<br />328</div>
+          <div className="stats">엔티티 수 328</div>
         </div>
       </div>
 
@@ -130,7 +123,7 @@ function MainPage() {
       </h1>
 
       <div className="typing-text">
-        한성대학교 홈페이지에서 찾아볼게요!
+        {systemName}에서 찾아볼게요!
       </div>
 
       <div className="search-container">

@@ -3,6 +3,7 @@ import subprocess
 import time
 from flask import Blueprint, jsonify, request
 from services.document_service.convert2txt import convert2txt
+from firebase_config import bucket
 
 generate_bp = Blueprint('generate', __name__)
 
@@ -11,6 +12,7 @@ def apply_documents(page_id):
     """GraphRAG 인덱싱 처리"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
+        output_path = os.path.join(base_path, 'output')
 
         # graphrag index 명령어 실행
         start_time = time.time()
@@ -18,6 +20,27 @@ def apply_documents(page_id):
         end_time = time.time()
         execution_time = end_time - start_time
         print(execution_time)
+
+        # output 폴더 내부 파일 Firebase로 업로드
+        uploaded_files = []
+        if os.path.exists(output_path):
+            for filename in os.listdir(output_path):
+                file_path = os.path.join(output_path, filename)
+
+                if os.path.isfile(file_path):
+                    # Firebase Storage에 업로드 경로
+                    firebase_path = f'pages/{page_id}/results/{filename}'
+
+                    blob = bucket.blob(firebase_path)
+                    blob.upload_from_filename(file_path)
+                    blob.make_public()
+
+                    print(f"Uploaded {filename} → {firebase_path}")
+                    uploaded_files.append(firebase_path)
+
+                    # 업로드 후 파일 삭제
+                    os.remove(file_path)
+                    print(f"Deleted local file: {file_path}")
 
         return jsonify({
             'success': True,
@@ -36,9 +59,10 @@ def update(page_id):
     """document 업데이트"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
-        
-        convert2txt(upload_path, input_path)
-        print("모든 파일 .txt로 변환 완료")
+        output_path = os.path.join(base_path, 'output')
+
+        # convert2txt(upload_path, input_path, bucket)
+        # print("모든 파일 .txt로 변환 완료")
         
         start_time = time.time()
         subprocess.run(['graphrag', 'update', '--root', base_path])
@@ -46,6 +70,27 @@ def update(page_id):
         execution_time = end_time - start_time
         print(f'execution_time: {execution_time}')
         
+        # output 폴더 내부 파일 Firebase로 업로드
+        uploaded_files = []
+        if os.path.exists(output_path):
+            for filename in os.listdir(output_path):
+                file_path = os.path.join(output_path, filename)
+
+                if os.path.isfile(file_path):
+                    # Firebase Storage에 업로드 경로
+                    firebase_path = f'pages/{page_id}/results/{filename}'
+
+                    blob = bucket.blob(firebase_path)
+                    blob.upload_from_filename(file_path)
+                    blob.make_public()
+
+                    print(f"Uploaded {filename} → {firebase_path}")
+                    uploaded_files.append(firebase_path)
+
+                    # 업로드 후 파일 삭제
+                    os.remove(file_path)
+                    print(f"Deleted local file: {file_path}")
+
         return jsonify({'success': True})
     
     except Exception as e:

@@ -10,7 +10,7 @@ export const FileDropHandler = ({
   setIsFileLoading,
   setHasDocuments,
   isAnyProcessing,
-  currentPageId
+  pageId
 }) => {
   const allowedFileTypes = [
     'application/pdf',
@@ -40,7 +40,9 @@ export const FileDropHandler = ({
         return;
       }
 
-      const existingDocs = uploadedDocs.map(doc => doc.name.toLowerCase());
+      const existingDocs = uploadedDocs
+        .map(doc => (doc.original_filename ? doc.original_filename.toLowerCase() : ''))
+        .filter(name => name);
       const newFiles = filteredFiles.filter(file => !existingDocs.includes(file.name.toLowerCase()));
 
       if (newFiles.length === 0) {
@@ -51,7 +53,7 @@ export const FileDropHandler = ({
       const formData = new FormData();
       newFiles.forEach(file => formData.append('files', file));
 
-      const response = await fetch(`${UPLOAD_URL}/${currentPageId}`, {
+      const response = await fetch(`${UPLOAD_URL}/${pageId}`, {
         method: 'POST',
         body: formData
       });
@@ -61,7 +63,7 @@ export const FileDropHandler = ({
         alert('파일 업로드에 실패했습니다.');
         return;
       }
-      
+
       const newDocObjs = data.uploaded_files; // ← 서버에서 보낸 firebase 저장 결과
 
       const updated = [...uploadedDocs, ...newDocObjs];
