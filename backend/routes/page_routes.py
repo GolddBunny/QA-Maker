@@ -92,7 +92,7 @@ def init_page(page_id):
         })
     except Exception as e:
         return jsonify({
-            'succes': False,
+            'success': False,
             'error': str(e)
         }), 500
 
