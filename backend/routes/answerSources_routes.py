@@ -65,7 +65,6 @@ def find_url_and_title_from_source_id(df: pd.DataFrame, source_id: int) -> Optio
 
             
             return {
-                
                 'title': title_match.group(1).strip() if title_match else None,
                 'url': url_match.group(1).strip() if url_match else None
             }

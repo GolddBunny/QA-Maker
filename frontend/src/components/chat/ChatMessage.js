@@ -285,15 +285,20 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         </button>
                         </div>
                     )}
-
                     {!showGraph && !showDocument && (
                         <div className="graph-button-wrapper">
-                        <button type="button" className="action-button-left-graph" onClick={(e) => handleShowGraph(e, index, currentAnswerType)}>
-                            <span className="button-icon">지식 그래프 보기 <img src="/assets/graph_button.png" alt="Graph icon" /></span>
-                        </button>
+                            <button 
+                                type="button" 
+                                className="action-button-left" 
+                                onClick={handleShowGraph}
+                            >
+                                <span className="button-icon">
+                                    지식 그래프 보기 
+                                    <img src="/assets/graph_button.png" alt="Graph icon" />
+                                </span>
+                            </button>
                         </div>
                     )}
-
                     {!showGraph && !showDocument && (
                         <div className="related-questions">
                             <div className="related-questions-header">💁🏻‍♀️ 관련 질문</div>

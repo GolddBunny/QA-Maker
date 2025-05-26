@@ -6,6 +6,7 @@ import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
 import { FileDropHandler } from '../api/handleFileDrop';
+import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { fetchEntities, fetchRelationships } from '../api/AllParquetView';
 import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
@@ -21,7 +22,6 @@ const PROCESS_URL = `${BASE_URL}/process-documents`;
 const UPDATE_URL = `${BASE_URL}/update`;
 const APPLY_URL = `${BASE_URL}/apply`;
 const URL_URL = `${BASE_URL}`;
-
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -57,7 +57,7 @@ const AdminPage = () => {
       systemName, setSystemName, domainName, setDomainName
      } = usePageContext();
     const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
-    const [qaHistory, setQaHistory] = useState([]);
+    const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
     const [hasOutput, setHasOutput] = useState(null);
@@ -149,16 +149,6 @@ const AdminPage = () => {
           navigate(`/admin/${fallbackPageId}`);
         }
         return;
-      }
-
-      const stored = localStorage.getItem("qaHistory");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setQaHistory(parsed);
-        } catch (e) {
-          console.error("qaHistory JSON 파싱 오류:", e);
-        }
       }
 
       if (currentPageId) {
@@ -739,14 +729,31 @@ return (
                 </tr>
               </thead>
               <tbody>
-                {qaHistory.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.question}</td>
-                    <td>{item.category || "-"}</td>
-                    <td>{item.satisfaction || "-"}</td>
-                    <td>{item.trust || "-"}</td>
+                {qaLoading ? (
+                  <tr>
+                    <td colSpan="4" className="empty-message">로딩 중...</td>
                   </tr>
-                ))}
+                ) : qaError ? (
+                  <tr>
+                    <td colSpan="4" className="empty-message">오류: {qaError}</td>
+                  </tr>
+                ) : qaHistory?.length > 0 ? (
+                  // 모든 QA 항목의 conversations를 펼쳐서 개별 행으로 표시
+                  qaHistory.flatMap((qaItem) => 
+                    qaItem.conversations?.map((conversation, convIndex) => (
+                      <tr key={`${qaItem.id}-${convIndex}`}>
+                        <td>{conversation.question}</td>
+                        <td>{conversation.category || qaItem.category || "-"}</td>
+                        <td>{conversation.satisfaction || qaItem.satisfaction || "-"}</td>
+                        <td>{conversation.trust || qaItem.trust || "-"}</td>
+                      </tr>
+                    )) || []
+                  )
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="empty-message">질문 기록이 없습니다.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
