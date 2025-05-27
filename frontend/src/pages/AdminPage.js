@@ -186,6 +186,15 @@ const AdminPage = () => {
       
       console.log("현재 admin pageId:", pageId);
 
+      // 페이지가 변경될 때마다 상태 초기화
+      // setEntities([]);
+      // setRelationships([]);
+      // setGraphData(null);
+      // setUploadedUrls([]);
+      // setUploadedDocs([]);
+      // setHasDocuments(false);
+      // setHasOutput(null);
+      
       const savedShow = localStorage.getItem(`showProgressing_${pageId}`);
       if (savedShow === 'true') {
         setShowProgressing(true);
@@ -519,8 +528,7 @@ const AdminPage = () => {
                 적용
               </button>
             </div>
-        </div>
-      
+      </div>
         <div className="upload-section-wrapper" id="register">
           {/* 왼쪽 URL 섹션 */}
           <div className="url-upload">

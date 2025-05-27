@@ -118,7 +118,7 @@
 
 /* 통계 섹션 */
 .stats-section {
-    padding: 20px;
+    padding: 15px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
 }
@@ -134,7 +134,7 @@
 .stat-card {
     background: white;
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border: 1px solid #f0f0f0;
     position: relative;
@@ -175,7 +175,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .stat-icon {
@@ -672,4 +672,204 @@
     border-radius: 12px;
     font-size: 12px;
     white-space: nowrap;
+}
+
+/* 통계 차트 섹션 */
+.stats-charts-section {
+    margin: 2rem 0;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.chart-header {
+    margin-bottom: 1.5rem;
+}
+
+.chart-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.chart-icon {
+    font-size: 1.3rem;
+}
+
+.chart-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 200px;
+    padding: 1rem 0;
+    gap: 0.5rem;
+}
+
+.bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 60px;
+}
+
+.bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    height: 160px;
+    margin-bottom: 0.5rem;
+}
+
+.bar {
+    width: 8px;
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    transition: all 0.3s ease;
+}
+
+.bar:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+}
+
+/* 막대 색상 */
+.url-bar {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.doc-bar {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.entity-bar {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.relationship-bar {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.bar-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+    text-align: center;
+}
+
+.chart-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+/* 범례 (선택사항) */
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .bar-chart {
+        height: 150px;
+        gap: 0.25rem;
+    }
+    
+    .bars {
+        height: 120px;
+        gap: 1px;
+    }
+    
+    .bar {
+        width: 6px;
+    }
+    
+    .chart-stats {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .stat-item {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .bar-label {
+        font-size: 0.7rem;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem;
+    }
 }

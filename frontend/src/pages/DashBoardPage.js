@@ -28,13 +28,17 @@ const DashboardPage = () => {
     const [dataFetchError, setDataFetchError] = useState(null);
     const [showGraph, setShowGraph] = useState(true);
     const graphDataCacheRef = useRef({});
-    
+    const [createdDate, setCreatedDate] = useState("");
+
     // URL과 문서 목록 상태 추가
     const [uploadedUrls, setUploadedUrls] = useState([]);
     const [uploadedDocs, setUploadedDocs] = useState([]);
     
     const { currentPageId, domainName, setDomainName, systemName, setSystemName } = usePageContext();
     const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
+
+    const urlCount = uploadedUrls?.length || 0;
+    const docCount = uploadedDocs?.length || 0;
 
     const DashboardHeader = ({ isSidebarOpen, toggleSidebar }) => {
         return (
@@ -43,13 +47,13 @@ const DashboardPage = () => {
                     <div className="dashboard-header-left">
                         <button 
                             className="back-button"
-                            onClick={() => navigate('/admin')}
+                            onClick={() => navigate(`/admin/${pageId}`)}
                             title="관리자 페이지로 돌아가기"
                         >
                             ← 돌아가기
                         </button>
                         <div className="dashboard-logo-section">
-                            <h1 className="dashboard-title">한성대 QA System dashboard</h1>
+                            <h1 className="dashboard-title">Log Analyzer</h1>
                         </div>
                     </div>
                     
@@ -148,9 +152,29 @@ const DashboardPage = () => {
             if (currentPage) {
                 setDomainName(currentPage.name || "");
                 setSystemName(currentPage.sysname || "");
+                // Firebase의 createdAt 필드에서 날짜 추출
+                if (currentPage.createdAt) {
+                    try {
+                        // ISO 문자열을 Date 객체로 변환
+                        const date = new Date(currentPage.createdAt);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        console.log('날짜 파싱 성공:', currentPage.createdAt)
+                        setCreatedDate(`${year}.${month}.${day}`);
+                    } catch (error) {
+                        console.log('날짜 파싱 실패:', currentPage.createdAt);
+                        setCreatedDate("2025.05.27");
+                    }
+                } else {
+                    setCreatedDate("2025.05.27");
+                }
+            } else {
+                setCreatedDate("2025.05.27");
             }
         }
     }, [pageId, loadAllData, navigate, fetchSavedUrls, loadDocumentsInfo]);
+
     const filteredEntities = (entities || [])
         .filter((item) =>
             item.title && item.title.toLowerCase().includes(entitySearchTerm.toLowerCase())
@@ -172,12 +196,19 @@ const DashboardPage = () => {
             {/* 통계 섹션 */}
             <div className="stats-section">
                 <div className="stats-grid">
+                    <div className="stat-card date-card">
+                        <div className="stat-header">
+                            <span className="stat-icon">📅</span>
+                        </div>
+                        <div className="stat-number">{createdDate || ""}</div>
+                        <div className="stat-label">생성된 날짜</div>
+                    </div>
                     <div className="stat-card url-card">
                         <div className="stat-header">
                             <span className="stat-icon">🌐</span>
                             <span className="stat-change positive">+23</span>
                         </div>
-                        <div className="stat-number">1,247</div>
+                        <div className="stat-number">{urlCount}</div>
                         <div className="stat-label">등록된 URL</div>
                     </div>
                     
@@ -186,7 +217,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">📄</span>
                             <span className="stat-change positive">+156</span>
                         </div>
-                        <div className="stat-number">2,843</div>
+                        <div className="stat-number">{docCount}</div>
                         <div className="stat-label">수집된 문서</div>
                     </div>
                     
@@ -195,7 +226,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">🔗</span>
                             <span className="stat-change positive">+802</span>
                         </div>
-                        <div className="stat-number">28,391</div>
+                        <div className="stat-number">{filteredEntities.length}</div>
                         <div className="stat-label">추출된 엔티티</div>
                     </div>
                     
@@ -204,7 +235,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">⚡</span>
                             <span className="stat-change positive">+1,445</span>
                         </div>
-                        <div className="stat-number">52,743</div>
+                        <div className="stat-number">{filteredRelationships.length}</div>
                         <div className="stat-label">구축된 관계</div>
                     </div>
                     
@@ -220,7 +251,6 @@ const DashboardPage = () => {
             </div>
 
             <div className={`dashboard-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-                
                 {/* URL 리스트 섹션 개선 */}
                 <div className="url-list-section">
                     <div className="section-header">
@@ -228,13 +258,18 @@ const DashboardPage = () => {
                             <span className="icon">🌐</span>
                             URL 리스트
                         </h2>
-                        <div className="search-box">
-                            <span className="search-icon">🔍</span>
-                            <input 
-                                type="text" 
-                                placeholder="URL에서 도메인으로 검색..."
-                            />
-                        </div>
+                            <div className="search-controls">
+                                <div className="search-box">
+                                    <span className="search-icon">🔍</span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="URL에서 도메인으로 검색..."
+                                    />
+                                </div>
+                                <div className="entity-count">
+                                {`총 URL 수: ${urlCount}`}
+                                </div>
+                            </div>
                     </div>
                     
                     <div className="url-table-container">
@@ -243,7 +278,7 @@ const DashboardPage = () => {
                                 <thead>
                                     <tr>
                                         <th>URL</th>
-                                        <th>설명</th>
+                                        <th>카테고리</th>
                                         <th>수집일</th>
                                     </tr>
                                 </thead>
@@ -286,12 +321,17 @@ const DashboardPage = () => {
                             <span className="icon">📄</span>
                             문서 목록
                         </h2>
-                        <div className="search-box">
-                            <span className="search-icon">🔍</span>
-                            <input 
-                                type="text" 
-                                placeholder="문서명으로 검색..."
-                            />
+                        <div className="search-controls">
+                            <div className="search-box">
+                                <span className="search-icon">🔍</span>
+                                <input 
+                                    type="text" 
+                                    placeholder="문서명으로 검색..."
+                                />
+                            </div>
+                            <div className="entity-count">
+                                {`총 문서 수: ${docCount}`}
+                            </div>
                         </div>
                     </div>
                     
@@ -362,7 +402,7 @@ const DashboardPage = () => {
                                     <input
                                         type="text"
                                         placeholder={
-                                            activeTab === "entity" ? "title로 검색" : "description 내용 검색"
+                                            activeTab === "entity" ? "title로 검색" : "엔티티나 관계로 검색..."
                                         }
                                         value={activeTab === "entity" ? entitySearchTerm : relationshipSearchTerm}
                                         onChange={(e) =>
@@ -375,7 +415,7 @@ const DashboardPage = () => {
                                 <div className="entity-count">
                                     {activeTab === "entity"
                                         ? `총 엔티티 수: ${filteredEntities.length}`
-                                        : `총 엣지 수: ${filteredRelationships.length}`}
+                                        : `총 관계 수: ${filteredRelationships.length}`}
                                 </div>
                             </div>
                         </div>
@@ -463,7 +503,6 @@ const DashboardPage = () => {
                         </div>
                     )}
                 </div>
-            </div>
                 </div>
                 {/* 그래프 보기 섹션 수정 */}
                 <div className="graph-section">
@@ -480,6 +519,105 @@ const DashboardPage = () => {
                         </div>
                     )}
                 </div>
+                {/* 통계 차트 섹션 */}
+                <div className="stats-charts-section">
+                    <div className="charts-container">
+                        {/* 날짜별 데이터 수집 현황 */}
+                        <div className="chart-card">
+                            <div className="chart-header">
+                                <h3 className="chart-title">
+                                    <span className="chart-icon">📊</span>
+                                    날짜별 데이터 수집 현황
+                                </h3>
+                            </div>
+                            <div className="chart-content">
+                                <div className="bar-chart">
+                                    {[
+                                        {date: '01', url: 45, doc: 32, entity: 78, relationship: 56},
+                                        {date: '02', url: 23, doc: 18, entity: 41, relationship: 35},
+                                        {date: '03', url: 34, doc: 28, entity: 62, relationship: 48},
+                                        {date: '04', url: 12, doc: 15, entity: 27, relationship: 22},
+                                        {date: '05', url: 28, doc: 22, entity: 50, relationship: 38},
+                                        {date: '06', url: 42, doc: 35, entity: 77, relationship: 62},
+                                        {date: '07', url: 38, doc: 31, entity: 69, relationship: 55},
+                                        {date: '08', url: 52, doc: 45, entity: 97, relationship: 82},
+                                        {date: '09', url: 29, doc: 24, entity: 53, relationship: 41},
+                                        {date: '10', url: 46, doc: 39, entity: 85, relationship: 71},
+                                        {date: '11', url: 31, doc: 26, entity: 57, relationship: 44},
+                                        {date: '12', url: 48, doc: 41, entity: 89, relationship: 75}
+                                    ].map((item, index) => (
+                                        <div key={index} className="bar-group">
+                                            <div className="bars">
+                                                <div className="bar url-bar" style={{height: `${item.url}%`}}></div>
+                                                <div className="bar doc-bar" style={{height: `${item.doc}%`}}></div>
+                                                <div className="bar entity-bar" style={{height: `${item.entity}%`}}></div>
+                                                <div className="bar relationship-bar" style={{height: `${item.relationship}%`}}></div>
+                                            </div>
+                                            <div className="bar-label">{item.date}월</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="chart-stats">
+                                    <div className="stat-item">
+                                        <span className="stat-label">오늘 수집</span>
+                                        <span className="stat-value">234개</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">이번 주 수집</span>
+                                        <span className="stat-value">1,567개</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 지식그래프 구축 현황 */}
+                        <div className="chart-card">
+                            <div className="chart-header">
+                                <h3 className="chart-title">
+                                    <span className="chart-icon">📈</span>
+                                    지식그래프 구축 현황
+                                </h3>
+                            </div>
+                            <div className="chart-content">
+                                <div className="bar-chart">
+                                    {[
+                                        {date: '13', entity: 67, relationship: 54},
+                                        {date: '14', entity: 72, relationship: 59},
+                                        {date: '15', entity: 58, relationship: 45},
+                                        {date: '16', entity: 43, relationship: 38},
+                                        {date: '17', entity: 51, relationship: 42},
+                                        {date: '18', entity: 39, relationship: 33},
+                                        {date: '19', entity: 76, relationship: 68},
+                                        {date: '20', entity: 64, relationship: 52},
+                                        {date: '21', entity: 48, relationship: 41},
+                                        {date: '22', entity: 82, relationship: 74},
+                                        {date: '23', entity: 55, relationship: 47},
+                                        {date: '24', entity: 41, relationship: 35}
+                                    ].map((item, index) => (
+                                        <div key={index} className="bar-group">
+                                            <div className="bars">
+                                                <div className="bar entity-bar" style={{height: `${item.entity}%`}}></div>
+                                                <div className="bar relationship-bar" style={{height: `${item.relationship}%`}}></div>
+                                            </div>
+                                            <div className="bar-label">{item.date}일</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="chart-stats">
+                                    <div className="stat-item">
+                                        <span className="stat-label">오늘 추가된 엔티티</span>
+                                        <span className="stat-value">892개</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">오늘 구축된 관계</span>
+                                        <span className="stat-value">1,445개</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
