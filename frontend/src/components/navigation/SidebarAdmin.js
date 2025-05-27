@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import "../../styles/Sidebar.css";
 import { usePageContext } from "../../utils/PageContext";
+import { savePages, getPages, changePageType } from '../../utils/storage';
+import { usePageHandlers } from '../hooks/usePageHandlers';
+
 const BASE_URL = 'http://localhost:5000';
 
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
@@ -13,7 +16,8 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const [selectedPageId, setSelectedPageId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const { pages, currentPageId, setCurrentPageId, updatePages } = usePageContext();
-
+    const { handleAddPage } = usePageHandlers(pages, updatePages, setCurrentPageId);
+    
     useEffect(() => {
         const initializePages = async () => {
             let savedPages = JSON.parse(localStorage.getItem('pages')) || [];
@@ -108,54 +112,6 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
         initializePages();
     }, [setCurrentPageId]);
 
-    const handleAddPage = async() => {
-        console.log('새 페이지 추가 버튼이 클릭되었습니다.');
-        if (newPageName.trim()) {
-            setIsLoading(true);
-            const newPageId = Date.now().toString();
-
-            try {
-                // 서버에 새 페이지 초기화 요청
-                const response = await fetch(`${BASE_URL}/init/${newPageId}`, {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // 새 페이지 추가
-                    const newPage = {
-                        id: newPageId,
-                        name: newPageName,
-                        sysname: newSysName,
-                        type: 'normal',
-                        createdAt: new Date().toISOString()
-                    };
-                    
-                    const updatedPages = [...pages, newPage];
-                    updatePages(updatedPages);
-                    localStorage.setItem('pages', JSON.stringify(updatedPages));
-                    setNewPageName('');  // 입력창 초기화
-                    setNewSysName('');
-                    
-                    // 새 페이지로 이동
-                    localStorage.setItem('currentPageId', newPageId);
-                    setCurrentPageId(newPageId);
-                    navigate(`/admin/${newPageId}`);
-                } else {
-                    console.error('페이지 초기화 실패:', data.error);
-                    alert('페이지 초기화에 실패했습니다.');
-                }
-            } catch (error) {
-                console.error('페이지 초기화 중 오류:', error);
-                alert('페이지 초기화 중 오류가 발생했습니다.');
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    };
-    
-
     const handlePageClick = (pageId) => {
         // 클릭된 페이지로 이동
         localStorage.setItem('currentPageId', pageId);
@@ -169,16 +125,32 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
         setShowDeleteModal(true);
     };
 
-    const handleSetMainPage = (pageId) => {
-        const updatedPages = pages.map(page => ({
-            ...page,
-            type: page.id === pageId ? 'main' : 'normal'
-        }));
-        
-        updatePages(updatedPages);
-        localStorage.setItem('pages', JSON.stringify(updatedPages));
-        setShowDeleteModal(false);
+    const onAddPageClick = async () => {
+        await handleAddPage(newPageName.trim());
+        setNewPageName('');  // 이름 초기화
     };
+
+    const handleSetMainPage = (pageId) => {
+    console.log('handleSetMainPage 실행 - pageId:', pageId, typeof pageId);
+    console.log('변경 전 pages:', pages);
+    
+    // pageId를 문자열로 변환하여 비교
+    const targetPageId = String(pageId);
+    
+    const updatedPages = pages.map(page => {
+        console.log('비교:', page.id, '===', targetPageId, '?', page.id === targetPageId);
+        return {
+            ...page,
+            type: page.id === targetPageId ? 'main' : 'normal'
+        };
+    });
+    
+    console.log('변경 후 updatedPages:', updatedPages);
+    
+    savePages(updatedPages);
+    updatePages(updatedPages);
+    setShowDeleteModal(false);
+};
 
     const handleDeletePage = async () => {
         setIsLoading(true);
@@ -238,27 +210,8 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
 
     return (
         <div>
-            {!isSidebarOpen && (
-                <div className="sidebar-toggle-button" onClick={toggleSidebar}>
-                    <img
-                    src="/assets/sidebar_right.png"
-                    alt="사이드바 열기"
-                    className="sidebar-toggle-icon"
-                    />
-                </div>
-                )}
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-            {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
-            {isSidebarOpen && (
-                <div className="sidebar-close-button" onClick={toggleSidebar}>
-                <img
-                    src="/assets/sidebar_left.png"
-                    alt="사이드바 닫기"
-                    className="sidebar-toggle-icon"
-                />
-                </div>
-            )}
-            <div className="new-page-title"><strong>새 도메인 페이지 추가하기</strong></div>
+            <div className="new-page-title"><strong>새 QA 시스템 추가하기</strong></div>
 
             <div className="new-page-container">
                 <input
@@ -270,7 +223,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                 disabled={isLoading}
                 />
                 <button
-                onClick={handleAddPage}
+                onClick={onAddPageClick}
                 className="add-page-btn"
                 disabled={isLoading || !newPageName.trim()}
                 >
@@ -278,7 +231,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                 </button>
             </div>
 
-            <div className="page-list-title">도메인 페이지 목록</div>
+            <div className="page-list-title">QA 시스템 목록</div>
 
             <div className="page-list">
                 {pages.length > 0 ? (
@@ -300,11 +253,19 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
             {showDeleteModal && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h3>페이지 삭제</h3>
+                        <button 
+                            className="set-main-button" 
+                            onClick={() => handleSetMainPage(selectedPageId)}
+                        >
+                            메인으로 설정
+                        </button>
+                        <h3 style={{ textAlign: 'center' }}>페이지 삭제</h3>
+                        
                         <div className="modal-buttons">
                             <button onClick={handleDeletePage} disabled={isLoading}>
                                 {isLoading ? '삭제 중...' : '삭제'}
                             </button>
+                            
                             <button onClick={closeModal} disabled={isLoading}>취소</button>
                         </div>
                     </div>

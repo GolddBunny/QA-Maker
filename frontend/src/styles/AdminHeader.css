@@ -1,0 +1,76 @@
+.main-header {
+  padding: 18px 40px 18px 20px;
+  background: linear-gradient(to top, #cbc4f3 33%, #c7b2f4 100%);
+  border-bottom: 1px solid #ede9f8;
+  color: #6d48a5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  top: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-family: 'Helvetica', sans-serif;
+  position: relative;
+  z-index: 101;
+}
+
+.left-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 40px;
+  font-weight: 1000;
+  letter-spacing: 1px;
+  color: #ffffff; /* 진한 보라 */
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  margin-top: 5px;
+}
+.add-domain-button {
+  color: #3b3054 !important; /* add-domain 전용 진한 보라색 */
+  font-weight: 1000;
+  cursor: pointer;
+}
+.nav-links a {
+  color: #524d5c; 
+  font-weight: 600;
+  font-size: 18px;
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 4px;
+  transition: color 0.3s ease;
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #763cdb;
+  transition: width 0.3s;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.nav-links a:hover {
+  color: #6b4da1;
+}
+
+.divider-admin {
+  font-size: 25px;
+  color: #a8a8a8; /* 진한 보라 */
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}

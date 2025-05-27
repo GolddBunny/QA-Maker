@@ -259,7 +259,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                     <div className="answer-side-panel">
                     {!showGraph && !showDocument && (
                         <div className="action-button-container">
-                        <span className="action-button-left">
+                        <span className="action-button-left-graph">
                             정확도 {getCurrentAccuracy()}%
                         </span>
                         </div>

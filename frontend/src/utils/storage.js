@@ -202,6 +202,26 @@ export const savePage = async (page) => {
     console.error('페이지 저장 실패:', error);
     return false;
   }
+// export const savePage = (page) => {
+//   let pages = getPages();
+//   const index = pages.findIndex(p => p.id === page.id);
+
+//   if (page.type === 'main') {
+//     // 모든 페이지의 type을 'normal'로 초기화
+//     pages = pages.map(p => ({
+//       ...p,
+//       type: p.id === page.id ? 'main' : 'normal'
+//     }));
+//   } else {
+//     // 그냥 업데이트만
+//     if (index >= 0) {
+//       pages[index] = page;
+//     } else {
+//       pages.push(page);
+//     }
+//   }
+
+//   return savePages(pages);
 };
 
 // 페이지 삭제하기
@@ -281,3 +301,6 @@ export const updatePageSysName = async (pageId, newSysName) => {
     return { success: false, error: error.message };
   }
 };
+  
+//   return savePages(filteredPages);
+// }; 

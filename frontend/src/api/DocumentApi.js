@@ -2,7 +2,7 @@ const BASE_URL = 'http://localhost:5000';
 
 export const processDocuments = async (pageId) => {
   try {
-    const response = await fetch(`${BASE_URL}/${pageId}`, {
+    const response = await fetch(`${BASE_URL}/process-documents/${pageId}`, {
       method: 'POST'
     });
 
@@ -33,4 +33,22 @@ export const loadUploadedDocs = async (pageId) => {
     console.error("Firebase 문서 목록 요청 중 오류:", error);
     return [];
   }
+};
+
+export const createUpdatedQaHistory = (qaHistory, qaId, index, originalFilenames) => {
+    const newHistory = [...qaHistory];
+    const qaItemIndex = newHistory.findIndex(item => item.id === qaId);
+    if (qaItemIndex !== -1) {
+        const qaItem = { ...newHistory[qaItemIndex] };
+        const conversations = [...qaItem.conversations];
+        if (conversations[index]) {
+            conversations[index] = {
+                ...conversations[index],
+                originalFilenames
+            };
+            qaItem.conversations = conversations;
+            newHistory[qaItemIndex] = qaItem;
+        }
+    }
+    return newHistory;
 };

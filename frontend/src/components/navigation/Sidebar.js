@@ -51,25 +51,25 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
 
     return (
         <div>
-            {!isSidebarOpen && (
-                <div className="sidebar-toggle-button" onClick={toggleSidebar}>
-                    <img
-                    src="/assets/sidebar_right.png"
-                    alt="사이드바 열기"
-                    className="sidebar-toggle-icon"
-                    />
+            <div className="sidebar-toggle-button-main" onClick={toggleSidebar}>
+            {!isSidebarOpen ? (
+                <div className="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
                 </div>
-                )}
-            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-            
-            
+            ) : (
+                ""
+            )}
+            </div>
+
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <h3>대화 기록</h3>
                     {/* 열린 상태: 사이드바 내부 오른쪽 상단에 토글 이미지 */}
                     {isSidebarOpen && (
                         <div className="sidebar-close-btnX" onClick={toggleSidebar}>
-                        x
+                        ×
                         </div>
                     )}
                 </div>
@@ -153,7 +153,6 @@ function Sidebar({ isSidebarOpen, toggleSidebar }) {
                     </div>
                 </div>
             )}
-            </div>
         </div>
     );
 }

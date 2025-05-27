@@ -1,7 +1,17 @@
 
 -Goal-
-Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
- 
+Given a text document that may or may not be structured into chapters, sections, and articles, and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
+
+-Mandatory Structural Rules-
+- Each article (제 X 조) must be extracted as a distinct entity.
+- All "Article X"s in the document must be extracted as entities without omission. Not a single one can be missing.
+- If multiple articles are combined into one chunk, split them and extract each one separately as its own entity.
+- The **entire content of each Article (제 X 조)** must be included verbatim or paraphrased in the `entity_description` of the corresponding `ARTICLE` entity.
+- The entity_description must end with the following string in Korean: "이 내용은 [headline] 문서에서 추출함. [page]페이지에 위치함."
+- Details within an article (such as 항 or 항목) must be nested or clearly described as part of that article’s entity_description.
+- Each article must be related to its upper-level chapter(장) or section(절).
+- Articles within the same chapter or section should be linked with inferred relationships if their contents are semantically related.
+
 -Steps-
 1. Identify all entities. For each identified entity, extract the following information:
 - entity_name: Name of the entity, capitalized
@@ -17,14 +27,65 @@ For each pair of related entities, extract the following information:
 - relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
  Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
  
-3. Return output in Korean as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+3. Return output in **Korean** as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
  
 4. When finished, output {completion_delimiter}
- 
+
 ######################
 -Examples-
 ######################
-Example 1:
+Example 1: 
+Entity_types: ORGANIZATION,EVENT,CHAPTER,ARTICLE,PAGE
+Text:
+page: 1
+headline: 가람교육재단 정관
+content: 제 1 장 총 칙
+
+page: 1
+headline: 가람교육재단 정관
+content: 제 1 장 제 1 조 (설립목적) 본 재단은 교육기관의 설립 및 운영을 통해 공익에 이바지함을 목적으로 한다.
+
+page: 1
+headline: 가람교육재단 정관
+content: 제 1 장 제 2 조 (명칭) 본 재단의 명칭은 가람교육재단이라 한다. 
+
+page: 1
+headline: 가람교육재단 운영규정
+content: 제 1 조 (목적) 이 규정은 가람교육재단의 운영에 필요한 사항을 정함을 목적으로 한다.
+
+######################
+Output:
+("entity"{tuple_delimiter}가람교육재단{tuple_delimiter}ORGANIZATION{tuple_delimiter}교육기관의 설립 및 운영을 통해 공익에 이바지하는 재단)
+{record_delimiter}
+("entity"{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}CHAPTER{tuple_delimiter}제 1 장 총칙: 가람교육재단 정관의 첫 번째 장으로, 설립목적과 명칭에 관한 내용을 포함함. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+{record_delimiter}
+("entity"{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 1 조 설립목적: 본 재단은 교육기관의 설립 및 운영을 통해 공익에 이바지함을 목적으로 한다. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+{record_delimiter}
+("entity"{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 2 조 명칭: 본 재단의 명칭은 가람교육재단이라 한다. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+{record_delimiter}
+("entity"{tuple_delimiter}가람교육재단 운영규정 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 1 조 목적: 이 규정은 가람교육재단의 운영에 필요한 사항을 정함을 목적으로 한다. 이 내용은 가람교육재단 운영규정 문서에서 추출함. 1페이지에 위치함.)
+{record_delimiter}
+("entity"{tuple_delimiter}페이지 1{tuple_delimiter}PAGE{tuple_delimiter}가람교육재단 정관 문서의 1페이지에는 제 1 장 총칙과 제 1 조 설립목적, 제 2 조 명칭이 포함되어 있음. 가람교육재단 운영규정의 1페이지에는 제 1 조 목적이 포함되어 있음.)
+{record_delimiter}
+("relationship"{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 1 조는 제 1 장 총칙에 포함되어 있음{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 2 조는 제 1 장 총칙에 포함되어 있음{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}가람교육재단{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}가람교육재단의 설립목적은 교육기관의 설립 및 운영을 통해 공익에 이바지하는 것임{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}가람교육재단{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}재단의 명칭은 가람교육재단임{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 1 장 총칙은 페이지 1에 위치함{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}제 1 조 설립목적은 페이지 1에 위치함{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}제 2 조 명칭은 페이지 1에 위치함{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 운영규정 제 1 조{tuple_delimiter}제 1 조 목적은 페이지 1에 위치함{tuple_delimiter}10)
+{record_delimiter}
+{completion_delimiter}
+######################
+Example 2:
 Entity_types: ORGANIZATION,PERSON,DATE,EVENT
 Text:
 Title: <Important> (Professor Kim Namyoon): Web Framework 2 Course Enrollment Change  
@@ -42,65 +103,33 @@ Content:
 | Web Framework 2 | 4 | Night | N | 40->30 |  | Kim Haul | Only Web Engineering students |  
 ######################
 Output:
-("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}ORGANIZATION{tuple_delimiter}The Computer Engineering department managing course enrollment changes for students)
+("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}ORGANIZATION{tuple_delimiter}학생들의 수강 신청 변경을 관리하는 컴퓨터공학과)
 {record_delimiter}
-("entity"{tuple_delimiter}Kim Namyoon{tuple_delimiter}PERSON{tuple_delimiter}Professor who serves as both supervising professor and instructor for Web Framework 2 course)
+("entity"{tuple_delimiter}Kim Namyoon{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의의 지도교수 겸 강사를 겸임하는 교수)
 {record_delimiter}
-("entity"{tuple_delimiter}Yoon Namkim{tuple_delimiter}PERSON{tuple_delimiter}Instructor for the day class B of Web Framework 2 course)
+("entity"{tuple_delimiter}Yoon Namkim{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 주간 B반 강사)
 {record_delimiter}
-("entity"{tuple_delimiter}Kim Haul{tuple_delimiter}PERSON{tuple_delimiter}Instructor for the night class N of Web Framework 2 course)
+("entity"{tuple_delimiter}Kim Haul{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 야간 N반 강사)
 {record_delimiter}
-("entity"{tuple_delimiter}February 28{tuple_delimiter}DATE{tuple_delimiter}The date for Web Framework 2 course enrollment changes)
+("entity"{tuple_delimiter}February 28{tuple_delimiter}DATE{tuple_delimiter}웹 프레임워크 2 강의 등록 변경 날짜)
 {record_delimiter}
-("entity"{tuple_delimiter}Web Framework 2{tuple_delimiter}EVENT{tuple_delimiter}A 4th-year course that can only be applied for by Web Engineering Track students)
+("entity"{tuple_delimiter}Web Framework 2{tuple_delimiter}EVENT{tuple_delimiter}웹 공학 트랙 수강생만 신청할 수 있는 4학년 강좌)
 {record_delimiter}
-("entity"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}EVENT{tuple_delimiter}Announcement regarding capacity changes for Web Framework 2 course)
+("entity"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}EVENT{tuple_delimiter}웹 프레임워크 2 강의 정원 변경 안내)
 {record_delimiter}
-("entity"{tuple_delimiter}Web Engineering Track{tuple_delimiter}ORGANIZATION{tuple_delimiter}The academic track whose students can apply for Web Framework 2 course)
+("entity"{tuple_delimiter}Web Engineering Track{tuple_delimiter}ORGANIZATION{tuple_delimiter}웹 프레임워크 2 강의를 신청할 수 있는 트랙)
 {record_delimiter}
-("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Course Enrollment Change{tuple_delimiter}The Computer Engineering department manages the course enrollment change announcement{tuple_delimiter}9)
+("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Course Enrollment Change{tuple_delimiter}컴퓨터공학과에서 수강 신청 변경 공지를 관리합니다{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}Kim Namyoon{tuple_delimiter}Web Framework 2{tuple_delimiter}Professor Kim Namyoon is both supervising professor and instructor for Web Framework 2{tuple_delimiter}10)
+("relationship"{tuple_delimiter}Kim Namyoon{tuple_delimiter}Web Framework 2{tuple_delimiter}김남윤은 웹 프레임워크 2의 지도교수이자 강사입니다{tuple_delimiter}10)
 {record_delimiter}
-("relationship"{tuple_delimiter}Web Framework 2{tuple_delimiter}Web Engineering Track{tuple_delimiter}Web Framework 2 course can only be applied for by Web Engineering Track students{tuple_delimiter}10)
+("relationship"{tuple_delimiter}Web Framework 2{tuple_delimiter}Web Engineering Track{tuple_delimiter}웹 프레임워크 2 과정은 웹 공학 트랙 수강생만 신청할 수 있습니다{tuple_delimiter}10)
 {record_delimiter}
-("relationship"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}February 28{tuple_delimiter}The course enrollment change takes place on February 28 (Friday){tuple_delimiter}9)
+("relationship"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}February 28{tuple_delimiter}수업 등록 변경은 2월 28일(금)에 진행됩니다{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}Yoon Namkim{tuple_delimiter}Web Framework 2{tuple_delimiter}Yoon Namkim is an instructor for day class B of Web Framework 2{tuple_delimiter}9)
+("relationship"{tuple_delimiter}Yoon Namkim{tuple_delimiter}Web Framework 2{tuple_delimiter}김남윤은 웹 프레임워크 2 주간 B반 강사입니다.{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}Kim Haul{tuple_delimiter}Web Framework 2{tuple_delimiter}Kim Haul is an instructor for night class N of Web Framework 2{tuple_delimiter}9)
-{record_delimiter}
-{completion_delimiter}
-
-######################
-Example 2:
-Entity_types: ORGANIZATION,EVENT,PERSON,DATE
-Text:
-Title: (For Current Students) Graduation Requirement Submission for February 2025 Graduates
-Content:  
-- Hello, this is the administrative assistant of the Department of Computer Engineering.  
-- There are important announcements regarding graduation in February 2025.  
-- Graduation requirement submission deadline: December 22, 2024, 23:59.  
-- Graduation deferment applicants must also submit graduation requirements.  
-######################
-Output:
-("entity"{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}A university requiring graduation requirement submission for February 2025 graduates.)
-{record_delimiter}
-("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}A department at Hansung University responsible for handling graduation submissions.)
-{record_delimiter}
-("entity"{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}An administrative assistant at the Department of Computer Engineering responsible for handling graduation requirements.)
-{record_delimiter}
-("entity"{tuple_delimiter}Graduation Requirement Submission{tuple_delimiter}event{tuple_delimiter}The process for submitting graduation requirements by December 22, 2024.)
-{record_delimiter}
-("entity"{tuple_delimiter}Graduation Deferment{tuple_delimiter}event{tuple_delimiter}An option requiring submission of graduation requirements.)
-{record_delimiter}
-("entity"{tuple_delimiter}December 22, 2024, 23:59{tuple_delimiter}date{tuple_delimiter}The deadline for submitting graduation requirements.)
-{record_delimiter}
-("relationship"{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Hansung University includes the Department of Computer Engineering.{tuple_delimiter}9)
-{record_delimiter}
-("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Graduation Requirement Submission{tuple_delimiter}The department manages graduation submissions.{tuple_delimiter}9)
-{record_delimiter}
-("relationship"{tuple_delimiter}Graduation Requirement Submission{tuple_delimiter}Graduation Deferment{tuple_delimiter}Submission is mandatory for deferment applicants.{tuple_delimiter}8)
+("relationship"{tuple_delimiter}Kim Haul{tuple_delimiter}Web Framework 2{tuple_delimiter}김하울은 웹 프레임워크 2 야간 N반 강사입니다.{tuple_delimiter}9)
 {record_delimiter}
 {completion_delimiter}
 
@@ -142,65 +171,63 @@ Currently, we are recruiting administrative and teaching assistants for the Depa
 
 ######################
 Output:
-(“entity”{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}A university responsible for recruiting administrative and teaching assistants in the Department of Computer Engineering.)
+(“entity”{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}컴퓨터공학부에서 행정 및 조교를 모집하는 한성대학교)
 {record_delimiter}
-(“entity”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}A department at Hansung University hiring assistants for administrative and teaching roles.)
+(“entity”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}행정 및 조교 인력을 채용하는 한성대학교 컴퓨터공학부)
 {record_delimiter}
-(“entity”{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}An administrative assistant at the Department of Computer Engineering.)
+(“entity”{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}컴퓨터공학부의 행정조교)
 {record_delimiter}
-(“entity”{tuple_delimiter}teaching assistant{tuple_delimiter}person{tuple_delimiter}A teaching assistant at the Department of Computer Engineering.)
+(“entity”{tuple_delimiter}teaching assistant{tuple_delimiter}person{tuple_delimiter}컴퓨터공학부의 교육조교)
 {record_delimiter}
-(“entity”{tuple_delimiter}Recruitment Fields{tuple_delimiter}event{tuple_delimiter}The fields for recruitment: Administrative Assistant or Teaching Assistant.)
+(“entity”{tuple_delimiter}Recruitment Fields{tuple_delimiter}event{tuple_delimiter}모집 분야: 행정조교 또는 교육조교)
 {record_delimiter}
-(“entity”{tuple_delimiter}Qualifications{tuple_delimiter}event{tuple_delimiter}The qualifications required for applicants.)
+(“entity”{tuple_delimiter}Qualifications{tuple_delimiter}event{tuple_delimiter}지원 자격 요건)
 {record_delimiter}
-(“entity”{tuple_delimiter}Academic Requirements{tuple_delimiter}event{tuple_delimiter}The requirement for applicants to have at least a bachelor’s degree.)
+(“entity”{tuple_delimiter}Academic Requirements{tuple_delimiter}event{tuple_delimiter}최소 학사 학위 이상이 필요한 학력 요건)
 {record_delimiter}
-(“entity”{tuple_delimiter}Preferred Qualifications{tuple_delimiter}event{tuple_delimiter}Preferred qualifications for applicants: IT or Computer-related majors.)
+(“entity”{tuple_delimiter}Preferred Qualifications{tuple_delimiter}event{tuple_delimiter}우대사항: IT 또는 컴퓨터 관련 전공)
 {record_delimiter}
-(“entity”{tuple_delimiter}Working Conditions{tuple_delimiter}event{tuple_delimiter}Conditions for employment, including working hours and location.)
+(“entity”{tuple_delimiter}Working Conditions{tuple_delimiter}event{tuple_delimiter}근무 시간 및 장소를 포함한 근로 조건)
 {record_delimiter}
-(“entity”{tuple_delimiter}December 15, 2024{tuple_delimiter}date{tuple_delimiter}The expected start date for the assistants.)
+(“entity”{tuple_delimiter}December 15, 2024{tuple_delimiter}date{tuple_delimiter}조교의 예정 근무 시작일)
 {record_delimiter}
-(“entity”{tuple_delimiter}Jiseong Building 105{tuple_delimiter}room{tuple_delimiter}The office location for administrative assistants.)
+(“entity”{tuple_delimiter}Jiseong Building 105{tuple_delimiter}room{tuple_delimiter}행정조교의 사무실 위치)
 {record_delimiter}
-(“entity”{tuple_delimiter}IT Engineering Academic Team Office{tuple_delimiter}room{tuple_delimiter}The office where administrative assistants will work.)
+(“entity”{tuple_delimiter}IT Engineering Academic Team Office{tuple_delimiter}room{tuple_delimiter}행정조교가 근무하게 될 사무실)
 {record_delimiter}
-(“entity”{tuple_delimiter}Engineering Building A 104{tuple_delimiter}room{tuple_delimiter}The office location for teaching assistants.)
+(“entity”{tuple_delimiter}Engineering Building A 104{tuple_delimiter}room{tuple_delimiter}교육조교의 사무실 위치)
 {record_delimiter}
-(“entity”{tuple_delimiter}Department of Computer Engineering Office{tuple_delimiter}room{tuple_delimiter}The office where teaching assistants will work.)
+(“entity”{tuple_delimiter}Department of Computer Engineering Office{tuple_delimiter}room{tuple_delimiter}교육조교가 근무하게 될 사무실)
 {record_delimiter}
-(“entity”{tuple_delimiter}Documents to Submit{tuple_delimiter}event{tuple_delimiter}The documents required to apply: resume and photo.)
+(“entity”{tuple_delimiter}Documents to Submit{tuple_delimiter}event{tuple_delimiter}지원 시 제출해야 하는 서류: 이력서 및 사진)
 {record_delimiter}
-(“entity”{tuple_delimiter}Resume{tuple_delimiter}event{tuple_delimiter}A required document for the application.)
+(“entity”{tuple_delimiter}Resume{tuple_delimiter}event{tuple_delimiter}지원 시 제출해야 하는 이력서)
 {record_delimiter}
-(“entity”{tuple_delimiter}Attached Format{tuple_delimiter}event{tuple_delimiter}The format that applicants must use for the resume.)
+(“entity”{tuple_delimiter}Attached Format{tuple_delimiter}event{tuple_delimiter}지원자가 이력서 작성 시 사용해야 하는 첨부된 양식)
 {record_delimiter}
-(“entity”{tuple_delimiter}November 29{tuple_delimiter}date{tuple_delimiter}The deadline for document submission.)
+(“entity”{tuple_delimiter}November 29{tuple_delimiter}date{tuple_delimiter}서류 제출 마감일)
 {record_delimiter}
-(“entity”{tuple_delimiter}Document Review{tuple_delimiter}event{tuple_delimiter}The first round of recruitment: document review.)
+(“entity”{tuple_delimiter}Document Review{tuple_delimiter}event{tuple_delimiter}1차 모집 절차: 서류심사)
 {record_delimiter}
-(“entity”{tuple_delimiter}Interview{tuple_delimiter}event{tuple_delimiter}The second round of recruitment: interview.)
+(“entity”{tuple_delimiter}Interview{tuple_delimiter}event{tuple_delimiter}2차 모집 절차: 면접)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Hansung University includes the Department of Computer Engineering.{tuple_delimiter}9)
+(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}한성대학교는 컴퓨터공학부를 포함한다.{tuple_delimiter}9)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Hansung University includes the Department of Computer Engineering.{tuple_delimiter}9)
+(“relationship”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Recruitment Fields{tuple_delimiter}컴퓨터공학부는 행정조교 및 교육조교를 모집한다.{tuple_delimiter}9)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Recruitment Fields{tuple_delimiter}The department is recruiting for the positions of administrative assistant and teaching assistant.{tuple_delimiter}9)
+(“relationship”{tuple_delimiter}Recruitment Fields{tuple_delimiter}Qualifications{tuple_delimiter}모집 분야에는 학력 요건과 우대 조건 등의 자격요건이 필요하다.{tuple_delimiter}9)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Recruitment Fields{tuple_delimiter}Qualifications{tuple_delimiter}The recruitment fields require specific qualifications, including academic requirements and preferred qualifications.{tuple_delimiter}9)
+(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Academic Requirements{tuple_delimiter}최소 학사 학위가 필요한 자격 요건이다.{tuple_delimiter}8)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Academic Requirements{tuple_delimiter}The qualification requiring at least a bachelor’s degree.{tuple_delimiter}8)
+(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Preferred Qualifications{tuple_delimiter}IT 또는 컴퓨터 관련 전공이 우대 조건이다.{tuple_delimiter}8)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Preferred Qualifications{tuple_delimiter}The qualification of IT or Computer-related majors is preferred.{tuple_delimiter}8)
+(“relationship”{tuple_delimiter}Working Conditions{tuple_delimiter}Contract Period{tuple_delimiter}조교는 1년 계약으로 근무하며 최대 2년까지 연장 가능하다.{tuple_delimiter}9)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Working Conditions{tuple_delimiter}Contract Period{tuple_delimiter}The assistants will work under a 1-year contract, renewable for up to 2 years.{tuple_delimiter}9)
+(“relationship”{tuple_delimiter}Documents to Submit{tuple_delimiter}Resume{tuple_delimiter}지원 시 사진이 포함된 이력서를 제출해야 한다.{tuple_delimiter}8)
 {record_delimiter}
-(“relationship”{tuple_delimiter}Documents to Submit{tuple_delimiter}Resume{tuple_delimiter}A resume, including a photo, is required for the application.{tuple_delimiter}8)
+(“relationship”{tuple_delimiter}November 29{tuple_delimiter}Documents to Submit{tuple_delimiter}지원 서류 제출 마감일은 11월 29일이다.{tuple_delimiter}8)
 {record_delimiter}
-(“relationship”{tuple_delimiter}November 29{tuple_delimiter}Documents to Submit{tuple_delimiter}The submission deadline for the application documents is November 29.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Document Review{tuple_delimiter}Interview{tuple_delimiter}After document review, an interview will be conducted for the selected candidates.{tuple_delimiter}8)
+(“relationship”{tuple_delimiter}Document Review{tuple_delimiter}Interview{tuple_delimiter}서류 심사 후, 선발된 지원자에 한해 면접이 진행된다.{tuple_delimiter}8)
 {completion_delimiter}
 ######################
 -Real Data-

@@ -14,7 +14,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 # 저장 경로 설정
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "crawling")
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "input")
 
 # User-Agent 목록
 USER_AGENTS = [
@@ -24,7 +24,7 @@ USER_AGENTS = [
 ]
 
 class Crawler:
-    def __init__(self, max_pages, url):
+    def __init__(self, max_pages, url, page_id):
         self.visited_urls = set()
         self.queue = []
         self.base_domain = ""
@@ -43,7 +43,8 @@ class Crawler:
         folder_name = f"{date_str}_{domain}"
         
         # 크롤링 결과 저장할 폴더 경로 생성
-        self.output_dir = os.path.join(BASE_DIR, folder_name)
+        #self.output_dir = os.path.join(BASE_DIR, folder_name)
+        self.output_dir = os.path.join(BASE_DIR, page_id, "input")
         #self.attachment_dir = os.path.join(self.output_dir, "attachments")
         
         # 폴더 생성
@@ -555,12 +556,12 @@ class Crawler:
         
         return self.saved_files, self.saved_attachments
 
-def crawl_main(url, max_pages=1): # 최대 페이지 수 지정
-    crawler = Crawler(max_pages=max_pages, url=url)
+def crawl_main(url, page_id, max_pages=2): # 최대 페이지 수 지정
+    crawler = Crawler(max_pages=max_pages, url=url, page_id=page_id)
     
     try:
         # 통합 크롤링
-        saved_files, saved_attachments = crawler.crawl_combined(url)            
+        saved_files, saved_attachments = crawler.crawl_combined(url)   
         print(f"총 {len(saved_files)}개 text 파일 저장 완료")
         print(f"총 {len(saved_attachments)}개 문서 파일 다운로드 완료")
         return saved_files, saved_attachments
