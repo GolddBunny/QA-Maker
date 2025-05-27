@@ -84,8 +84,21 @@ const AdminPage = () => {
     const handleCloseProgressing = async () => {
       setShowProgressing(false);
       localStorage.removeItem(`showProgressing_${pageId}`);
-      await checkOutputFolder(pageId); // 상태 갱신
-      await loadAllData(pageId);
+
+      if (!pageId) return;
+
+      try {
+        const outputExists = await checkOutputFolder(pageId);
+        setHasOutput(outputExists); //output 상태를 직접 반영해야 렌더링됨
+
+        await Promise.all([
+          loadAllData(pageId),
+          fetchSavedUrls(pageId),
+          loadDocumentsInfo(pageId)
+        ]);
+      } catch (error) {
+        console.error('ProgressingBar 닫을 때 상태 갱신 오류:', error);
+      }
     };
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
@@ -538,15 +551,17 @@ const AdminPage = () => {
                         </tr>
                       ))
                     ) : (
-                      <div className="no-message">
-                        업로드된 문서가 없습니다.<br />
-                        url을 등록해주세요.
-                      </div>
+                      <tr>
+                        <td colSpan={2} className="empty-message">
+                          업로드된 URL이 없습니다.<br />
+                          URL을 등록해주세요.
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
               </div>
-             <div className='search-firebase-sum'>총 url 수</div> 
+             <div className='search-firebase-sum'>총 URL 수: {uploadedUrls?.length || 0}</div>
             </div>
           
           {/* 오른쪽 문서 섹션 */}
@@ -607,7 +622,7 @@ const AdminPage = () => {
                 <div className="document-table-scroll">
                   <table className="document-table">
                     <tbody>
-                      {uploadedDocs.length > 0 ? (
+                      {uploadedDocs && uploadedDocs.length > 0 ? (
                         
                         sortedDocs.map((doc, index) => (
                           <tr key={index}>
@@ -617,10 +632,12 @@ const AdminPage = () => {
                           </tr>
                         ))
                       ) : (
-                          <div className="no-message">
-                            업로드된 문서가 없습니다.<br />
-                            문서를 등록해주세요.
-                          </div>
+                          <tr>
+                            <td colSpan={2} className="empty-message">
+                              업로드된 문서가 없습니다.<br />
+                              문서를 등록해주세요.
+                            </td>
+                          </tr>
                         )}
                     </tbody>
                   </table>
