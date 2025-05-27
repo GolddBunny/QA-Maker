@@ -1,0 +1,52 @@
+﻿id,entity,description,number of relationships,in_context
+970,11/7(목) ~ 11/15(금),프로그래밍 대회 신청 기간. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264770/artclView.do 링크에서 추출함.,1,True
+1530,2024년 1월 18일,2024 동계 프로그래밍 캠프의 종료일. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.,1,True
+629,2024.11.18,컴퓨터공학부 학생회와 BUG가 개최한 프로그래밍 대회의 날짜. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265004/artclView.do 링크에서 추출함.,1,True
+1492,2025년 1월 20일~2025년 1월 24일,"2024 동계 프로그래밍 캠프가 진행되는 기간으로, 4박 5일 동안 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출함.",1,True
+1532,2023년 1월 12일,2023 동계 프로그래밍 캠프의 종료일. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.,1,True
+80,2024.11.27,"2024 동계 프로그래밍 캠프 모집 안내 게시일. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.
+한성SW중심대학 페스티벌 관련 게시일. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.",2,True
+959,프로그래밍 언어,,2,True
+1336,4월 23일,"2025-1학기 컴퓨터공학부 캡스톤디자인 전시회 정보 작성 기한으로, 학생들이 정보를 제출해야 하는 날짜임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.",1,True
+630,프로그래밍 대회,"컴퓨터공학부 학생회와 BUG가 주관한 행사로, 2024년 11월 18일에 개최됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265004/artclView.do 링크에서 추출함.",18,True
+1529,2024년 1월 15일,2024 동계 프로그래밍 캠프의 시작일. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.,1,True
+1531,2023년 1월 9일,2023 동계 프로그래밍 캠프의 시작일. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.,1,True
+81,2024.11.21,프로그래밍 대회 결과 게시일. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.,1,True
+1526,2023 동계 프로그래밍 캠프,"2023년 1월 9일부터 1월 12일까지 오크밸리리조트에서 진행된 프로그래밍 캠프. 학생 105명, 튜터 7명, 학부 교수 8명이 참석함. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.",4,True
+1433,6/14토 09:30 ~ 10:30,컴퓨터프로그래밍 과목의 기말고사 일정. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/267331/artclView.do 링크에서 추출함.,1,True
+1488,2024 동계 프로그래밍 캠프,"2024 동계 프로그래밍 캠프는 2024년 1월 15일부터 1월 18일까지 경기도 양평군 강하면 블룸비스타에서 진행될 예정이며, 학생 105명, 튜터 9명, 학부 교수 8명이 참석할 계획이다. 이 캠프는 컴퓨터공학부에서 주관하며, 4박 5일 동안 진행되며 모든 경비는 학부에서 지원한다. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 및 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출된 정보이다.",14,True
+827,2025.1.13~2025.1.27,"동계 IT부트캠프 프로그램의 운영 기간으로, 2025년 1월 13일부터 1월 27일까지 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265639/artclView.do 링크에서 추출함.",2,True
+1528,오크밸리리조트,"2023 동계 프로그래밍 캠프가 진행된 장소로, 학생들이 캠프에 참석한 장소임. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.",1,True
+834,동계 IT부트캠프 프로그램,,3,True
+1451,2024.11.07,학과동아리 'bug'와 함께하는 컴퓨터공학부 프로그래밍대회의 작성일. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.,1,True
+1335,4/30,"TOSUN Technology 현장실습생 선발 안내의 마감일로, 학생들이 지원해야 하는 날짜임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.",1,True
+1497,프로그래밍 몰입교육,"2024 동계 프로그래밍 캠프의 교육 목표로, 집중적으로 프로그래밍을 학습하는 과정임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출함.",1,True
+461,프론트엔드 개발자 과정,"이스트소프트 채용연계 과정의 일환으로, 11월 12일에 개강하는 과정임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264340/artclView.do 링크에서 추출함.",1,True
+1446,학과동아리 'BUG'와 함께하는 컴퓨터공학부 프로그래밍대회,컴퓨터공학부의 학과동아리 'bug'가 주관하는 프로그래밍 대회 안내임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.,2,True
+1496,미니 프로젝트,"프로그래밍 캠프의 4단계 교육 내용으로, 작은 프로젝트를 여러 개 수행하는 과정임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출함.",1,True
+1435,6/14토 11:00 ~ 12:00,웹프로그래밍기초 과목의 기말고사 일정. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/267331/artclView.do 링크에서 추출함.,1,True
+72,동계 프로그래밍 캠프 모집 안내,"2024 동계 프로그래밍 캠프에 대한 모집 안내로, 컴퓨터공학부에서 주관함. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.",2,True
+1527,MINI PROJECT PROBLEMS,"프로그래밍 캠프에서 진행되는 미니 프로젝트 문제로, 학생들이 실습을 통해 해결해야 할 과제임. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 링크에서 추출함.",1,True
+1489,양평군,"2024 동계 프로그래밍 캠프가 예정된 장소로, 경기도에 위치함. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출함.",1,True
+1432,4/26토 09:30 ~ 10:30,컴퓨터프로그래밍 과목의 중간고사 일정. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/267331/artclView.do 링크에서 추출함.,1,True
+1434,4/26토 11:00 ~ 12:00,웹프로그래밍기초 과목의 중간고사 일정. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/267331/artclView.do 링크에서 추출함.,1,True
+969,무료,"""무료""에 대한 종합 설명: 2024 동계 프로그래밍 캠프의 참가비가 무료임을 나타내며, 이 정보는 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출되었습니다. 또한, 프로그래밍 대회 참가비도 무료임을 나타내며, 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264770/artclView.do 링크에서 확인할 수 있습니다.",1,True
+14,프로그래밍 캠프,"프로그래밍 캠프는 한성대학교 컴퓨터공학부에서 주최하는 겨울방학 동안 외부 교육 장소에서 4박 5일 동안 진행되는 집중 프로그래밍 학습 활동이다. 이 캠프는 학생들의 프로그래밍 능력 향상과 학부에 대한 자부심을 느낄 수 있는 기회를 제공하며, 프로그래밍 관련 교육 및 활동을 포함한다. 학생들이 프로그래밍 기술을 향상시키기 위한 교육 프로그램으로 설계되어 있다. 이 내용은 https://hansung.ac.kr/CSE/10757/subview.do 및 https://hansung.ac.kr/CSE/10778/subview.do 링크에서 추출되었다.",34,True
+1453,2024.11.05,2024 진로취업 페스티벌의 작성일. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/artclList.do 링크에서 추출함.,1,True
+1495,C++/JAVA 응용 프로그래밍 연습,"프로그래밍 캠프의 3단계 교육 내용으로, C++ 또는 Java 프로그래밍을 어느 정도 하는 수준의 학생을 대상으로 하는 과정임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출함.",1,True
+971,HTTPS://FORMS.GLE/2FDX1H3NMS9KE4N89,프로그래밍 대회 신청 링크. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264770/artclView.do 링크에서 추출함.,1,True
+627,학생회,"컴퓨터공학부의 학생회로, 프로그래밍 대회를 주관함. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265004/artclView.do 링크에서 추출함.",2,True
+1466,안전하게 프로그램을 작성하기 위해 필요한 기술,,1,True
+503,2024.11.21.,"2024 진로취업 페스티벌의 세 번째 날짜로, 미래관 B103호에서 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264705/artclView.do 링크에서 추출함.",1,True
+182,C 프로그램,,1,True
+504,2024.11.22.,"2024 진로취업 페스티벌의 네 번째 날짜로, 상상관 604호에서 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264705/artclView.do 링크에서 추출함.",1,True
+1500,1/20,"동계캠프의 시작일로, 월요일에 해당함. 이 내용은 제공된 텍스트에서 추출함.",1,True
+1245,2024 LG유플러스 테크 컨퍼런스,"2024 LG유플러스 테크 컨퍼런스는 2024년 9월 23일 월요일 13:00부터 18:00까지 LG유플러스 마곡사옥 B1F에서 개최되는 행사이다. 이 컨퍼런스는 컴퓨터공학부가 주최하며, 관련된 자세한 내용은 https://hansung.ac.kr/bbs/CSE/1248/264084/artclView.do 및 https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=7 링크에서 확인할 수 있다.",6,True
+953,V023006,디지털콘텐츠기획및제작 과목의 교과목코드. 이 내용은 https://hansung.ac.kr/curriculum/CSE/143/2697/artclView.do 링크에서 추출함.,1,True
+1494,C 응용 프로그래밍 연습,"프로그래밍 캠프의 2단계 교육 내용으로, C 프로그래밍을 어느 정도 하는 수준의 학생을 대상으로 하는 과정임. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/265112/artclView.do 링크에서 추출함.",1,True
+1504,1/24,"동계캠프의 마지막 날로, 금요일에 해당함. 이 내용은 제공된 텍스트에서 추출함.",1,True
+1233,코딩 라운지,"컴퓨터공학부에서 운영하는 튜터링 프로그램으로, 월요일부터 금요일까지 오후 2시부터 6시까지 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/267269/artclView.do 링크에서 추출함.",6,True
+1501,1/21,"동계캠프의 두 번째 날로, 화요일에 해당함. 이 내용은 제공된 텍스트에서 추출함.",1,True
+502,2024.11.20.,"2024 진로취업 페스티벌의 두 번째 날짜로, 상상관 203호에서 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264705/artclView.do 링크에서 추출함.",1,True
+1481,2024. 11. 23.,"면접고사 날짜로, 2024년 11월 23일 토요일 10시에 진행됨. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/264415/artclView.do 링크에서 추출함.",1,True
+425,44,프로그래밍언어론 과목의 수업이 진행되는 강의실 번호. 이 내용은 https://hansung.ac.kr/bbs/CSE/1248/75369/download.do 링크에서 추출함.,1,True

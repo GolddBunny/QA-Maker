@@ -14,7 +14,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from pathlib import Path
 
 # 저장 경로 설정 - 상대 경로로 변경
-BASE_DIR = Path(__file__).parent / "crawling_results"
+BASE_DIR = Path(__file__).parent.parent.parent.parent / "data/crawling/20250526_0412_hansung_ac_kr_sites_hansung/artclView_Crawling"
 
 # User-Agent 목록
 USER_AGENTS = [
@@ -24,7 +24,7 @@ USER_AGENTS = [
 ]
 
 class Crawler:
-    def __init__(self, urls=None):
+    def __init__(self, urls=None, output_base_dir=None):
         self.visited_urls = set()
         self.saved_files = []
         self.saved_attachments = []
@@ -37,16 +37,23 @@ class Crawler:
             parsed_url = urlparse(self.urls_to_crawl[0])
             self.base_domain = parsed_url.netloc
             domain = parsed_url.netloc
+            print(f"도메인: {self.base_domain}")
         else:
             self.base_domain = "hansung.ac.kr"
             domain = "hansung.ac.kr"
         
-        # 오늘 날짜와 도메인으로 폴더명 생성
-        date_str = datetime.now().strftime('%y%m%d%H%M')
-        folder_name = f"{date_str}_{domain}_multiple_pages"
+        # 저장 경로 설정
+        if output_base_dir is None:
+            # 기본 경로 사용 (기존 로직)
+            date_str = datetime.now().strftime('%y%m%d%H%M')
+            folder_name = f"{date_str}_{domain}_multiple_pages"
+            self.output_dir = os.path.join(BASE_DIR, folder_name)
+        else:
+            # 외부에서 지정한 경로 사용
+            timestamp = datetime.now().strftime('%y%m%d%H%M')
+            folder_name = f"{timestamp}_{domain}_multiple_pages"
+            self.output_dir = os.path.join(output_base_dir, folder_name)
         
-        # 크롤링 결과 저장할 폴더 경로 생성
-        self.output_dir = os.path.join(BASE_DIR, folder_name)
         self.attachment_dir = os.path.join(self.output_dir, "attachments")
         
         # 폴더 생성
@@ -99,9 +106,50 @@ class Crawler:
                 
         return links, doc_links
     
+    def extract_view_util_metadata(self, soup):
+        """view-util 태그에서 분류, 작성일, 작성자 정보 추출"""
+        metadata = {
+            'category': '',
+            'date': '',
+            'author': ''
+        }
+        
+        # view-util 클래스를 가진 div 태그 찾기
+        view_util = soup.find('div', class_='view-util')
+        if not view_util:
+            return metadata
+        
+        # dl 태그들을 찾아서 정보 추출
+        dl_tags = view_util.find_all('dl')
+        
+        for dl in dl_tags:
+            dt = dl.find('dt')
+            dd = dl.find('dd')
+            
+            if dt and dd:
+                dt_text = dt.get_text().strip()
+                dd_text = dd.get_text().strip()
+                
+                # 분류 정보 추출
+                if '분류' in dt_text:
+                    metadata['category'] = dd_text
+                
+                # 작성일 정보 추출
+                elif '작성일' in dt_text:
+                    metadata['date'] = dd_text
+                
+                # 작성자 정보 추출
+                elif '작성자' in dt_text:
+                    metadata['author'] = dd_text
+        
+        return metadata
+
     def html_to_markdown(self, html_content):
         """HTML 내용을 마크다운 형식으로 변환"""
         soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # view-util 메타데이터 추출
+        metadata = self.extract_view_util_metadata(soup)
         
         # 스크립트, 스타일, 헤드 태그 제거
         for tag in soup.find_all(['script', 'style', 'head', 'meta', 'link', 'iframe']):
@@ -195,7 +243,7 @@ class Crawler:
             else:
                 content = tables_markdown
         
-        return title, content
+        return title, content, metadata
 
     def clean_html(self, html_content):
         """HTML 내용에서 script와 style 태그 및 style 속성, 불필요한 공백 정리"""
@@ -463,7 +511,7 @@ class Crawler:
         os.makedirs(self.output_dir, exist_ok=True)
         
         # HTML을 마크다운으로 변환
-        title, content = self.html_to_markdown(html_content)
+        title, content, metadata = self.html_to_markdown(html_content)
         
         # 파일명을 title 기반으로 생성
         if title and title.strip():
@@ -506,10 +554,21 @@ class Crawler:
                 attachments_text += f"{i}. 첨부파일: {attachment['name']} 함께 제공됨\n"
                 attachments_text += f"   - URL: {attachment['url']}\n"
         
+        # 메타데이터 정보 추가
+        metadata_text = ""
+        if metadata and any(metadata.values()):
+            metadata_text = "\n\n## 메타데이터\n\n"
+            if metadata['category']:
+                metadata_text += f"분류: {metadata['category']}\n"
+            if metadata['date']:
+                metadata_text += f"작성일: {metadata['date']}\n"
+            if metadata['author']:
+                metadata_text += f"작성자: {metadata['author']}\n"
+        
         # 마크다운 형식으로 파일 내용 구성
         text_content = f"""Title: {title}
 
-URL Source: {url}
+URL Source: {url}{metadata_text}
 
 Markdown Content:
 
@@ -633,7 +692,7 @@ def filter_urls(urls, patterns):
 
 def crawl_main(test_mode=False, test_limit=5):
     # URL 리스트 파일 경로
-    url_file_path = Path(__file__).parent / "page_urls_20250518_0316.txt"
+    url_file_path = Path(__file__).parent.parent.parent.parent / "data/crawling/20250526_0412_hansung_ac_kr_sites_hansung/pages_urls_20250526_0412.txt"
     
     # 파일에서 URL 리스트 읽기
     all_urls = read_urls_from_file(url_file_path)

@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/gshansung/101/40/artclView.doMarkdown Content:## 교과목 소개정보시스템의 분석기법과 설계기술을 이용하여 실제 응용업무를 수행한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || C1162555 | 정보시스템 분석 및 설계 | 3 |

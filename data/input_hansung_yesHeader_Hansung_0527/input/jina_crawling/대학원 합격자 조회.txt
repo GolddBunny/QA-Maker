@@ -1,0 +1,1 @@
+Title: 대학원 합격자 조회URL Source: https://info.hansung.ac.kr/won/pass_info.jspMarkdown Content:※성명은 공백없이 입력하세요. ※생년월일은 주민등록번호 앞자리를 입력하세요.(6자리)
