@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
@@ -644,7 +643,7 @@ const AdminPage = () => {
                         sortedDocs.map((doc, index) => (
                           <tr key={index}>
                             <td>{doc.original_filename}</td>
-                            <td><span className="category-pill">{doc.category}</span></td>
+                            <td><span className="category-pill-admin">{doc.category}</span></td>
                             <td>{doc.date}</td>
                           </tr>
                         ))
@@ -710,7 +709,7 @@ const AdminPage = () => {
             <ProgressingBar 
               onClose={handleCloseProgressing}
               onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
-              isCompleted={hasOutput}       // ✅ output이 있을 때만 Analyzer 버튼 보여주기
+              isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
             />
           </div>
         )}
