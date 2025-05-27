@@ -9,7 +9,8 @@ export const processDocuments = async (pageId) => {
     const data = await response.json();
 
     if (data.success) {
-      return { success: true };
+      return { success: true,
+        executionTime: data.execution_time };
     } else {
       return { success: false, error: data.error };
     }

@@ -11,6 +11,7 @@ from firebase_config import bucket
 from werkzeug.utils import secure_filename
 import uuid
 from firebase_admin import firestore
+import time
 
 document_bp = Blueprint('document', __name__)
 
@@ -132,11 +133,18 @@ def process_documents(page_id):
             orig = data.get('original_filename')
             if fb and orig:
                 filename_mapping[fb] = orig
-        
-        convert2txt(firebase_path, input_path, bucket, filename_mapping)  # 🔸 매핑 전달
+                
+        start_time = time.time()
+        convert2txt(firebase_path, input_path, bucket, filename_mapping)
+        end_time = time.time()
+        execution_time = round(end_time - start_time)
 
         print("모든 파일 .txt로 변환 완료")
-        return jsonify({'success': True, 'message': '문서 변환 완료'})
+        return jsonify({
+            'success': True,
+            'message': '문서 변환 완료',
+            'execution_time': execution_time
+        })
     
     except Exception as e:
         print("Flask 서버 오류:", str(e))

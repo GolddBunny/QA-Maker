@@ -50,7 +50,10 @@ const AdminPage = () => {
       const saved = localStorage.getItem(`showProgressing_${pageId}`);
       return saved === 'true';
     });
-    const [docCount, setDocCount] = useState(0);
+    const [docCount, setDocCount] = useState(0);  //문서 수
+    const [urlCount, setUrlCount] = useState(0);
+    const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
+    const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
 
     const { handleFileDrop } = FileDropHandler({
       uploadedDocs,
@@ -85,6 +88,7 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       setUploadedUrls(urls);
+      setUrlCount(urls.length);
     }, []);
 
     // 문서 정보 로드
@@ -247,7 +251,7 @@ const AdminPage = () => {
         const result = await processDocuments(pageId);
 
         if (result.success) {
-          alert("문서 처리 완료");
+          setConversionTime(result.executionTime); 
         } else {
           console.error("문서 처리 실패:", result.error);
           alert("문서 처리에 실패했습니다.");
@@ -280,6 +284,7 @@ const AdminPage = () => {
         const result = await applyIndexing(pageId);
         if (result.success) {
           setIsNewPage(false);
+          setApplyExecutionTime(result.execution_time);
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
@@ -351,7 +356,7 @@ const AdminPage = () => {
       try {
         console.log("Analyzer 실행");
 
-        navigate(`/dashboard/${pageId}`);
+        navigate(`/dashboard/${pageId}`, { state: { conversionTime } });  //conversionTime : 문서 전처리 실행 시간
       } catch (error) {
         console.error("Analyzer 실행 중 오류:", error);
         alert("Analyzer 실행 중 오류가 발생했습니다.");
@@ -475,7 +480,7 @@ const AdminPage = () => {
                   </tbody>
                 </table>
               </div>
-             <div className='search-firebase-sum'>총 url 수</div> 
+             <div className='search-firebase-sum'>총 url 수: {urlCount}</div>
             </div>
           
           {/* 오른쪽 문서 섹션 */}
@@ -608,6 +613,8 @@ const AdminPage = () => {
               onClose={handleCloseProgressing}
               onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
               isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
+              conversionTime={conversionTime} //문서 전처리 시간
+              indexingTime={applyExecutionTime} //인덱싱 시간
             />
           </div>
         )}
