@@ -1,113 +1,219 @@
+from datetime import datetime
 import os
 import subprocess
+import tempfile
 import time
 from flask import Blueprint, jsonify, request
-from services.document_service.convert2txt import convert2txt
+from services.document_service.hwp2txt import convert_hwp_file
+from services.document_service.pdf2txt import extract_text_and_tables
+from services.document_service.convert2txt import convert2txt, convert_docx
+from firebase_config import bucket
+from werkzeug.utils import secure_filename
+import uuid
+from firebase_admin import firestore
 
 document_bp = Blueprint('document', __name__)
 
+# Firestore 클라이언트
+db = firestore.client()
 
+@document_bp.route('/has-output/<page_id>', methods=['GET'])
+def has_output_folder(page_id):
+    """Firebase Storage의 output 폴더 존재 여부 확인"""
+    prefix = f'pages/{page_id}/results/'
+    blobs = list(bucket.list_blobs(prefix=prefix))
+
+    has_output = len(blobs) > 0
+
+    return jsonify({
+        'success': True,
+        'has_output': has_output
+    })
+
+# 문서 업로드 api
 @document_bp.route('/upload-documents/<page_id>', methods=['POST'])
 def upload_documents(page_id):
-    """document 업로드"""
-    base_path, input_path, upload_path = ensure_page_directory(page_id)
-
+    """Firebase Storage에 문서 업로드"""
+    
     if 'files' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     
     files = request.files.getlist('files')
     uploaded_files = []
-
+    
     for file in files:
         if file.filename == '':
             continue
         
-        if file:
-            original_filename = file.filename.strip()
-            sanitized_filename = original_filename.replace(' ', '_')
-            file_path = os.path.join(upload_path, os.path.basename(sanitized_filename))
-            file.save(file_path)
-            uploaded_files.append(file_path)
-            print(f"파일 업로드 완료: {file_path}")
+        original_filename = file.filename
+        ext = os.path.splitext(original_filename)[1]
+        uuid_name = f"{uuid.uuid4().hex}{ext}"
+        upload_path = f"pages/{page_id}/documents/{uuid_name}"
+
+        # 날짜 포맷 지정
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
+         # 1. Firebase blob 생성
+        blob = bucket.blob(upload_path)
+
+        # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
+        blob.metadata = {
+            "original_filename": original_filename,
+            "category": "unknown",
+            "date": today_str
+        }
+
+        # 3. 파일 업로드
+        blob.upload_from_file(file.stream, content_type=file.content_type)
+        blob.make_public()
+
+        document_data = {
+            'original_filename': original_filename,
+            'firebase_filename': uuid_name,
+            'download_url': blob.public_url,
+            'page_id': page_id,
+            'upload_date': today_str,
+            'category': "unknown",   
+            'date': today_str  
+        }
+
+        # 문서명을 문서 ID로 사용하면 중복 이슈 있음 → UUID 또는 자동 ID 사용 권장
+        db.collection('document_files').add(document_data)
+
+        # 5. 클라이언트 응답용 리스트에도 추가
+        uploaded_files.append(document_data)
+
+        print(f"Uploaded 문서 to Firebase: {blob.public_url} (원본 이름: {original_filename})")
 
     return jsonify({
-        'success': True, 
+        'success': True,
         'uploaded_files': uploaded_files
     })
 
+# adminPage에서 문서 목록 보기
+@document_bp.route('/documents/<page_id>', methods=['GET'])
+def get_uploaded_documents(page_id):
+    try:
+        blobs = bucket.list_blobs(prefix=f"pages/{page_id}/documents")
+        uploaded_files = []
+        for blob in blobs:
+            # 메타데이터에서 original_filename 가져오기
+            blob.reload()  # 메타데이터 최신화
+            original_filename = blob.metadata.get('original_filename')
+            category = blob.metadata.get('category', '학교')
+            date = blob.metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
+
+            if original_filename:
+                uploaded_files.append({
+                    'original_filename': original_filename,
+                    'category': category,
+                    'date': date
+                })
+
+        return jsonify({'success': True, 'uploaded_files': uploaded_files, 'total_count': len(uploaded_files)})
+
+    except Exception as e:
+        print("Firebase 오류:", str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
 
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):
     """document 처리"""
     try:
-        base_path, input_path, upload_path = ensure_page_directory(page_id)
+        base_path, input_path, _ = ensure_page_directory(page_id)
+        firebase_path = f"pages/{page_id}/documents"
 
-        convert2txt(upload_path, input_path)    # 문서 -> txt 변경
+        # 🔸 Firestore에서 filename 매핑 가져오기
+        filename_mapping = {}  # {firebase_filename: original_filename}
+        docs = db.collection('document_files').where('page_id', '==', page_id).stream()
+        for doc in docs:
+            data = doc.to_dict()
+            fb = data.get('firebase_filename')
+            orig = data.get('original_filename')
+            if fb and orig:
+                filename_mapping[fb] = orig
+        
+        convert2txt(firebase_path, input_path, bucket, filename_mapping)  # 🔸 매핑 전달
+
         print("모든 파일 .txt로 변환 완료")
-
-        return jsonify({
-            'success': True,
-            'message': '문서 변환 완료'
-        })
-
-    except Exception as e:
-        print("Flask 서버 오류:", str(e))
-        return jsonify({
-            'success': False, 
-            'error': str(e)
-        }), 500
-
-
-@document_bp.route('/apply/<page_id>', methods=['POST'])
-def apply_documents(page_id):
-    """GraphRAG 인덱싱 처리"""
-    try:
-        base_path, input_path, upload_path = ensure_page_directory(page_id)
-
-        # graphrag index 명령어 실행
-        start_time = time.time()
-        process = subprocess.run(['graphrag', 'index', '--root', base_path])
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(execution_time)
-
-        return jsonify({
-            'success': True,
-            'execution_time': execution_time
-        })
-
-    except Exception as e:
-        print("Flask 서버 오류:", str(e))
-        return jsonify({
-            'success': False, 
-            'error': str(e)
-        }), 500
-
-
-@document_bp.route('/update/<page_id>', methods=['POST'])
-def update(page_id):
-    """document 업데이트"""
-    try:
-        base_path, input_path, upload_path = ensure_page_directory(page_id)
-
-        convert2txt(upload_path, input_path)
-        print("모든 파일 .txt로 변환 완료")
-
-        start_time = time.time()
-        subprocess.run(['graphrag', 'update', '--root', base_path])
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f'execution_time: {execution_time}')
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'message': '문서 변환 완료'})
     
     except Exception as e:
-        print("Flask update 오류: ", str(e))
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        print("Flask 서버 오류:", str(e))
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
+@document_bp.route('/process-document-direct', methods=['POST'])
+def process_document_direct():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'})
 
+    file = request.files['file']
+    filename = file.filename
+    lower_name = filename.lower()
 
+    try:
+        # 임시 디렉토리 생성
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = os.path.join(temp_dir, filename)
+            file.save(file_path)
+
+            text = ""
+
+            if lower_name.endswith('.hwp'):
+                output_path = os.path.join(temp_dir, "output.txt")
+                convert_hwp_file(file_path, output_path)
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+
+            elif lower_name.endswith('.pdf'):
+                output_path = os.path.join(temp_dir, "output.txt")
+                extract_text_and_tables(file_path, output_path)
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+
+            elif lower_name.endswith('.docx'):
+                output_path = os.path.join(temp_dir, "output.txt")
+                convert_docx(file_path, output_path)
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+
+            elif lower_name.endswith('.txt'):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    raw_text = f.read()
+                base_name = os.path.splitext(filename)[0]
+                text = f"headline: {base_name}\ncontent:\n{raw_text}"
+
+            else:
+                return jsonify({'success': False, 'message': 'Unsupported file type'})
+
+            return jsonify({'success': True, 'content': text})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    
+    
+@document_bp.route('/document/content/<page_id>', methods=['GET'])
+def get_document_content(page_id):
+    """처리된 문서 내용 가져오기"""
+    try:
+        base_path, input_path, _ = ensure_page_directory(page_id)
+        
+        # 처리된 문서 텍스트 파일들을 읽어 내용 반환
+        document_content = ""
+        
+        for file_name in os.listdir(input_path):
+            if file_name.endswith(".txt") and not "crawled_" in file_name:
+                file_path = os.path.join(input_path, file_name)
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    document_content += f"--- {file_name} ---\n"
+                    document_content += file.read() + "\n\n"
+        
+        return document_content
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": f"문서 내용 가져오기 실패: {str(e)}"}), 500
+    
 # 공통 디렉토리 유틸리티 함수
 def ensure_page_directory(page_id):
     """페이지 디렉토리 확인"""

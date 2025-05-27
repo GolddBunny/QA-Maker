@@ -1,58 +1,14 @@
+import os
 from flask import Blueprint, jsonify, request
 import time
+from routes.page_routes import ensure_page_directory
 from utils.crawling import crawl_main
 from backend.utils.past.url_manager import URLManager
 
 crawling_bp = Blueprint('crawling', __name__)
 url_manager = URLManager()
 
-@crawling_bp.route('/add-url/<page_id>', methods=['POST'])
-def add_url(page_id):
-    try:
-        data = request.json
-        url = data.get('url')
-        
-        if not url:
-            return jsonify({"success": False, "error": "입력된 URL이 없습니다."}), 400
-        
-        # 1. URL 저장
-        saved_urls = url_manager.add_url(page_id, url)
-        print(f"페이지 '{page_id}'에 URL이 성공적으로 저장되었습니다: {url}")
-        
-        # 2. 크롤링 실행
-        print(f"크롤링 시작: {url}")
-        start_time = time.time()
-        
-        try:
-            saved_files, saved_attachments = crawl_main(url)
-            
-            crawl_result = {
-                "url": url,
-                "status": "success",
-                "saved_files": len(saved_files),
-                "saved_attachments": len(saved_attachments)
-            }
-            
-        except Exception as e:
-            crawl_result = {
-                "url": url,
-                "status": "error",
-                "error": str(e)
-            }
-        
-        execution_time = time.time() - start_time
-        print(f"크롤링 완료. 총 실행 시간: {execution_time}초")
-        
-        return jsonify({
-            "success": True,
-            "message": "URL 저장 및 크롤링 완료",
-            "urls": saved_urls,
-            "crawl_result": crawl_result,
-            "execution_time": execution_time
-        }), 200
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": f"URL 저장 및 크롤링 중 오류 발생: {str(e)}"}), 500
+
 
 @crawling_bp.route('/crawling/<page_id>', methods=['POST'])
 def crawling(page_id):
@@ -100,3 +56,24 @@ def crawling(page_id):
         
     except Exception as e:
         return jsonify({"success": False, "error": f"URL 크롤링 중 오류 발생: {str(e)}"}), 500
+    
+@crawling_bp.route('/crawling/content/<page_id>', methods=['GET'])
+def get_crawled_content(page_id):
+    """크롤링된 URL 내용 가져오기"""
+    try:
+        base_path, input_path, _ = ensure_page_directory(page_id)
+        
+        # 크롤링된 텍스트 파일들을 읽어 내용 반환
+        crawled_content = ""
+        
+        for file_name in os.listdir(input_path):
+            if file_name.endswith(".txt") and "crawled_" in file_name:
+                file_path = os.path.join(input_path, file_name)
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    crawled_content += f"--- {file_name} ---\n"
+                    crawled_content += file.read() + "\n\n"
+        
+        return crawled_content
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": f"크롤링된 내용 가져오기 실패: {str(e)}"}), 500

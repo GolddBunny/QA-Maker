@@ -1,0 +1,253 @@
+.admin-main-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #D8BAFF 0%, #C3B7F6 33%, #786ED0 100%);
+  display: flex;
+  padding-top: 20px;
+  flex-direction: column; /* column으로 설정 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.main-content {
+  flex: 1; /* 공간을 차지해서 footer를 아래로 밀어냄 */
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #242323;
+  margin-bottom: 30px;
+  letter-spacing: -2px;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 40px;
+  line-height: 1.6;
+  max-width: 57%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 50px;
+  flex-wrap: wrap;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 500;
+
+  background-color: rgba(255, 255, 255, 0.33); /* 흰색 33% 투명도 */
+  border-radius: 10px;                         /* 라운드 박스 */
+  padding: 8px 16px;                           /* 안쪽 여백 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);     /* 약한 그림자 */
+  transition: transform 0.2s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-2px); /* hover 시 약간 올라가게 */
+}
+
+.feature-icon {
+  font-size: 1.2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-bottom: 60px;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  background: rgb(250, 247, 247);
+  border-radius: 20px;
+  padding: 30px;
+  width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+.button-icon {
+  font-size: 2rem;
+  color: #666;
+  min-width: 40px;
+  text-align: center;
+}
+
+.button-content {
+  text-align: left;
+  flex: 1;
+}
+
+.button-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.button-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.organization-section {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  align-items: flex-start; /* 기존: flex-end → 위쪽 정렬 */
+}
+
+.org-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 130px; /* 모든 org-item 높이 고정 */
+}
+
+.org-name {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+  min-height: 20px;     /* 이름이 없더라도 공간 확보 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.org-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.org-circle:not(.add-button) {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.org-circle.hansung {
+  background: linear-gradient(45deg, #1e3a8a, #3b82f6);
+  color: white;
+}
+
+.org-circle.add-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+}
+
+.org-circle:hover {
+  transform: scale(1.05);
+}
+
+.org-icon {
+  font-size: 2rem;
+}
+
+.org-logo {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.plus-icon {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+}
+
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 3rem;
+  }
+  
+  .features {
+    gap: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .action-button {
+    width: 100%;
+    max-width: 350px;
+  }
+  
+  .organization-section {
+    gap: 20px;
+  }
+  
+  .org-circle {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* 푸터 */
+.site-footer {
+  background-color: #d6cbe4;
+  border-top: 0.5px solid #e0d5f8;
+  font-size: 14px;
+  margin-top: auto;
+  color: #5f5f5f;
+  text-align: center;
+  width: 100%;
+}
+
+.footer-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.footer-content p {
+  margin: 6px 0;
+}
+
+.team-name {
+  font-weight: bold;
+  color: #575071;
+}
+
+.team-members {
+  font-style: italic;
+}
+
+.footer-note {
+  font-size: 12px;
+  color: #999;
+}

@@ -1,3 +1,4 @@
+import os
 import networkx as nx
 import json
 import sys
@@ -46,6 +47,7 @@ def convert_graphml_to_json(graphml_path, json_path):
             graph_data["edges"].append(edge_data)
 
         # JSON 파일로 저장
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
         with open(json_path, "w") as f:
             json.dump(graph_data, f, indent=4)
 
