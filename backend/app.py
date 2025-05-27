@@ -1,11 +1,9 @@
 from flask import Flask
 from flask_cors import CORS
 import atexit
-
 from routes.query_routes import query_bp
 from routes.document_routes import document_bp
 from routes.page_routes import page_bp
-from routes.crawling_routes import crawling_bp
 from routes.urlLoad_routes import url_load_bp
 from routes.documentSource_routes import source_bp
 from routes.answerSources_routes import url_source_bp
@@ -23,7 +21,6 @@ def create_app():
     app.register_blueprint(query_bp, url_prefix='/')
     app.register_blueprint(document_bp)
     app.register_blueprint(page_bp)
-    app.register_blueprint(crawling_bp)
     app.register_blueprint(url_load_bp)
     app.register_blueprint(source_bp)
     app.register_blueprint(url_source_bp)

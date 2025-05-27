@@ -194,13 +194,13 @@ const AdminPage = () => {
       }
 
       // 페이지가 변경될 때마다 상태 초기화
-      setEntities([]);
-      setRelationships([]);
-      setGraphData(null);
-      setUploadedUrls([]);
-      setUploadedDocs([]);
-      setHasDocuments(false);
-      setHasOutput(null);
+      // setEntities([]);
+      // setRelationships([]);
+      // setGraphData(null);
+      // setUploadedUrls([]);
+      // setUploadedDocs([]);
+      // setHasDocuments(false);
+      // setHasOutput(null);
 
 
       // loadUploadedDocs(pageId)
@@ -485,42 +485,50 @@ const AdminPage = () => {
         )}
 
         <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-          {/* 상단 입력부 */}
-          <div className="input-container" id="name">
-          <div className="input-row-horizontal">
-            <div className="input-field">
-              <input
-                type="text"
-                placeholder="도메인 이름을 정해주세요"
-                value={domainName}
-                onChange={(e) => {
-                  const newName = e.target.value;
-                  setDomainName(newName);
-                  updatePageName(pageId, newName);
+        <div className="input-container" id="name">
+            <div className="input-row-horizontal">
+              <div className="input-field">
+                <input
+                  type="text"
+                  placeholder="도메인 이름을 정해주세요"
+                  value={domainName}
+                  onChange={(e) => setDomainName(e.target.value)} // 실시간 동기화 제거
+                />
+              </div>
+
+              <div className="input-field">
+                <input
+                  type="text"
+                  placeholder="QA 시스템 이름을 정해주세요"
+                  value={systemName}
+                  onChange={(e) => setSystemName(e.target.value)}
+                />
+              </div>
+              <button
+                className="apply-button-admin"
+                onClick={() => {
+                  updatePageName(pageId, domainName);
+                  updatePageSysName(pageId, systemName);
+                  
+                  // localStorage도 함께 업데이트
+                  const pages = JSON.parse(localStorage.getItem('pages')) || [];
+                  const updatedPages = pages.map(page => {
+                    if (page.id === pageId) {
+                      return {
+                        ...page,
+                        name: domainName,
+                        sysname: systemName
+                      };
+                    }
+                    return page;
+                  });
+                  localStorage.setItem('pages', JSON.stringify(updatedPages));
                 }}
-              />
+              >
+                적용
+              </button>
             </div>
-
-            <div className="input-field">
-              <input
-                type="text"
-                placeholder="QA 시스템 이름을 정해주세요"
-                value={systemName}
-                onChange={(e) => setSystemName(e.target.value)}
-              />
             </div>
-
-            <button
-              className="apply-button-admin"
-              onClick={() => {
-                updatePageName(pageId, domainName);
-                updatePageSysName(pageId, systemName);
-              }}
-            >
-              적용
-            </button>
-          </div>
-        </div>
       
         <div className="upload-section-wrapper" id="register">
           {/* 왼쪽 URL 섹션 */}
