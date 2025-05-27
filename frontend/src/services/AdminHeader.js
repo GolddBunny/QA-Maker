@@ -27,14 +27,14 @@ const AdminHeader = ({ isSidebarOpen, toggleSidebar }) => {
         <div className="logo">QA Maker</div>
       </div>
 
-      <nav className="nav-links">
+      {/* <nav className="nav-links">
         <a href="#name">이름</a>
         <a href="#register">URL / 문서 등록</a>
         <a href="#info">QA시스템 정보</a>
         <a href="#user-questions">유저 질문</a>
         <span className="divider-admin">|</span>
         <a onClick={handleQuickAddPage} className="add-domain-button">새 QA시스템 추가</a>
-      </nav>
+      </nav> */}
     </header>
   );
 };
