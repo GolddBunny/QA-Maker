@@ -1,4 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { db } from '../firebase/sdk';
+import { collection, doc, getDocs, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 
 // PageContext 생성
 const PageContext = createContext();
@@ -7,48 +9,49 @@ const PageContext = createContext();
 export const PageProvider = ({ children }) => {
   const [currentPageId, setCurrentPageId] = useState("");
   const [pages, setPages] = useState([]);
-  
   const [systemName, setSystemName] = useState("");
   const [domainName, setDomainName] = useState("");
+  const [loading, setLoading] = useState(true);
 
+  // Firebase에서 페이지 목록 실시간 로드
   useEffect(() => {
-    const loadPages = () => {
+    const unsubscribe = onSnapshot(collection(db, "pages"), (snapshot) => {
       try {
-        const savedPages = JSON.parse(localStorage.getItem('pages')) || [];
-        setPages(savedPages);
+        const pagesData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setPages(pagesData);
+        setLoading(false);
       } catch (error) {
         console.error('페이지 목록 로드 오류:', error);
         setPages([]);
+        setLoading(false);
       }
-    };
-    
-    loadPages();
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // 현재 페이지 ID가 변경될 때마다 로컬 스토리지 업데이트
-  useEffect(() => {
-    if (currentPageId) {
-      localStorage.setItem('currentPageId', currentPageId);
-      
-    }
-  }, [currentPageId]);
-
+  // 현재 페이지 ID가 변경될 때마다 시스템명, 도메인명 업데이트
   useEffect(() => {
     if (!currentPageId) return;
 
     const currentPage = pages.find(page => page.id === currentPageId);
-    const sysname = currentPage.sysname || '';
-    const name = currentPage.name || '';
+    const sysname = currentPage?.sysname || '';
+    const name = currentPage?.name || '';
     setDomainName(name);
-    setSystemName(sysname); // 상태를 업데이트
-
+    setSystemName(sysname);
   }, [currentPageId, pages]);
 
   // 페이지 목록 업데이트 함수
-  const updatePages = (newPages) => {
+  const updatePages = async (newPages) => {
     try {
-      localStorage.setItem('pages', JSON.stringify(newPages));
-      setPages(newPages);
+      // Firebase에 각 페이지를 개별적으로 저장
+      const promises = newPages.map(page => 
+        setDoc(doc(db, "pages", page.id), page)
+      );
+      await Promise.all(promises);
       return true;
     } catch (error) {
       console.error('페이지 목록 업데이트 오류:', error);
@@ -57,28 +60,21 @@ export const PageProvider = ({ children }) => {
   };
 
   // 특정 페이지 이름 업데이트 함수
-  const updatePageName = (pageId, newName) => {
+  const updatePageName = async (pageId, newName) => {
     try {
-      const pageIndex = pages.findIndex(page => page.id === pageId);
-      
-      if (pageIndex === -1) {
-        return { success: false, error: "페이지를 찾을 수 없습니다." };
-      }
-      
-      // 새로운 페이지 배열 생성 (불변성 유지)
-      const updatedPages = [...pages];
-      updatedPages[pageIndex] = { ...updatedPages[pageIndex], name: newName };
-      
-      // 로컬 스토리지와 상태 업데이트
-      localStorage.setItem('pages', JSON.stringify(updatedPages));
-      setPages(updatedPages);
+      const pageRef = doc(db, "pages", pageId);
+      await updateDoc(pageRef, {
+        name: newName
+      });
+
+      // 현재 페이지인 경우 domainName 업데이트
       if (pageId === currentPageId) {
         setDomainName(newName);
       }
-      
-      return { 
-        success: true, 
-        updatedPage: updatedPages[pageIndex]
+
+      return {
+        success: true,
+        updatedPage: { id: pageId, name: newName }
       };
     } catch (error) {
       console.error('페이지 이름 업데이트 오류:', error);
@@ -87,25 +83,21 @@ export const PageProvider = ({ children }) => {
   };
 
   // 특정 페이지의 시스템 이름 업데이트 함수
-  const updatePageSysName = (pageId, newSysName) => {
+  const updatePageSysName = async (pageId, newSysName) => {
     try {
-      const pageIndex = pages.findIndex(page => page.id === pageId);
-      
-      if (pageIndex === -1) {
-        return { success: false, error: "페이지를 찾을 수 없습니다." };
+      const pageRef = doc(db, "pages", pageId);
+      await updateDoc(pageRef, {
+        sysname: newSysName
+      });
+
+      // 현재 페이지인 경우 systemName 업데이트
+      if (pageId === currentPageId) {
+        setSystemName(newSysName);
       }
-      
-      // 새로운 페이지 배열 생성 (불변성 유지) 
-      const updatedPages = [...pages];
-      updatedPages[pageIndex] = { ...updatedPages[pageIndex], sysname: newSysName };
-      
-      // 로컬 스토리지와 상태 업데이트
-      localStorage.setItem('pages', JSON.stringify(updatedPages));
-      setPages(updatedPages);
-      
+
       return {
         success: true,
-        updatedPage: updatedPages[pageIndex]
+        updatedPage: { id: pageId, sysname: newSysName }
       };
     } catch (error) {
       console.error('페이지 시스템 이름 업데이트 오류:', error);
@@ -134,6 +126,7 @@ export const PageProvider = ({ children }) => {
     setSystemName,
     domainName,
     setDomainName,
+    loading, // 로딩 상태 추가
   };
 
   return (
