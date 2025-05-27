@@ -50,7 +50,7 @@ const AdminMainPage = () => {
         
         <div className="action-buttons">
           <div className="action-button get-started" onClick={handleQuickAddPage}>
-            <div className="button-icon">▷</div>
+            <div className="button-icon-adminMain">▷</div>
             <div className="button-content">
               <div className="button-title">Get Started</div>
               <div className="button-description">새 Q&A 시스템을 생성합니다.</div>
@@ -66,7 +66,7 @@ const AdminMainPage = () => {
                 alert('메인 타입 페이지가 존재하지 않습니다.');
                 }
             }}>
-            <div className="button-icon">⚙</div>
+            <div className="button-icon-adminMain">⚙</div>
             <div className="button-content">
               <div className="button-title">Open Page</div>
               <div className="button-description">구축된 Q&A 시스템을 모니터링합니다.</div>
