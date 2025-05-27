@@ -90,8 +90,21 @@ const AdminPage = () => {
     const handleCloseProgressing = async () => {
       setShowProgressing(false);
       localStorage.removeItem(`showProgressing_${pageId}`);
-      await checkOutputFolder(pageId); // 상태 갱신
-      await loadAllData(pageId);
+
+      if (!pageId) return;
+
+      try {
+        const outputExists = await checkOutputFolder(pageId);
+        setHasOutput(outputExists); //output 상태를 직접 반영해야 렌더링됨
+
+        await Promise.all([
+          loadAllData(pageId),
+          fetchSavedUrls(pageId),
+          loadDocumentsInfo(pageId)
+        ]);
+      } catch (error) {
+        console.error('ProgressingBar 닫을 때 상태 갱신 오류:', error);
+      }
     };
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
@@ -190,12 +203,18 @@ const AdminPage = () => {
       setHasOutput(null);
 
 
+      // loadUploadedDocs(pageId)
+      //   .then(docs => setUploadedDocs(docs))
+      //   .catch(error => {
+      //     console.error("문서 목록 로드 중 오류:", error);
+      //     setUploadedDocs([]);
+      //   });
       loadUploadedDocs(pageId)
-        .then(docs => setUploadedDocs(docs))
-        .catch(error => {
-          console.error("문서 목록 로드 중 오류:", error);
-          setUploadedDocs([]);
-        });
+      .then(docs => setUploadedDocs(Array.isArray(docs) ? docs : []))
+      .catch(error => {
+        console.error("문서 목록 로드 중 오류:", error);
+        setUploadedDocs([]);
+      });
 
       // 페이지 ID가 유효한 경우에만 데이터 로드
       if (pageId) {
