@@ -17,7 +17,7 @@ For each pair of related entities, extract the following information:
 - relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
  Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
  
-3. Return output in English as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+3. Return output in Korean as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
  
 4. When finished, output {completion_delimiter}
  
@@ -25,93 +25,183 @@ For each pair of related entities, extract the following information:
 -Examples-
 ######################
 Example 1:
-Entity_types: ORGANIZATION,PERSON
+Entity_types: ORGANIZATION,PERSON,DATE,EVENT
 Text:
-The Verdantis's Central Institution is scheduled to meet on Monday and Thursday, with the institution planning to release its latest policy decision on Thursday at 1:30 p.m. PDT, followed by a press conference where Central Institution Chair Martin Smith will take questions. Investors expect the Market Strategy Committee to hold its benchmark interest rate steady in a range of 3.5%-3.75%.
+Title: <Important> (Professor Kim Namyoon): Web Framework 2 Course Enrollment Change  
+Category: Announcement
+Author: Department of Computer Engineering
+Content:  
+- Change Date: February 28 (Friday), please check!  
+- Only students in the Web Engineering Track can apply.  
+
+| Course Name | Year | Type | Class | Capacity | Supervising Professor | Instructor | Application |  
+|------------|------|------|------|----------|--------------------|------------|-------------|  
+| Web Framework 2 | 4 | Mixed | 7 | 40->80 | Kim Namyoon | Kim Namyoon | Only Web Engineering students |  
+| Web Framework 2 | 4 | Day | A | 40->60 |  | Kim Namyoon | Only Web Engineering students |  
+| Web Framework 2 | 4 | Day | B | 40->60 |  | Yoon Namkim | Only Web Engineering students |  
+| Web Framework 2 | 4 | Night | N | 40->30 |  | Kim Haul | Only Web Engineering students |  
 ######################
 Output:
-("entity"{tuple_delimiter}CENTRAL INSTITUTION{tuple_delimiter}ORGANIZATION{tuple_delimiter}The Central Institution is the Federal Reserve of Verdantis, which is setting interest rates on Monday and Thursday)
+("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}ORGANIZATION{tuple_delimiter}The Computer Engineering department managing course enrollment changes for students)
 {record_delimiter}
-("entity"{tuple_delimiter}MARTIN SMITH{tuple_delimiter}PERSON{tuple_delimiter}Martin Smith is the chair of the Central Institution)
+("entity"{tuple_delimiter}Kim Namyoon{tuple_delimiter}PERSON{tuple_delimiter}Professor who serves as both supervising professor and instructor for Web Framework 2 course)
 {record_delimiter}
-("entity"{tuple_delimiter}MARKET STRATEGY COMMITTEE{tuple_delimiter}ORGANIZATION{tuple_delimiter}The Central Institution committee makes key decisions about interest rates and the growth of Verdantis's money supply)
+("entity"{tuple_delimiter}Yoon Namkim{tuple_delimiter}PERSON{tuple_delimiter}Instructor for the day class B of Web Framework 2 course)
 {record_delimiter}
-("relationship"{tuple_delimiter}MARTIN SMITH{tuple_delimiter}CENTRAL INSTITUTION{tuple_delimiter}Martin Smith is the Chair of the Central Institution and will answer questions at a press conference{tuple_delimiter}9)
+("entity"{tuple_delimiter}Kim Haul{tuple_delimiter}PERSON{tuple_delimiter}Instructor for the night class N of Web Framework 2 course)
+{record_delimiter}
+("entity"{tuple_delimiter}February 28{tuple_delimiter}DATE{tuple_delimiter}The date for Web Framework 2 course enrollment changes)
+{record_delimiter}
+("entity"{tuple_delimiter}Web Framework 2{tuple_delimiter}EVENT{tuple_delimiter}A 4th-year course that can only be applied for by Web Engineering Track students)
+{record_delimiter}
+("entity"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}EVENT{tuple_delimiter}Announcement regarding capacity changes for Web Framework 2 course)
+{record_delimiter}
+("entity"{tuple_delimiter}Web Engineering Track{tuple_delimiter}ORGANIZATION{tuple_delimiter}The academic track whose students can apply for Web Framework 2 course)
+{record_delimiter}
+("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Course Enrollment Change{tuple_delimiter}The Computer Engineering department manages the course enrollment change announcement{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}Kim Namyoon{tuple_delimiter}Web Framework 2{tuple_delimiter}Professor Kim Namyoon is both supervising professor and instructor for Web Framework 2{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}Web Framework 2{tuple_delimiter}Web Engineering Track{tuple_delimiter}Web Framework 2 course can only be applied for by Web Engineering Track students{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}February 28{tuple_delimiter}The course enrollment change takes place on February 28 (Friday){tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}Yoon Namkim{tuple_delimiter}Web Framework 2{tuple_delimiter}Yoon Namkim is an instructor for day class B of Web Framework 2{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}Kim Haul{tuple_delimiter}Web Framework 2{tuple_delimiter}Kim Haul is an instructor for night class N of Web Framework 2{tuple_delimiter}9)
+{record_delimiter}
 {completion_delimiter}
 
 ######################
 Example 2:
-Entity_types: ORGANIZATION
+Entity_types: ORGANIZATION,EVENT,PERSON,DATE
 Text:
-TechGlobal's (TG) stock skyrocketed in its opening day on the Global Exchange Thursday. But IPO experts warn that the semiconductor corporation's debut on the public markets isn't indicative of how other newly listed companies may perform.
-
-TechGlobal, a formerly public company, was taken private by Vision Holdings in 2014. The well-established chip designer says it powers 85% of premium smartphones.
+Title: (For Current Students) Graduation Requirement Submission for February 2025 Graduates
+Content:  
+- Hello, this is the administrative assistant of the Department of Computer Engineering.  
+- There are important announcements regarding graduation in February 2025.  
+- Graduation requirement submission deadline: December 22, 2024, 23:59.  
+- Graduation deferment applicants must also submit graduation requirements.  
 ######################
 Output:
-("entity"{tuple_delimiter}TECHGLOBAL{tuple_delimiter}ORGANIZATION{tuple_delimiter}TechGlobal is a stock now listed on the Global Exchange which powers 85% of premium smartphones)
+("entity"{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}A university requiring graduation requirement submission for February 2025 graduates.)
 {record_delimiter}
-("entity"{tuple_delimiter}VISION HOLDINGS{tuple_delimiter}ORGANIZATION{tuple_delimiter}Vision Holdings is a firm that previously owned TechGlobal)
+("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}A department at Hansung University responsible for handling graduation submissions.)
 {record_delimiter}
-("relationship"{tuple_delimiter}TECHGLOBAL{tuple_delimiter}VISION HOLDINGS{tuple_delimiter}Vision Holdings formerly owned TechGlobal from 2014 until present{tuple_delimiter}5)
+("entity"{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}An administrative assistant at the Department of Computer Engineering responsible for handling graduation requirements.)
+{record_delimiter}
+("entity"{tuple_delimiter}Graduation Requirement Submission{tuple_delimiter}event{tuple_delimiter}The process for submitting graduation requirements by December 22, 2024.)
+{record_delimiter}
+("entity"{tuple_delimiter}Graduation Deferment{tuple_delimiter}event{tuple_delimiter}An option requiring submission of graduation requirements.)
+{record_delimiter}
+("entity"{tuple_delimiter}December 22, 2024, 23:59{tuple_delimiter}date{tuple_delimiter}The deadline for submitting graduation requirements.)
+{record_delimiter}
+("relationship"{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Hansung University includes the Department of Computer Engineering.{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Graduation Requirement Submission{tuple_delimiter}The department manages graduation submissions.{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}Graduation Requirement Submission{tuple_delimiter}Graduation Deferment{tuple_delimiter}Submission is mandatory for deferment applicants.{tuple_delimiter}8)
+{record_delimiter}
 {completion_delimiter}
 
 ######################
 Example 3:
-Entity_types: ORGANIZATION,GEO,PERSON
+Entity_types: ORGANIZATION,GEO,PERSON,EVENT,DATE,ROOM
 Text:
-Five Aurelians jailed for 8 years in Firuzabad and widely regarded as hostages are on their way home to Aurelia.
+Title: Hansung University Computer Engineering Department Teaching Assistant Recruitment Announcement
+Content:
+Hello, this is the administrative assistant from the Department of Computer Engineering.
+Currently, we are recruiting administrative and teaching assistants for the Department of Computer Engineering.
 
-The swap orchestrated by Quintara was finalized when $8bn of Firuzi funds were transferred to financial institutions in Krohaara, the capital of Quintara.
+1. Recruitment Fields
+- Administrative Assistant (Day shift) or Teaching Assistant (Day shift)
+- Number of openings: 1 for each (select either Administrative or Teaching Assistant)
 
-The exchange initiated in Firuzabad's capital, Tiruzia, led to the four men and one woman, who are also Firuzi nationals, boarding a chartered flight to Krohaara.
+2. Qualifications
+- Academic requirement: A bachelor's degree or higher
+- Must not have any disqualifying factors for assistant appointment
+- Preferred: Majors in IT or Computer-related fields
 
-They were welcomed by senior Aurelian officials and are now on their way to Aurelia's capital, Cashion.
+3. Working Conditions
+- 5 days a week, daytime
+- Daytime: 9:00 AM to 5:30 PM
+- During vacation periods: 10:00 AM to 4:00 PM
+- Expected start date: December 15, 2024
+- Administrative Assistant: Hansung University Jiseong Building 105, IT Engineering Academic Team Office
+- Teaching Assistant: Hansung University Engineering Building A 104, Department of Computer Engineering Office
+- Contract: 1 year (renewable once for up to 2 years)
 
-The Aurelians include 39-year-old businessman Samuel Namara, who has been held in Tiruzia's Alhamia Prison, as well as journalist Durke Bataglani, 59, and environmentalist Meggie Tazbah, 53, who also holds Bratinas nationality.
+4. Documents to Submit
+- Resume (use the attached format, include a photo)
+- Submission deadline: November 29, Friday
+
+5. Recruitment Process
+- 1st round: Document review (Only candidates selected will be notified individually)
+- 2nd round: Interview (Only for those who pass the first round)
+- Additional documents for successful candidates: University graduation certificate, transcript, resident registration, etc. to be provided later.
+
 ######################
 Output:
-("entity"{tuple_delimiter}FIRUZABAD{tuple_delimiter}GEO{tuple_delimiter}Firuzabad held Aurelians as hostages)
+(“entity”{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}A university responsible for recruiting administrative and teaching assistants in the Department of Computer Engineering.)
 {record_delimiter}
-("entity"{tuple_delimiter}AURELIA{tuple_delimiter}GEO{tuple_delimiter}Country seeking to release hostages)
+(“entity”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}A department at Hansung University hiring assistants for administrative and teaching roles.)
 {record_delimiter}
-("entity"{tuple_delimiter}QUINTARA{tuple_delimiter}GEO{tuple_delimiter}Country that negotiated a swap of money in exchange for hostages)
+(“entity”{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}An administrative assistant at the Department of Computer Engineering.)
 {record_delimiter}
+(“entity”{tuple_delimiter}teaching assistant{tuple_delimiter}person{tuple_delimiter}A teaching assistant at the Department of Computer Engineering.)
 {record_delimiter}
-("entity"{tuple_delimiter}TIRUZIA{tuple_delimiter}GEO{tuple_delimiter}Capital of Firuzabad where the Aurelians were being held)
+(“entity”{tuple_delimiter}Recruitment Fields{tuple_delimiter}event{tuple_delimiter}The fields for recruitment: Administrative Assistant or Teaching Assistant.)
 {record_delimiter}
-("entity"{tuple_delimiter}KROHAARA{tuple_delimiter}GEO{tuple_delimiter}Capital city in Quintara)
+(“entity”{tuple_delimiter}Qualifications{tuple_delimiter}event{tuple_delimiter}The qualifications required for applicants.)
 {record_delimiter}
-("entity"{tuple_delimiter}CASHION{tuple_delimiter}GEO{tuple_delimiter}Capital city in Aurelia)
+(“entity”{tuple_delimiter}Academic Requirements{tuple_delimiter}event{tuple_delimiter}The requirement for applicants to have at least a bachelor’s degree.)
 {record_delimiter}
-("entity"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}PERSON{tuple_delimiter}Aurelian who spent time in Tiruzia's Alhamia Prison)
+(“entity”{tuple_delimiter}Preferred Qualifications{tuple_delimiter}event{tuple_delimiter}Preferred qualifications for applicants: IT or Computer-related majors.)
 {record_delimiter}
-("entity"{tuple_delimiter}ALHAMIA PRISON{tuple_delimiter}GEO{tuple_delimiter}Prison in Tiruzia)
+(“entity”{tuple_delimiter}Working Conditions{tuple_delimiter}event{tuple_delimiter}Conditions for employment, including working hours and location.)
 {record_delimiter}
-("entity"{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}PERSON{tuple_delimiter}Aurelian journalist who was held hostage)
+(“entity”{tuple_delimiter}December 15, 2024{tuple_delimiter}date{tuple_delimiter}The expected start date for the assistants.)
 {record_delimiter}
-("entity"{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}PERSON{tuple_delimiter}Bratinas national and environmentalist who was held hostage)
+(“entity”{tuple_delimiter}Jiseong Building 105{tuple_delimiter}room{tuple_delimiter}The office location for administrative assistants.)
 {record_delimiter}
-("relationship"{tuple_delimiter}FIRUZABAD{tuple_delimiter}AURELIA{tuple_delimiter}Firuzabad negotiated a hostage exchange with Aurelia{tuple_delimiter}2)
+(“entity”{tuple_delimiter}IT Engineering Academic Team Office{tuple_delimiter}room{tuple_delimiter}The office where administrative assistants will work.)
 {record_delimiter}
-("relationship"{tuple_delimiter}QUINTARA{tuple_delimiter}AURELIA{tuple_delimiter}Quintara brokered the hostage exchange between Firuzabad and Aurelia{tuple_delimiter}2)
+(“entity”{tuple_delimiter}Engineering Building A 104{tuple_delimiter}room{tuple_delimiter}The office location for teaching assistants.)
 {record_delimiter}
-("relationship"{tuple_delimiter}QUINTARA{tuple_delimiter}FIRUZABAD{tuple_delimiter}Quintara brokered the hostage exchange between Firuzabad and Aurelia{tuple_delimiter}2)
+(“entity”{tuple_delimiter}Department of Computer Engineering Office{tuple_delimiter}room{tuple_delimiter}The office where teaching assistants will work.)
 {record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}ALHAMIA PRISON{tuple_delimiter}Samuel Namara was a prisoner at Alhamia prison{tuple_delimiter}8)
+(“entity”{tuple_delimiter}Documents to Submit{tuple_delimiter}event{tuple_delimiter}The documents required to apply: resume and photo.)
 {record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}Samuel Namara and Meggie Tazbah were exchanged in the same hostage release{tuple_delimiter}2)
+(“entity”{tuple_delimiter}Resume{tuple_delimiter}event{tuple_delimiter}A required document for the application.)
 {record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}Samuel Namara and Durke Bataglani were exchanged in the same hostage release{tuple_delimiter}2)
+(“entity”{tuple_delimiter}Attached Format{tuple_delimiter}event{tuple_delimiter}The format that applicants must use for the resume.)
 {record_delimiter}
-("relationship"{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}Meggie Tazbah and Durke Bataglani were exchanged in the same hostage release{tuple_delimiter}2)
+(“entity”{tuple_delimiter}November 29{tuple_delimiter}date{tuple_delimiter}The deadline for document submission.)
 {record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}FIRUZABAD{tuple_delimiter}Samuel Namara was a hostage in Firuzabad{tuple_delimiter}2)
+(“entity”{tuple_delimiter}Document Review{tuple_delimiter}event{tuple_delimiter}The first round of recruitment: document review.)
 {record_delimiter}
-("relationship"{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}FIRUZABAD{tuple_delimiter}Meggie Tazbah was a hostage in Firuzabad{tuple_delimiter}2)
+(“entity”{tuple_delimiter}Interview{tuple_delimiter}event{tuple_delimiter}The second round of recruitment: interview.)
 {record_delimiter}
-("relationship"{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}FIRUZABAD{tuple_delimiter}Durke Bataglani was a hostage in Firuzabad{tuple_delimiter}2)
+(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Hansung University includes the Department of Computer Engineering.{tuple_delimiter}9)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Hansung University includes the Department of Computer Engineering.{tuple_delimiter}9)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Recruitment Fields{tuple_delimiter}The department is recruiting for the positions of administrative assistant and teaching assistant.{tuple_delimiter}9)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Recruitment Fields{tuple_delimiter}Qualifications{tuple_delimiter}The recruitment fields require specific qualifications, including academic requirements and preferred qualifications.{tuple_delimiter}9)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Academic Requirements{tuple_delimiter}The qualification requiring at least a bachelor’s degree.{tuple_delimiter}8)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Preferred Qualifications{tuple_delimiter}The qualification of IT or Computer-related majors is preferred.{tuple_delimiter}8)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Working Conditions{tuple_delimiter}Contract Period{tuple_delimiter}The assistants will work under a 1-year contract, renewable for up to 2 years.{tuple_delimiter}9)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Documents to Submit{tuple_delimiter}Resume{tuple_delimiter}A resume, including a photo, is required for the application.{tuple_delimiter}8)
+{record_delimiter}
+(“relationship”{tuple_delimiter}November 29{tuple_delimiter}Documents to Submit{tuple_delimiter}The submission deadline for the application documents is November 29.{tuple_delimiter}8)
+{record_delimiter}
+(“relationship”{tuple_delimiter}Document Review{tuple_delimiter}Interview{tuple_delimiter}After document review, an interview will be conducted for the selected candidates.{tuple_delimiter}8)
 {completion_delimiter}
-
 ######################
 -Real Data-
 ######################

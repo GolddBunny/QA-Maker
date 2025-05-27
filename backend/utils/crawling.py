@@ -555,7 +555,7 @@ class Crawler:
         
         return self.saved_files, self.saved_attachments
 
-def crawl_main(url, max_pages=2): # 최대 페이지 수 지정
+def crawl_main(url, max_pages=1): # 최대 페이지 수 지정
     crawler = Crawler(max_pages=max_pages, url=url)
     
     try:

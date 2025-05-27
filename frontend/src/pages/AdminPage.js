@@ -553,7 +553,6 @@ const AdminPage = () => {
             )}
           </div>
         </div>
-
         {/* 적용 버튼 */}
         <div className="apply-btn-row">
           <button 
