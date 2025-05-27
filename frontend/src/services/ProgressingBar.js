@@ -2,9 +2,11 @@
 import React from 'react';
 import '../styles/ProgressingBar.css';
 
-const ProgressingBar = () => {
+const ProgressingBar = ({ onClose, onAnalyzer, isCompleted }) => {
   return (
     <div className="progress-wrapper">
+        <button className="progress-close-button" onClick={onClose}>×</button>
+        
       <h2 className="progress-title">한성대 Q&A 시스템 구축 중 ...</h2>
       <p className="progress-desc">
         크롤링은 사이트 크기를 사전에 알 수 없기 때문에 시간이 오래 걸릴 수 있습니다.
@@ -44,6 +46,14 @@ const ProgressingBar = () => {
         <span>수집된 웹 페이지 수: ---</span>
         <span>수집된 문서 수: ---</span>
       </div>
+
+      {isCompleted && (
+        <div className="apply-btn-row" style={{ marginTop: '40px' }}>
+          <button className="btn-apply-update" onClick={onAnalyzer}>
+            Go to Analyzer
+          </button>
+        </div>
+      )}
     </div>
   );
 };

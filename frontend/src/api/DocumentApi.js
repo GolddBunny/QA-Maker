@@ -24,14 +24,17 @@ export const loadUploadedDocs = async (pageId) => {
     const res = await fetch(`${BASE_URL}/documents/${pageId}`);
     const data = await res.json();
     if (data.success) {
-      return data.uploaded_files;
+      return {
+        docs: data.uploaded_files,
+        count: data.total_count || 0
+      };
     } else {
       console.error("문서 목록 로드 실패:", data.error);
-      return [];
+      return { docs: [], count: 0 };
     }
   } catch (error) {
     console.error("Firebase 문서 목록 요청 중 오류:", error);
-    return [];
+        return { docs: [], count: 0 };
   }
 };
 
