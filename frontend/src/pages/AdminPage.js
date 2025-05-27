@@ -15,6 +15,8 @@ import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
 import { applyIndexing, updateIndexing } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
+import "../styles/AdminPage.css";
+import ProgressingBar from '../services/ProgressingBar';
 
 const BASE_URL = 'http://localhost:5000';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
@@ -391,25 +393,43 @@ const AdminPage = () => {
       setShowGraph(prev => !prev);
     };
     
+    const handleAnalyzer = async () => {
+      if (!pageId) {
+        alert("먼저 페이지를 생성해주세요.");
+        return;
+      }
 
-return (
-  <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-    <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      if (isAnyProcessing) return;
 
-    {/* 사이드바는 AdminPage 안에서만 조건부 렌더링 */}
-    {isSidebarOpen && (
-      <SidebarAdmin
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-      />
-    )}
+      // Analyzer 로직 구현
+      try {
+        // 여기에 analyzer 관련 API 호출 또는 동작 구현
+        console.log("Analyzer 실행");
+        // 예: const result = await runAnalyzer(pageId);
+        alert("Analyzer 실행 완료");
+      } catch (error) {
+        console.error("Analyzer 실행 중 오류:", error);
+        alert("Analyzer 실행 중 오류가 발생했습니다.");
+      }
+    };
 
-    <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        {/* 상단 입력부 */}
-        <div className="input-container" id="name">
-          <div className="input-group">
+    return (
+      <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+        <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
+        {/* 사이드바는 AdminPage 안에서만 조건부 렌더링 */}
+        {isSidebarOpen && (
+          <SidebarAdmin
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={toggleSidebar}
+          />
+        )}
+
+        <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+          {/* 상단 입력부 */}
+          <div className="input-container" id="name">
+          <div className="input-row-horizontal">
             <div className="input-field">
-              <label>도메인 이름</label>
               <input
                 type="text"
                 placeholder="도메인 이름을 정해주세요"
@@ -421,9 +441,8 @@ return (
                 }}
               />
             </div>
-            <div className="divider"></div>
+
             <div className="input-field">
-              <label>QA 시스템 이름</label>
               <input
                 type="text"
                 placeholder="QA 시스템 이름을 정해주세요"
@@ -431,10 +450,15 @@ return (
                 onChange={(e) => setSystemName(e.target.value)}
               />
             </div>
-            <button className="apply-button-admin" onClick={() => {
-              const nameResult = updatePageName(pageId, domainName);// 도메인 이름 업데이트
-              const sysNameResult = updatePageSysName(pageId, systemName);// 시스템 이름 업데이트
-              }}>적용하기
+
+            <button
+              className="apply-button-admin"
+              onClick={() => {
+                updatePageName(pageId, domainName);
+                updatePageSysName(pageId, systemName);
+              }}
+            >
+              적용
             </button>
           </div>
         </div>
@@ -455,15 +479,6 @@ return (
                 disabled={isAnyProcessing}
                 style={{ color: isAnyProcessing ? 'transparent' : 'inherit' }}
               />
-              {isAnyProcessing && (
-                  <div className="loader processing-message">
-                    {"Loading".split("").map((char, i) => (
-                      <span key={i} className={`letter ${char === " " ? "i" : char}`}>
-                        {char}
-                      </span>
-                    ))}
-                  </div>
-                )}
 
               {/* 버튼은 로딩 중일 때 숨김 */}
               {!isAnyProcessing && (
@@ -496,10 +511,11 @@ return (
                       </tr>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan="2" className="empty-message">업로드된 URL이 없습니다.</td>
-                    </tr>
-                  )}
+                          <div className="no-message">
+                            업로드된 문서가 없습니다.<br />
+                            url을 등록해주세요.
+                          </div>
+                        )}
                 </tbody>
               </table>
             </div>
@@ -526,17 +542,6 @@ return (
                   disabled={isAnyProcessing}
                 />
                 
-                {/* 처리 중 메시지 */}
-                {isAnyProcessing && (
-                  <div className="loader processing-message">
-                    {"Loading".split("").map((char, i) => (
-                      <span key={i} className={`letter ${char === " " ? "i" : char}`}>
-                        {char}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
                 {/* 기존 텍스트는 isAnyProcessing이 false일 때만 보이도록 */}
                 {!isAnyProcessing && (
                   <>
@@ -584,10 +589,11 @@ return (
                           </tr>
                         ))
                       ) : (
-                        <tr>
-                          <td colSpan="3" className="empty-message">업로드된 문서가 없습니다.</td>
-                        </tr>
-                      )}
+                          <div className="no-message">
+                            업로드된 문서가 없습니다.<br />
+                            문서를 등록해주세요.
+                          </div>
+                        )}
                     </tbody>
                   </table>
                 </div>
@@ -609,17 +615,49 @@ return (
         </div>
 
         {/* 적용 버튼 */}
-        <div className="apply-btn-row">
+      <div className="apply-btn-row">
+          {isAnyProcessing ? (
+            <ProgressingBar />
+          ) : hasOutput ? (
+            // QA System이 구축된 후 - 두 개 버튼을 가로 정렬로 표시
+            <>
+              <button 
+                className="btn-apply-update"
+                onClick={handleUpdate}
+                disabled={isCheckingOutput}
+              > 
+                Update QA System
+              </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleAnalyzer} // 이 함수를 구현해야 함
+                disabled={isCheckingOutput}
+              > 
+                Analyzer
+              </button>
+            </>
+          ) : (
+            // 처음 상태 - Build QA System 버튼만 표시
+            <button 
+              className="btn-apply-update"
+              onClick={handleApply}
+              disabled={isCheckingOutput || hasOutput === null}
+            > 
+              Build QA System
+            </button>
+          )}
+        </div>
+
+        {/* <div className="apply-btn-row">
           <button 
             className="btn-apply-update"
-            onClick={hasOutput ? handleUpdate : handleApply}
             disabled={isAnyProcessing || isCheckingOutput || hasOutput === null}
           > 
-            {isAnyProcessing ? 'QA 생성 중' : 'QA 생성 시작'}
+            progress bar
           </button>
-        </div>
+        </div> */}
         
-        <div className="result-table-section" id="info">
+        {/* <div className="result-table-section" id="info">
           <div className="header-bar">
             <div className="left-group">
               <h2 className="section-title">QA 시스템 정보 보기</h2>
@@ -673,9 +711,9 @@ return (
           ) : (
             <RelationshipTable relationships={filteredRelationships} />
           )}
-        </div>
+        </div> */}
 
-        {/* 그래프 보기 */}
+        {/* 그래프 보기
         <div className="graph-section">
           <h2 className="section-title">QA 시스템 그래프 보기</h2>
           <button
@@ -691,10 +729,11 @@ return (
           <div className="network-chart-wrapper">
             <NetworkChart data={graphData} />
           </div>
-        )}
-        <div className="user-qa-analyze" id="user-questions">
+        )} */}
+        
+        {/* <div className="user-qa-analyze" id="user-questions">
           <h2 className="section-title">유저 질문 분석</h2>
-          {/* <div className="stat-cards">
+          <div className="stat-cards">
             <div className="card card-total-category">
               <div className="card-text">
                 많이 묻는 질문 카테고리<br /><strong>장학금</strong>
@@ -710,11 +749,11 @@ return (
                 평균 만족도<br /><strong>4.7 / 5</strong>
               </div>
             </div>
-          </div> */}
-        </div>
+          </div>
+        </div> */}
 
-        <span className='user-table-info'>*정보 신뢰성: 제공한 정보의 정확성 평가</span>
-        <div className="upload-table-wrapper">
+        {/* <span className='user-table-info'>*정보 신뢰성: 제공한 정보의 정확성 평가</span> */}
+        {/* <div className="upload-table-wrapper">
             <table className="user-table">
               <thead>
                 <tr>
@@ -737,6 +776,7 @@ return (
                   // 모든 QA 항목의 conversations를 펼쳐서 개별 행으로 표시
                   qaHistory.flatMap((qaItem) => 
                     qaItem.conversations?.map((conversation, convIndex) => (
+                      <tr key={`${qaItem.id}-${convIndex}`}>
                         <td>{conversation.question}</td>
                         <td>{conversation.category || qaItem.category || "-"}</td>
                         <td>{conversation.satisfaction || qaItem.satisfaction || "-"}</td>
@@ -751,7 +791,7 @@ return (
                 )}
               </tbody>
             </table>
-          </div>
+          </div> */}
         </div>
         <footer className="site-footer">
           <div className="footer-content">
