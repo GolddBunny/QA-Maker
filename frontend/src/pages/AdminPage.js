@@ -158,66 +158,50 @@ const AdminPage = () => {
         }
         return;
       }
+      
       console.log("현재 admin pageId:", pageId);
 
-      loadUploadedDocs(pageId)
-    .then(docs => setUploadedDocs(docs))
-    .catch(error => {
-      console.error("문서 목록 로드 중 오류:", error);
+      // 페이지가 변경될 때마다 상태 초기화
+      setEntities([]);
+      setRelationships([]);
+      setGraphData(null);
+      setUploadedUrls([]);
       setUploadedDocs([]);
-    });
+      setHasDocuments(false);
+      setHasOutput(null);
 
-  // // 페이지 ID가 유효한 경우에만 데이터 로드
-  // if (pageId) {
-  //   Promise.all([
-  //     loadDocumentsInfo(pageId),
-  //     fetchSavedUrls(pageId),
-  //     checkOutputFolder(pageId),
-  //     loadAllData(pageId),
-  //     fetchGraphData({
-  //       pageId,
-  //       graphDataCacheRef,
-  //       setGraphData
-  //     }),
-  //   ]).catch(error => {
-  //     console.error("데이터 로드 중 오류:", error);
-  //   });
+      loadUploadedDocs(pageId)
+        .then(docs => setUploadedDocs(docs))
+        .catch(error => {
+          console.error("문서 목록 로드 중 오류:", error);
+          setUploadedDocs([]);
+        });
 
-    let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
-    console.log("현재 currentPageId:", pageId);
-    // 페이지 ID가 유효한 경우에만 데이터 로드
-    if (savedPageId) {
-      // 병렬로 데이터 로드 작업 실행
-      Promise.all([
-        loadDocumentsInfo(savedPageId),
-        fetchSavedUrls(savedPageId),
-        checkOutputFolder(savedPageId),
-        loadAllData(savedPageId),
-        fetchGraphData({
-          pageId: savedPageId,
-          graphDataCacheRef,
-          setGraphData
-        }),
-      ]).catch(error => {
-        console.error("데이터 로드 중 오류:", error);
-      });
-      const pages = JSON.parse(localStorage.getItem('pages')) || [];
-      const currentPage = pages.find(page => page.id === savedPageId);
-      if (currentPage) {
-        setDomainName(currentPage.name || "");
-        setSystemName(currentPage.sysname || "");
+      // 페이지 ID가 유효한 경우에만 데이터 로드
+      if (pageId) {
+        // 병렬로 데이터 로드 작업 실행
+        Promise.all([
+          loadDocumentsInfo(pageId),
+          fetchSavedUrls(pageId),
+          checkOutputFolder(pageId),
+          loadAllData(pageId),
+          fetchGraphData({
+            pageId: pageId,
+            graphDataCacheRef,
+            setGraphData
+          }),
+        ]).catch(error => {
+          console.error("데이터 로드 중 오류:", error);
+        });
+        
+        const pages = JSON.parse(localStorage.getItem('pages')) || [];
+        const currentPage = pages.find(page => page.id === pageId);
+        if (currentPage) {
+          setDomainName(currentPage.name || "");
+          setSystemName(currentPage.sysname || "");
+        }
       }
-    }
-  }, [pageId, currentPageId, navigate]);
-//     const pages = JSON.parse(localStorage.getItem('pages')) || [];
-//     const currentPage = pages.find(page => page.id === pageId);
-//     if (currentPage) {
-//       setDomainName(currentPage.name || "");
-//       setSystemName(currentPage.sysname || "");
-//     }
-//   }
-// }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
-
+    }, [pageId, navigate, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
 
     const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
