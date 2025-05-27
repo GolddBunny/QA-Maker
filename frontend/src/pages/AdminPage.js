@@ -203,12 +203,18 @@ const AdminPage = () => {
       setHasOutput(null);
 
 
+      // loadUploadedDocs(pageId)
+      //   .then(docs => setUploadedDocs(docs))
+      //   .catch(error => {
+      //     console.error("문서 목록 로드 중 오류:", error);
+      //     setUploadedDocs([]);
+      //   });
       loadUploadedDocs(pageId)
-        .then(docs => setUploadedDocs(docs))
-        .catch(error => {
-          console.error("문서 목록 로드 중 오류:", error);
-          setUploadedDocs([]);
-        });
+      .then(docs => setUploadedDocs(Array.isArray(docs) ? docs : []))
+      .catch(error => {
+        console.error("문서 목록 로드 중 오류:", error);
+        setUploadedDocs([]);
+      });
 
       // 페이지 ID가 유효한 경우에만 데이터 로드
       if (pageId) {
@@ -564,17 +570,15 @@ const AdminPage = () => {
                         </tr>
                       ))
                     ) : (
-                      <tr>
-                        <td colSpan={2} className="empty-message">
-                          업로드된 URL이 없습니다.<br />
-                          URL을 등록해주세요.
-                        </td>
-                      </tr>
+                      <div className="no-message">
+                        업로드된 문서가 없습니다.<br />
+                        url을 등록해주세요.
+                      </div>
                     )}
                   </tbody>
                 </table>
               </div>
-             <div className='search-firebase-sum'>총 URL 수: {uploadedUrls?.length || 0}</div>
+             <div className='search-firebase-sum'>총 url 수</div> 
             </div>
           
           {/* 오른쪽 문서 섹션 */}
@@ -635,7 +639,7 @@ const AdminPage = () => {
                 <div className="document-table-scroll">
                   <table className="document-table">
                     <tbody>
-                      {uploadedDocs && uploadedDocs.length > 0 ? (
+                      {uploadedDocs.length > 0 ? (
                         
                         sortedDocs.map((doc, index) => (
                           <tr key={index}>
@@ -645,12 +649,10 @@ const AdminPage = () => {
                           </tr>
                         ))
                       ) : (
-                          <tr>
-                            <td colSpan={2} className="empty-message">
-                              업로드된 문서가 없습니다.<br />
-                              문서를 등록해주세요.
-                            </td>
-                          </tr>
+                          <div className="no-message">
+                            업로드된 문서가 없습니다.<br />
+                            문서를 등록해주세요.
+                          </div>
                         )}
                     </tbody>
                   </table>
