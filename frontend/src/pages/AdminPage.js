@@ -5,8 +5,8 @@ import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
+import { useQAHistoryContext } from '../utils/QAHistoryContext'; // QA History Context 추가
 import { FileDropHandler } from '../api/handleFileDrop';
-import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { fetchEntities, fetchRelationships } from '../api/AllParquetView';
 import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
@@ -24,6 +24,7 @@ const PROCESS_URL = `${BASE_URL}/process-documents`;
 const UPDATE_URL = `${BASE_URL}/update`;
 const APPLY_URL = `${BASE_URL}/apply`;
 const URL_URL = `${BASE_URL}`;
+
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -59,7 +60,12 @@ const AdminPage = () => {
       systemName, setSystemName, domainName, setDomainName
      } = usePageContext();
     const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
-    const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
+    // Firebase QA History Context 사용 (pageId 기반, Firebase 사용)
+    const { 
+        qaHistory, 
+        loading: qaLoading, 
+        error: qaError 
+    } = useQAHistoryContext(pageId, true); // useFirestore = true로 설정
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
     const [hasOutput, setHasOutput] = useState(null);
@@ -152,40 +158,50 @@ const AdminPage = () => {
         }
         return;
       }
+      
       console.log("현재 admin pageId:", pageId);
 
-      loadUploadedDocs(pageId)
-    .then(docs => setUploadedDocs(docs))
-    .catch(error => {
-      console.error("문서 목록 로드 중 오류:", error);
+      // 페이지가 변경될 때마다 상태 초기화
+      setEntities([]);
+      setRelationships([]);
+      setGraphData(null);
+      setUploadedUrls([]);
       setUploadedDocs([]);
-    });
+      setHasDocuments(false);
+      setHasOutput(null);
 
-  // 페이지 ID가 유효한 경우에만 데이터 로드
-  if (pageId) {
-    Promise.all([
-      loadDocumentsInfo(pageId),
-      fetchSavedUrls(pageId),
-      checkOutputFolder(pageId),
-      loadAllData(pageId),
-      fetchGraphData({
-        pageId,
-        graphDataCacheRef,
-        setGraphData
-      }),
-    ]).catch(error => {
-      console.error("데이터 로드 중 오류:", error);
-    });
+      loadUploadedDocs(pageId)
+        .then(docs => setUploadedDocs(docs))
+        .catch(error => {
+          console.error("문서 목록 로드 중 오류:", error);
+          setUploadedDocs([]);
+        });
 
-    const pages = JSON.parse(localStorage.getItem('pages')) || [];
-    const currentPage = pages.find(page => page.id === pageId);
-    if (currentPage) {
-      setDomainName(currentPage.name || "");
-      setSystemName(currentPage.sysname || "");
-    }
-  }
-}, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
-
+      // 페이지 ID가 유효한 경우에만 데이터 로드
+      if (pageId) {
+        // 병렬로 데이터 로드 작업 실행
+        Promise.all([
+          loadDocumentsInfo(pageId),
+          fetchSavedUrls(pageId),
+          checkOutputFolder(pageId),
+          loadAllData(pageId),
+          fetchGraphData({
+            pageId: pageId,
+            graphDataCacheRef,
+            setGraphData
+          }),
+        ]).catch(error => {
+          console.error("데이터 로드 중 오류:", error);
+        });
+        
+        const pages = JSON.parse(localStorage.getItem('pages')) || [];
+        const currentPage = pages.find(page => page.id === pageId);
+        if (currentPage) {
+          setDomainName(currentPage.name || "");
+          setSystemName(currentPage.sysname || "");
+        }
+      }
+    }, [pageId, navigate, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
 
     const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
@@ -613,7 +629,6 @@ const AdminPage = () => {
             )}
           </div>
         </div>
-
         {/* 적용 버튼 */}
       <div className="apply-btn-row">
           {isAnyProcessing ? (
@@ -766,28 +781,25 @@ const AdminPage = () => {
               <tbody>
                 {qaLoading ? (
                   <tr>
-                    <td colSpan="4" className="empty-message">로딩 중...</td>
+                    <td colSpan="4">QA 히스토리를 불러오는 중...</td>
                   </tr>
                 ) : qaError ? (
                   <tr>
-                    <td colSpan="4" className="empty-message">오류: {qaError}</td>
+                    <td colSpan="4">QA 히스토리 로드 실패: {qaError}</td>
                   </tr>
-                ) : qaHistory?.length > 0 ? (
-                  // 모든 QA 항목의 conversations를 펼쳐서 개별 행으로 표시
-                  qaHistory.flatMap((qaItem) => 
-                    qaItem.conversations?.map((conversation, convIndex) => (
-                      <tr key={`${qaItem.id}-${convIndex}`}>
-                        <td>{conversation.question}</td>
-                        <td>{conversation.category || qaItem.category || "-"}</td>
-                        <td>{conversation.satisfaction || qaItem.satisfaction || "-"}</td>
-                        <td>{conversation.trust || qaItem.trust || "-"}</td>
-                      </tr>
-                    )) || []
-                  )
-                ) : (
+                ) : qaHistory.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="empty-message">질문 기록이 없습니다.</td>
+                    <td colSpan="4">QA 히스토리가 없습니다.</td>
                   </tr>
+                ) : (
+                  qaHistory.map((item, index) => (
+                    <tr key={item.id || index}>
+                      <td>{item.question}</td>
+                      <td>{item.category || "-"}</td>
+                      <td>{item.satisfaction || "-"}</td>
+                      <td>{item.trust || "-"}</td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
