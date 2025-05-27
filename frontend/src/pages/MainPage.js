@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/MainPage.css";
 import Sidebar from "../components/navigation/Sidebar";
 import { usePageContext } from '../utils/PageContext';
+import { findMainPage } from '../utils/storage';
 
 function MainPage() {
   const { currentPageId, setCurrentPageId } = usePageContext(); 
@@ -21,19 +22,23 @@ function MainPage() {
   const [showUrlInput, setShowUrlInput] = useState(false);
 
   useEffect(() => {
-    // 로컬 스토리지에서 페이지 목록 불러오기
-    const savedPages = JSON.parse(localStorage.getItem('pages')) || [];
-    // "기본 페이지" 찾기
-    const defaultPage = savedPages.find(page => page.type === "main");
-    // "기본 페이지"가 존재하면 해당 ID를 기본 페이지 ID로 설정
-    if (defaultPage) {
-        setCurrentPageId(defaultPage.id);
-        localStorage.setItem('currentPageId', defaultPage.id);
-        console.log("기본 페이지 ID 설정:", defaultPage.id);
-    } else {
-        console.log("기본 페이지를 찾을 수 없습니다.");
+  const fetchMainPage = async () => {
+    try {
+      const mainPage = await findMainPage();
+      if (mainPage) {
+        setCurrentPageId(mainPage.id);
+        localStorage.setItem('currentPageId', mainPage.id);
+        console.log("기본 페이지 ID 설정:", mainPage.id);
+      } else {
+        console.log("기본 페이지를 Firebase에서 찾을 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("메인 페이지 가져오기 중 오류:", error);
     }
-  }, [setCurrentPageId]);
+  };
+
+  fetchMainPage();
+}, [setCurrentPageId]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);

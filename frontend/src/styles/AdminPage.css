@@ -20,7 +20,7 @@
 }
 
 .admin-content.sidebar-open {
-  margin-left: 300px;
+  margin-left: 100px;
 }
 
 .input-container {
@@ -532,11 +532,12 @@ background-color: #e2dbf0;
 
 .document-table th:nth-child(2),
 .document-table td:nth-child(2) {
-  width: 18%;
+  width: 16%;
 }
 
-.category-pill {
+.category-pill-admin {
   background-color: #e0d4fa;
+  color: rgb(59, 59, 59);
   border-radius: 20px;
   padding: 5px 10px;
   display: inline-block;
@@ -548,7 +549,7 @@ background-color: #e2dbf0;
 
 .document-table th:nth-child(3),
 .document-table td:nth-child(3) {
-  width: 17%;
+  width: 20%;
 }
 
 .user-table th:nth-child(1),

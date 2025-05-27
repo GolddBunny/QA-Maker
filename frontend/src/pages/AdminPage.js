@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
@@ -106,6 +105,7 @@ const AdminPage = () => {
         console.error('ProgressingBar 닫을 때 상태 갱신 오류:', error);
       }
     };
+
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
@@ -193,16 +193,6 @@ const AdminPage = () => {
         setShowProgressing(false);
       }
 
-      // 페이지가 변경될 때마다 상태 초기화
-      // setEntities([]);
-      // setRelationships([]);
-      // setGraphData(null);
-      // setUploadedUrls([]);
-      // setUploadedDocs([]);
-      // setHasDocuments(false);
-      // setHasOutput(null);
-
-
       // loadUploadedDocs(pageId)
       //   .then(docs => setUploadedDocs(docs))
       //   .catch(error => {
@@ -240,7 +230,7 @@ const AdminPage = () => {
           setSystemName(currentPage.sysname || "");
         }
       }
-    }, [pageId, navigate, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
+    }, [pageId, navigate]);
 
     const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
@@ -485,7 +475,8 @@ const AdminPage = () => {
         )}
 
         <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        <div className="input-container" id="name">
+          {/* 상단 입력부 */}
+          <div className="input-container" id="name">
             <div className="input-row-horizontal">
               <div className="input-field">
                 <input
@@ -528,7 +519,7 @@ const AdminPage = () => {
                 적용
               </button>
             </div>
-            </div>
+        </div>
       
         <div className="upload-section-wrapper" id="register">
           {/* 왼쪽 URL 섹션 */}
@@ -652,7 +643,7 @@ const AdminPage = () => {
                         sortedDocs.map((doc, index) => (
                           <tr key={index}>
                             <td>{doc.original_filename}</td>
-                            <td><span className="category-pill">{doc.category}</span></td>
+                            <td><span className="category-pill-admin">{doc.category}</span></td>
                             <td>{doc.date}</td>
                           </tr>
                         ))
@@ -718,7 +709,7 @@ const AdminPage = () => {
             <ProgressingBar 
               onClose={handleCloseProgressing}
               onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
-              isCompleted={hasOutput}       // ✅ output이 있을 때만 Analyzer 버튼 보여주기
+              isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
             />
           </div>
         )}
