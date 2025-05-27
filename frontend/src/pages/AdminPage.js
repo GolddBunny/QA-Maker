@@ -5,8 +5,8 @@ import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
+import { useQAHistoryContext } from '../utils/QAHistoryContext'; // QA History Context 추가
 import { FileDropHandler } from '../api/handleFileDrop';
-import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { fetchEntities, fetchRelationships } from '../api/AllParquetView';
 import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
@@ -20,6 +20,7 @@ const PROCESS_URL = `${BASE_URL}/process-documents`;
 const UPDATE_URL = `${BASE_URL}/update`;
 const APPLY_URL = `${BASE_URL}/apply`;
 const URL_URL = `${BASE_URL}`;
+
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -55,7 +56,12 @@ const AdminPage = () => {
       systemName, setSystemName, domainName, setDomainName
      } = usePageContext();
     const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
-    const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
+    // Firebase QA History Context 사용 (pageId 기반, Firebase 사용)
+    const { 
+        qaHistory, 
+        loading: qaLoading, 
+        error: qaError 
+    } = useQAHistoryContext(pageId, true); // useFirestore = true로 설정
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
 
@@ -139,12 +145,8 @@ const AdminPage = () => {
       }
 
       if (currentPageId) {
-        loadUploadedDocs(currentPageId)
-        .then(docs => setUploadedDocs(docs))
-        .catch(error => {
-          console.error("문서 목록 로드 중 오류:", error);
-          setUploadedDocs([]);
-        });
+        const saved = localStorage.getItem(`uploadedDocs_${currentPageId}`);
+        setUploadedDocs(saved ? JSON.parse(saved) : []);
       }
 
       let savedPageId = pageId;  // URL에서 페이지 ID 가져오기
@@ -173,7 +175,7 @@ const AdminPage = () => {
           setSystemName(currentPage.sysname || "");
         }
       }
-    }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
+    }, [pageId, currentPageId, navigate]);
 
 
     const toggleSidebar = () => {
@@ -391,41 +393,8 @@ const AdminPage = () => {
                 }
               }}>적용하기
             </button>
-          </div>
-          
+          </div>         
         </div>
-
-        {/* 상단 통계 카드
-        <div className="stat-cards">
-        <div className="card card-total-url">
-          <div className="card-text">
-            총 URL 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-total-docs">
-          <div className="card-text">
-            총 문서 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-total-entities">
-          <div className="card-text">
-            총 엔티티 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-total-questions">
-          <div className="card-text">
-            사용자 질문 수<br /><strong>43231</strong>
-          </div>
-        </div>
-        <div className="card card-avg-satisfaction">
-          <div className="card-text">
-            평균 만족도<br /><strong>4.7 / 5</strong>
-          </div>
-        </div>
-      </div> */}
-        
-        {/* <h1>{currentPageId ? `페이지 ID: ${currentPageId}` : '페이지를 선택하세요.'}</h1> */}
-
         <div className="upload-section-wrapper">
           {/* 왼쪽 URL 섹션 */}
           <div className="url-upload">
@@ -595,7 +564,6 @@ const AdminPage = () => {
             {isAnyProcessing ? 'QA 생성 중' : 'QA 생성 시작'}
           </button>
         </div>
-        
         <div className="result-table-section">
           <div className="header-bar">
             <div className="left-group">
@@ -703,28 +671,25 @@ const AdminPage = () => {
               <tbody>
                 {qaLoading ? (
                   <tr>
-                    <td colSpan="4" className="empty-message">로딩 중...</td>
+                    <td colSpan="4">QA 히스토리를 불러오는 중...</td>
                   </tr>
                 ) : qaError ? (
                   <tr>
-                    <td colSpan="4" className="empty-message">오류: {qaError}</td>
+                    <td colSpan="4">QA 히스토리 로드 실패: {qaError}</td>
                   </tr>
-                ) : qaHistory?.length > 0 ? (
-                  // 모든 QA 항목의 conversations를 펼쳐서 개별 행으로 표시
-                  qaHistory.flatMap((qaItem) => 
-                    qaItem.conversations?.map((conversation, convIndex) => (
-                      <tr key={`${qaItem.id}-${convIndex}`}>
-                        <td>{conversation.question}</td>
-                        <td>{conversation.category || qaItem.category || "-"}</td>
-                        <td>{conversation.satisfaction || qaItem.satisfaction || "-"}</td>
-                        <td>{conversation.trust || qaItem.trust || "-"}</td>
-                      </tr>
-                    )) || []
-                  )
-                ) : (
+                ) : qaHistory.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="empty-message">질문 기록이 없습니다.</td>
+                    <td colSpan="4">QA 히스토리가 없습니다.</td>
                   </tr>
+                ) : (
+                  qaHistory.map((item, index) => (
+                    <tr key={item.id || index}>
+                      <td>{item.question}</td>
+                      <td>{item.category || "-"}</td>
+                      <td>{item.satisfaction || "-"}</td>
+                      <td>{item.trust || "-"}</td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

@@ -12,15 +12,7 @@ import answerGraphData from '../json/answer_graphml_data.json';
 
 function ChatPage() {
     const { currentPageId, setCurrentPageId } = usePageContext();
-    const { 
-        qaHistory, 
-        loading: qaHistoryLoading, 
-        error: qaHistoryError,
-        addQA, 
-        updateQAHeadlines, 
-        updateSelectedHeadline, 
-        updateQASources 
-    } = useQAHistoryContext();
+    const { qaHistory, addQA, updateQAHeadlines, updateSelectedHeadline, updateQASources } = useQAHistoryContext();
     const [qaList, setQaList] = useState([]);
     const [newQuestion, setNewQuestion] = useState("");
     const [showGraph, setShowGraph] = useState(false);
@@ -129,65 +121,59 @@ function ChatPage() {
         // 현재 QA ID 설정
         setCurrentQaId(qaId);
         
-       // QA 히스토리 로딩 중이면 처리하지 않음
-        if (qaHistoryLoading) {
-            return;
+        // 이전 대화 로드 (qaId가 있는 경우)
+        if (qaId) {
+            loadPreviousQA(qaId);
         }
-        
-        // QA 히스토리 로딩 오류 처리
-        if (qaHistoryError) {
-            console.error("QA 히스토리 로딩 오류:", qaHistoryError);
-            showAlert("오류", "대화 기록을 불러오는 중 오류가 발생했습니다.");
-            return;
+        // 새 질문 처리 (question 파라미터가 있는 경우)
+        else if (initialQuestion && !hasSentInitialQuestion.current) {
+            setNewQuestion(initialQuestion);
+            setTimeout(() => {
+                sendQuestion(initialQuestion);
+            }, 500);
+            hasSentInitialQuestion.current = true;
         }
-        
-        // QA 히스토리 로딩이 완료된 후에만 처리
-        if (qaHistory) {
-            if (qaId) {
-                loadPreviousQA(qaId);
-            } else if (initialQuestion && !hasSentInitialQuestion.current) {
-                setNewQuestion(initialQuestion);
-                setTimeout(() => {
-                    sendQuestion(initialQuestion);
-                }, 500);
-                hasSentInitialQuestion.current = true;
-            }
-        }
-    }, [location.search, currentPageId, qaHistory, qaHistoryLoading, qaHistoryError]);
-
+    }, [location.search, currentPageId]);
+    
     // 이전 대화 로드 함수
     const loadPreviousQA = (qaId) => {
-        try {
-            if (!qaHistory || !Array.isArray(qaHistory)) {
-                console.warn("QA 히스토리가 없거나 유효하지 않습니다.");
-                setQaList([]);
-                return;
-            }
+        // qaHistory에서 해당 ID의 대화 찾기
+        const qaItem = qaHistory.find(qa => qa.id === qaId);
+        
+        if (qaItem) {
+            // 해당 대화의 모든 질문-답변 로드 (정확도와 관련 질문 포함)
+            const conversationsWithDefaults = (qaItem.conversations || []).map(conversation => ({
+                ...conversation,
+                // 정확도 기본값 설정
+                confidence: conversation.confidence || 0.0,
+                localConfidence: conversation.localConfidence || 0.0,
+                globalConfidence: conversation.globalConfidence || 0.0,
+                // 관련 질문 기본값 설정
+                relatedQuestions: conversation.relatedQuestions || [],
+                relatedQuestionsVisible: conversation.relatedQuestionsVisible !== undefined 
+                    ? conversation.relatedQuestionsVisible 
+                    : (conversation.relatedQuestions && conversation.relatedQuestions.length > 0),
+                // 기타 필드들 기본값
+                headlines: conversation.headlines || [],
+                sources: conversation.sources || [],
+                actionButtonVisible: conversation.actionButtonVisible !== undefined ? conversation.actionButtonVisible : true,
+            }));
             
-            const qaItem = qaHistory.find(qa => qa.id === qaId);
+            setQaList(conversationsWithDefaults);
             
-            if (qaItem) {
-                const conversations = qaItem.conversations || [];
-                setQaList(conversations);
-                
-                if (conversations.length > 0) {
-                    const lastConversation = conversations[conversations.length - 1];
-                    setEntities(lastConversation.entities || "");
-                    setRelationships(lastConversation.relationships || "");
-                    setServerResponseReceived(true);
-                }
-                console.log(`대화 로드 완료: ${conversations.length}개 대화`);
-            } else {
-                console.warn(`QA ID ${qaId}에 해당하는 대화를 찾을 수 없습니다.`);
-                setQaList([]);
-                setEntities("");
-                setRelationships("");
-                setServerResponseReceived(false);
+            // 엔티티와 관계 정보 설정 (마지막 대화의 정보 사용)
+            if (conversationsWithDefaults.length > 0) {
+                const lastConversation = conversationsWithDefaults[conversationsWithDefaults.length - 1];
+                setEntities(lastConversation.entities || "");
+                setRelationships(lastConversation.relationships || "");
+                setServerResponseReceived(true);
             }
-        } catch (error) {
-            console.error("이전 대화 로드 중 오류:", error);
-            showAlert("오류", "이전 대화를 불러오는 중 오류가 발생했습니다.");
+        } else {
+            // 해당 ID의 대화가 없으면 빈 배열로 초기화
             setQaList([]);
+            setEntities("");
+            setRelationships("");
+            setServerResponseReceived(false);
         }
     };
 
@@ -422,151 +408,152 @@ function ChatPage() {
                 }
             };
             
-            // 부분 응답 업데이트를 위한 새 함수 추가
-            const updatePartialAnswer = async(type, answer) => {
+            // UI 업데이트 헬퍼 함수
+            const updateQaList = (updateFn) => {
                 setQaList(prevQaList => {
                     const updatedList = [...prevQaList];
                     const lastIndex = updatedList.length - 1;
-                    
-                    if (type === 'local') {
-                        updatedList[lastIndex].localAnswer = answer;
-                    } else if (type === 'global') {
-                        updatedList[lastIndex].globalAnswer = answer;
-                    }
-                    
-                    // 기본 답변 업데이트
-                    updatedList[lastIndex].answer = answer;
-                    
-                    return updatedList;
+                    return updateFn(updatedList, lastIndex);
                 });
-
-                if (answer && answer !== "답변을 불러오는 중..." && answer !== "응답을 받지 못했습니다.") {
-                    try {
-                        console.log(`[${type}] 정확도 서버에 요청 보냄`);
-                        const accuracy = await calculateAccuracy(questionText, answer, type);
-                        console.log(`[${type}] 정확도 응답 받음:`, accuracy);
-                        
-                        // 정확도 업데이트
-                        setQaList(prevQaList => {
-                            const updatedList = [...prevQaList];
-                            const lastIndex = updatedList.length - 1;
-                            
-                            if (type === 'local') {
-                                updatedList[lastIndex].localConfidence = accuracy;
-                            } else if (type === 'global') {
-                                updatedList[lastIndex].globalConfidence = accuracy;
-                            }
-                            
-                            // 현재 보고 있는 답변 타입의 정확도로 confidence 업데이트
-                            // if (type === 'local') {
-                            //     updatedList[lastIndex].confidence = accuracy;
-                            // }
-                            const currentDisplayedAnswer = updatedList[lastIndex].answer;
-                            if (currentDisplayedAnswer === answer) {
-                                updatedList[lastIndex].confidence = accuracy;
-                            }
-                            
-                            return updatedList;
-                        });
-                    } catch (error) {
-                        console.error(`${type} 정확도 계산 중 오류:`, error);
-                    }
-                }
             };
 
             try {
-                // 로컬 응답과 글로벌 응답을 먼저 가져오기
-                console.log("로컬 및 글로벌 응답 요청 시작");
-                let localData, globalData;
-                
+                // 1. 로컬 답변 요청 및 즉시 표시
+                console.log("1. 로컬 응답 요청 시작");
+                const localStartTime = performance.now();
+                let localAnswer = "응답을 받지 못했습니다.";
                 try {
-                    localData = await fetchLocalResponse();
-                    console.log("로컬 응답 받음:", localData);
+                    const localData = await fetchLocalResponse();
+                    const localEndTime = performance.now();
+                    console.log(`1. 로컬 응답 완료 (${(localEndTime - localStartTime).toFixed(2)}ms):`, localData);
                     
-                    // 로컬 응답이 성공적으로 도착하면 즉시 UI 업데이트
                     if (localData && localData.response) {
-                        const localAnswer = localData.response;
-                        await updatePartialAnswer('local', localAnswer);
+                        localAnswer = localData.response;
+                        updateQaList((updatedList, lastIndex) => {
+                            updatedList[lastIndex].localAnswer = localAnswer;
+                            updatedList[lastIndex].answer = localAnswer;
+                            return updatedList;
+                        });
+                        console.log("1. 로컬 답변 화면 표시 완료");
                     }
                 } catch (localError) {
-                    console.error("로컬 응답 요청 실패:", localError);
-                    localData = { response: "로컬 응답을 받지 못했습니다." };
+                    const localEndTime = performance.now();
+                    console.error(`1. 로컬 응답 요청 실패 (${(localEndTime - localStartTime).toFixed(2)}ms):`, localError);
                 }
-                
-                try {
-                    globalData = await fetchGlobalResponse();
-                    console.log("글로벌 응답 받음:", globalData);
-                    
-                    // 글로벌 응답이 성공적으로 도착하면 즉시 UI 업데이트
-                    if (globalData && globalData.response) {
-                        const globalAnswer = globalData.response;
-                        await updatePartialAnswer('global', globalAnswer);
-                    }
-                } catch (globalError) {
-                    console.error("글로벌 응답 요청 실패:", globalError);
-                    globalData = { response: "글로벌 응답을 받지 못했습니다." };
-                }
-                
-                // 최종 응답 정보 추출
-                const localAnswer = localData?.response || "응답을 받지 못했습니다.";
-                const globalAnswer = globalData?.response || "응답을 받지 못했습니다.";
-                
-                // 나머지 데이터 가져오기
-                let headlinesList = [];
+
+                // 2. 관련 질문 요청 및 표시
+                console.log("2. 관련 질문 요청 시작");
+                const relatedStartTime = performance.now();
                 let relatedQuestions = [];
-                
-                try {
-                    headlinesList = await fetchHeadlinesForAnswer();
-                    console.log("근거 문서 목록 받음:", headlinesList);
-                } catch (headlinesError) {
-                    console.error("근거 문서 목록 요청 실패:", headlinesError);
-                }
-                
                 try {
                     relatedQuestions = await fetchRelatedQuestions();
-                    //console.log("관련 질문 받음:", relatedQuestions);
-                } catch (questionsError) {
-                    console.error("관련 질문 요청 실패:", questionsError);
-                }
-                
-                // 소스 URL 추출 (로컬 답변에서)
-                const sourcesData = await extractSourcesFromAnswer(localAnswer, currentPageId);
-                console.log("추출된 소스 URL:", sourcesData);
-                
-                // 여기에 updateQASources 추가 (현재 QA ID가 있는 경우에만)
-                if (sourcesData && sourcesData.length > 0 && currentQaId) {
-                    try {
-                        await updateQASources(currentQaId, qaList.length - 1, sourcesData);
-                        console.log("소스 정보 Firebase 저장 완료");
-                    } catch (error) {
-                        console.error("소스 정보 업데이트 실패:", error);
+                    const relatedEndTime = performance.now();
+                    console.log(`2. 관련 질문 완료 (${(relatedEndTime - relatedStartTime).toFixed(2)}ms):`, relatedQuestions);
+                    
+                    if (relatedQuestions.length > 0) {
+                        updateQaList((updatedList, lastIndex) => {
+                            updatedList[lastIndex].relatedQuestions = relatedQuestions;
+                            updatedList[lastIndex].relatedQuestionsVisible = true;
+                            return updatedList;
+                        });
+                        console.log("2. 관련 질문 화면 표시 완료");
                     }
+                } catch (questionsError) {
+                    const relatedEndTime = performance.now();
+                    console.error(`2. 관련 질문 요청 실패 (${(relatedEndTime - relatedStartTime).toFixed(2)}ms):`, questionsError);
                 }
-                // 최종 업데이트
-                updateLastAnswer(localAnswer, globalAnswer, "", "", headlinesList, sourcesData);
+
+                // 3. 근거 문서 요청 및 표시
+                console.log("3. 근거 문서 요청 시작");
+                const headlinesStartTime = performance.now();
+                let headlinesList = [];
+                try {
+                    headlinesList = await fetchHeadlinesForAnswer();
+                    const headlinesEndTime = performance.now();
+                    console.log(`3. 근거 문서 완료 (${(headlinesEndTime - headlinesStartTime).toFixed(2)}ms):`, headlinesList);
+                    
+                    if (headlinesList.length > 0) {
+                        updateQaList((updatedList, lastIndex) => {
+                            updatedList[lastIndex].headlines = headlinesList;
+                            updatedList[lastIndex].selectedHeadline = headlinesList[0];
+                            return updatedList;
+                        });
+                        console.log("3. 근거 문서 화면 표시 완료");
+                    }
+                } catch (headlinesError) {
+                    const headlinesEndTime = performance.now();
+                    console.error(`3. 근거 문서 목록 요청 실패 (${(headlinesEndTime - headlinesStartTime).toFixed(2)}ms):`, headlinesError);
+                }
+
+                // 4. 그래프 버튼 표시 (소스 URL 추출)
+                console.log("4. 그래프 버튼(소스 URL 추출) 시작");
+                const sourcesStartTime = performance.now();
+                let sourcesData = [];
+                try {
+                    sourcesData = await extractSourcesFromAnswer(localAnswer, currentPageId);
+                    const sourcesEndTime = performance.now();
+                    console.log(`4. 소스 URL 추출 완료 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesData);
+                    
+                    updateQaList((updatedList, lastIndex) => {
+                        updatedList[lastIndex].sources = sourcesData;
+                        updatedList[lastIndex].actionButtonVisible = true;
+                        return updatedList;
+                    });
+                    console.log("4. 그래프 버튼 화면 표시 완료");
+                } catch (sourcesError) {
+                    const sourcesEndTime = performance.now();
+                    console.error(`4. 소스 URL 추출 실패 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesError);
+                }
+
+                // 5. 로컬 정확도 계산 및 표시
+                console.log("5. 로컬 정확도 계산 시작");
+                const accuracyStartTime = performance.now();
+                if (localAnswer && localAnswer !== "답변을 불러오는 중..." && localAnswer !== "응답을 받지 못했습니다.") {
+                    try {
+                        const accuracy = await calculateAccuracy(questionText, localAnswer, 'local');
+                        const accuracyEndTime = performance.now();
+                        console.log(`5. 로컬 정확도 계산 완료 (${(accuracyEndTime - accuracyStartTime).toFixed(2)}ms):`, accuracy);
+                        
+                        updateQaList((updatedList, lastIndex) => {
+                            updatedList[lastIndex].localConfidence = accuracy;
+                            updatedList[lastIndex].confidence = accuracy;
+                            return updatedList;
+                        });
+                        console.log("5. 로컬 정확도 화면 표시 완료");
+                    } catch (accuracyError) {
+                        const accuracyEndTime = performance.now();
+                        console.error(`5. 로컬 정확도 계산 실패 (${(accuracyEndTime - accuracyStartTime).toFixed(2)}ms):`, accuracyError);
+                    }
+                } else {
+                    console.log("5. 로컬 정확도 계산 건너뜀 (유효하지 않은 답변)");
+                }
+
+                // 6. 글로벌 답변 요청 및 표시 (정확도 제외)
+                console.log("6. 글로벌 답변 요청 시작");
+                const globalStartTime = performance.now();
+                let globalAnswer = "응답을 받지 못했습니다.";
+                try {
+                    const globalData = await fetchGlobalResponse();
+                    const globalEndTime = performance.now();
+                    console.log(`6. 글로벌 응답 완료 (${(globalEndTime - globalStartTime).toFixed(2)}ms):`, globalData);
+                    
+                    if (globalData && globalData.response) {
+                        globalAnswer = globalData.response;
+                        updateQaList((updatedList, lastIndex) => {
+                            updatedList[lastIndex].globalAnswer = globalAnswer;
+                            return updatedList;
+                        });
+                        console.log("6. 글로벌 답변 화면 표시 완료");
+                    }
+                } catch (globalError) {
+                    const globalEndTime = performance.now();
+                    console.error(`6. 글로벌 응답 요청 실패 (${(globalEndTime - globalStartTime).toFixed(2)}ms):`, globalError);
+                }
+
                 setServerResponseReceived(true);
                 
-                // 그래프 및 관련 질문 버튼 표시
-                setQaList(prevQaList => {
-                    const updatedList = [...prevQaList];
-                    const lastIndex = updatedList.length - 1;
-                    const fallbackAnswer = relatedQuestions.length > 0 ? "관련 질문을 확인해보세요." : "답변을 받지 못했습니다.";
-                    const finalAnswer = globalAnswer !== "응답을 받지 못했습니다." ? globalAnswer :
-                        localAnswer !== "응답을 받지 못했습니다." ? localAnswer :
-                        fallbackAnswer;
-                    updatedList[lastIndex] = {
-                        ...updatedList[lastIndex],
-                        answer: finalAnswer,
-                        actionButtonVisible: true,
-                        relatedQuestionsVisible: relatedQuestions.length > 0,
-                        relatedQuestions: relatedQuestions,
-                    };
-
-                    return updatedList;
-                });
-                setServerResponseReceived(true);
                 // 대화 히스토리에 저장
-                await saveToQAHistory(questionText, localAnswer, globalAnswer, "", "", headlinesList, sourcesData);
+                saveToQAHistory(questionText, localAnswer, globalAnswer, "", "", headlinesList, sourcesData, relatedQuestions);
                 
             } catch (error) {
                 console.error("네트워크 오류:", error);
@@ -591,82 +578,69 @@ function ChatPage() {
     };
 
     // QA 히스토리에 저장하는 함수
-    const saveToQAHistory = async (question, localAnswer, globalAnswer, entities, relationships, headlines, sources) => {
-        try {
-            const params = new URLSearchParams(location.search);
-            const qaId = params.get("qaId");
-            const timestamp = new Date().toISOString();
-            
-            // 마지막 항목의 정확도 가져오기
-            const currentQaList = qaList;
-            const lastQa = currentQaList[currentQaList.length - 1];
-            
-            const newConversation = {
-                question,
-                answer: localAnswer,
-                localAnswer,
-                globalAnswer,
-                timestamp,
-                entities,
-                relationships,
-                actionButtonVisible: true,
-                relatedQuestionsVisible: true,
-                confidence: lastQa?.localConfidence || 0,
-                localConfidence: lastQa?.localConfidence || 0,
-                globalConfidence: lastQa?.globalConfidence || 0,
-                headlines: headlines || [],
-                sources: sources || [],
-            };
-            
-            if (qaId) {
-                // 기존 대화에 추가
-                const existingQA = qaHistory?.find(qa => qa.id === qaId);
-                if (existingQA) {
-                    const updatedConversations = [...(existingQA.conversations || []), newConversation];
-                    await addQA({
-                        ...existingQA,
-                        conversations: updatedConversations,
-                        timestamp: timestamp
-                    });
-                    console.log("기존 대화에 추가 완료");
-                } else {
-                    console.warn("기존 QA를 찾을 수 없어 새로운 대화로 생성합니다.");
-                    // 새로운 대화로 생성
-                    const newQAId = `qa-${Date.now()}`;
-                    const newQAItem = {
-                        id: newQAId,
-                        pageId: currentPageId,
-                        question: question,
-                        timestamp: timestamp,
-                        conversations: [newConversation]
-                    };
-                    await addQA(newQAItem);
-                    setCurrentQaId(newQAId);
-                    navigate(`/chat?qaId=${newQAId}`, { replace: true });
-                }
-            } else {
-                // 새로운 대화 생성
-                const newQAId = `qa-${Date.now()}`;
-                const newQAItem = {
-                    id: newQAId,
-                    pageId: currentPageId,
-                    question: question,
-                    timestamp: timestamp,
-                    conversations: [newConversation]
-                };
-                await addQA(newQAItem);
-                setCurrentQaId(newQAId);
-                navigate(`/chat?qaId=${newQAId}`, { replace: true });
-                console.log("새 대화 생성 완료:", newQAId);
+    const saveToQAHistory = (question, localAnswer, globalAnswer, entities, relationships, headlines, sources, relatedQuestions = []) => {
+        const params = new URLSearchParams(location.search);
+        const qaId = params.get("qaId");
+        
+        // 현재 날짜/시간
+        const timestamp = new Date().toISOString();
+        //마지막 항목의 정확도 가져오기
+        const currentQaList = qaList;
+        const lastQa = currentQaList[currentQaList.length - 1];
+        // 새 대화 항목
+        const newConversation = {
+            question,
+            answer: localAnswer, // 기본 답변은 로컬 답변으로 설정
+            localAnswer,
+            globalAnswer,
+            timestamp,
+            entities,
+            relationships,
+            actionButtonVisible: true,
+            relatedQuestionsVisible: relatedQuestions.length > 0,
+            // 정확도 정보 완전히 저장 (글로벌 정확도 제외)
+            confidence: lastQa?.localConfidence || 0.0,
+            localConfidence: lastQa?.localConfidence || 0.0,
+            globalConfidence: null, // 글로벌 정확도는 계산하지 않음
+            // 관련 질문 저장
+            relatedQuestions: relatedQuestions || [],
+            headlines: headlines || [], // 근거 문서 목록 추가
+            sources: sources || [], // 소스 URL 정보 추가
+        };
+        
+        if (qaId) {
+            // 기존 대화에 추가
+            const existingQA = qaHistory.find(qa => qa.id === qaId);
+            if (existingQA) {
+                const updatedConversations = [...(existingQA.conversations || []), newConversation];
+                // localStorage와 Firebase 모두에 저장
+                addQA({
+                    ...existingQA,
+                    conversations: updatedConversations,
+                    timestamp: timestamp // 타임스탬프 업데이트
+                }, true); // Firebase에도 저장
             }
-        } catch (error) {
-            console.error("QA 히스토리 저장 실패:", error);
-            showAlert("저장 오류", "대화 내용을 저장하는 중 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.");
+        } else {
+            // 새로운 대화 생성
+            const newQAId = `qa-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            // localStorage와 Firebase 모두에 저장
+            addQA({
+                id: newQAId,
+                pageId: currentPageId,
+                question: question,
+                timestamp: timestamp,
+                conversations: [newConversation]
+            }, true); // Firebase에도 저장
+            
+            // 현재 QA ID 업데이트
+            setCurrentQaId(newQAId);
+            // URL 업데이트 (새 qaId)
+            navigate(`/chat?qaId=${newQAId}`, { replace: true });
         }
     };
 
     // 최신 질문의 답변 업데이트
-    const updateLastAnswer = (localAnswer, globalAnswer, newEntities, newRelationships, headlines, sources) => {
+    const updateLastAnswer = (localAnswer, globalAnswer, newEntities, newRelationships, headlines, sources, relatedQuestions = []) => {
         setQaList((prevQaList) => {
             if (prevQaList.length === 0) return prevQaList;
 
@@ -674,7 +648,6 @@ function ChatPage() {
             const lastIndex = newList.length - 1;
 
             const existingLocalConfidence = newList[lastIndex].localConfidence;
-            const existingGlobalConfidence = newList[lastIndex].globalConfidence;
 
             newList[lastIndex] = {
                 ...newList[lastIndex],
@@ -683,13 +656,13 @@ function ChatPage() {
                 globalAnswer: globalAnswer || "글로벌 답변을 불러오는 중...",
                 confidence: existingLocalConfidence,
                 localConfidence: existingLocalConfidence,
-                globalConfidence: existingGlobalConfidence,
+                globalConfidence: null, // 글로벌 정확도는 계산하지 않음
                 entities: newEntities,
                 relationships: newRelationships,
                 headlines: headlines || [], // 근거 문서 목록 추가
                 selectedHeadline: headlines && headlines.length > 0 ? headlines[0] : '', // 기본 선택 근거 문서
                 sources: sources || [], // 소스 URL 정보 추가
-                
+                relatedQuestions: relatedQuestions || [], // 관련 질문 추가
             };
             return newList;
         });
@@ -713,23 +686,12 @@ function ChatPage() {
             return;
         }
 
-        // 가장 최근 메시지(마지막 메시지) 가져오기
-        if (!qaList || qaList.length === 0) {
-            console.error("질문 목록이 없습니다.");
-            showAlert("오류", "질문 데이터를 찾을 수 없습니다.");
-            return;
-        }
-
-        const latestMessage = qaList[qaList.length - 1];
-        const messageEntities = latestMessage.entities || "";
-        const messageRelationships = latestMessage.relationships || "";
-
         try {
             setIsLoading(true);
-            console.log(`최신 메시지의 그래프 데이터 로딩 시작`);
+            console.log("그래프 데이터 로딩 시작");
 
-            const cacheKey = `${messageEntities}-${messageRelationships}`;
-                        
+            const cacheKey = `${entities}-${relationships}`;
+            
             if (graphDataCacheRef.current[cacheKey]) {
                 console.log("메모리 캐시에서 그래프 데이터 로드");
                 setGraphData(graphDataCacheRef.current[cacheKey]);
@@ -839,30 +801,30 @@ function ChatPage() {
         setIsSidebarOpen(!isSidebarOpen);
     };
     
-    // 근거 문서 목록 가져오기 또는 저장소에서 불러오기
+    // 근거 문서 목록 가져오기 또는 로컬 저장소에서 불러오기
+    // headline 가져올 때도 localStorage만 사용
     const fetchHeadlinesForMessage = async (index) => {
+        const currentQA = qaList[index];
+        
+        // 이미 해당 메시지에 headline 정보가 있는지 확인
+        if (currentQA && currentQA.headlines && currentQA.headlines.length > 0) {
+            return currentQA.headlines;
+        }
+        
+        // localStorage에서 현재 QA와 대화 인덱스로 headline 정보를 찾음
+        if (currentQaId) {
+            const qaItem = qaHistory.find(qa => qa.id === currentQaId);
+            if (qaItem && qaItem.conversations && qaItem.conversations[index] && 
+                qaItem.conversations[index].headlines && 
+                qaItem.conversations[index].headlines.length > 0) {
+                return qaItem.conversations[index].headlines;
+            }
+        }
+        
+        // 서버에서 headline 정보 가져오기
+        setHeadlinesLoading(true);
         try {
-            const currentQA = qaList[index];
-            
-            // 이미 해당 메시지에 headline 정보가 있는지 확인
-            if (currentQA && currentQA.headlines && currentQA.headlines.length > 0) {
-                return currentQA.headlines;
-            }
-            
-            // QA 히스토리에서 현재 QA와 대화 인덱스로 headline 정보를 찾음
-            if (currentQaId && qaHistory) {
-                const qaItem = qaHistory.find(qa => qa.id === currentQaId);
-                if (qaItem && qaItem.conversations && qaItem.conversations[index] && 
-                    qaItem.conversations[index].headlines && 
-                    qaItem.conversations[index].headlines.length > 0) {
-                    return qaItem.conversations[index].headlines;
-                }
-            }
-            
-            // 서버에서 headline 정보 가져오기
-            setHeadlinesLoading(true);
             const response = await fetch(`http://localhost:5000/api/context-sources?page_id=${currentPageId}`);
-            
             if (!response.ok) {
                 throw new Error(`서버 응답 오류: ${response.status}`);
             }
@@ -877,19 +839,12 @@ function ChatPage() {
                 throw new Error("사용 가능한 headline이 없습니다");
             }
             
-            // Firebase에 헤드라인 정보 저장 (오류 처리 추가) 
-            if (currentQaId) {
-                try {
-                    await updateQAHeadlines(currentQaId, index, data.headlines);
-                    console.log("헤드라인 정보 Firebase 저장 완료");
-                } catch (saveError) {
-                    console.error("헤드라인 정보 Firebase 저장 실패:", saveError);
-                    // 저장 실패해도 UI는 계속 동작하도록 함
-                }
+            if (currentQaId) { 
+                // 가져온 headline 정보 QA 히스토리에 저장 (localStorage와 Firebase 모두)
+                updateQAHeadlines(currentQaId, index, data.headlines, true); // Firebase에도 저장
             }
             
-            // 현재 대화 목록에 headline 정보 추가
-            setQaList(prevQaList => {
+            setQaList(prevQaList => { // 현재 대화 목록에도 headline 정보 추가
                 const updatedList = [...prevQaList];
                 if (updatedList[index]) {
                     updatedList[index].headlines = data.headlines;
@@ -902,7 +857,6 @@ function ChatPage() {
             
         } catch (error) {
             console.error("headline 목록 가져오기 실패:", error);
-            setDocumentErrorMessage(`근거 문서를 불러올 수 없습니다: ${error.message}`);
             return [];
         } finally {
             setHeadlinesLoading(false);
@@ -1073,41 +1027,23 @@ function ChatPage() {
         });
     };
 
-    // headline 선택
-    const handleHeadlineSelect = async (headline) => {
-        try {
-            setSelectedHeadline(headline);
-            await updateDocumentUrl(headline);
-            
-            // Firebase에 선택된 headline 저장
-            if (currentQaId && currentMessageIndex !== null) {
-                try {
-                    await updateSelectedHeadline(currentQaId, currentMessageIndex, headline);
-                    console.log("선택된 헤드라인 Firebase 저장 완료");
-                    
-                    // 현재 대화 목록에 선택된 headline 업데이트
-                    setQaList(prevQaList => {
-                        const updatedList = [...prevQaList];
-                        if (updatedList[currentMessageIndex]) {
-                            updatedList[currentMessageIndex].selectedHeadline = headline;
-                        }
-                        return updatedList;
-                    });
-                } catch (saveError) {
-                    console.error("선택된 헤드라인 Firebase 저장 실패:", saveError);
-                    // Firebase 저장 실패해도 로컬 상태는 업데이트
-                    setQaList(prevQaList => {
-                        const updatedList = [...prevQaList];
-                        if (updatedList[currentMessageIndex]) {
-                            updatedList[currentMessageIndex].selectedHeadline = headline;
-                        }
-                        return updatedList;
-                    });
+    // headline 업데이트 시 localStorage, firebase 사용
+    const handleHeadlineSelect = (headline) => {
+        setSelectedHeadline(headline);
+        updateDocumentUrl(headline); // PDF URL 대신 document URL로 업데이트
+        
+        // 현재 선택된 headline 저장 (localStorage와 Firebase 모두)
+        if (currentQaId && currentMessageIndex !== null) {
+            // QA 히스토리에 선택된 headline 업데이트 (Firebase에도 저장)
+            updateSelectedHeadline(currentQaId, currentMessageIndex, headline, true); // Firebase에도 저장
+            // 현재 대화 목록에 선택된 headline 업데이트
+            setQaList(prevQaList => {
+                const updatedList = [...prevQaList];
+                if (updatedList[currentMessageIndex]) {
+                    updatedList[currentMessageIndex].selectedHeadline = headline;
                 }
-            }
-        } catch (error) {
-            console.error("헤드라인 선택 중 오류:", error);
-            showAlert("오류", "문서 선택 중 오류가 발생했습니다.");
+                return updatedList;
+            });
         }
     };
     
@@ -1230,7 +1166,7 @@ function ChatPage() {
             
             <div className={`chat-container ${showGraph || showDocument ? "shift-left" : ""} ${isSidebarOpen ? "sidebar-open" : ""}`}>
                 <div className="domain-name">
-                    <h2>{systemName + " QA 시스템" || "QA시스템"}</h2>
+                    <h2>{systemName + " 한성대 QA 시스템" || "한성대 QA 시스템"}</h2>
                 </div>
                 <div className="chat-messages">
                     {qaList.map((qa, index) => (

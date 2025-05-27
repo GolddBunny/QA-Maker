@@ -59,50 +59,20 @@ def add_url(page_id):
         if not url:
             return jsonify({"success": False, "error": "입력된 URL이 없습니다."}), 400
         
-        save_url_to_firebase(page_id, url) # firebase에 저장
-
         # 1. URL 저장
-        # saved_urls = url_manager.add_url(page_id, url)
-        # print(f"페이지 '{page_id}'에 URL이 성공적으로 저장되었습니다: {url}")
-        
-        # 2. 크롤링 실행
-        print(f"크롤링 시작: {url}")
-        start_time = time.time()
-        
-        try:
-            saved_files, saved_attachments = crawl_main(url)
-            
-            crawl_result = {
-                "url": url,
-                "status": "success",
-                "saved_files": len(saved_files),
-                "saved_attachments": len(saved_attachments)
-            }
-            
-        except Exception as e:
-            crawl_result = {
-                "url": url,
-                "status": "error",
-                "error": str(e)
-            }
-        
-        execution_time = time.time() - start_time
-        print(f"크롤링 완료. 총 실행 시간: {execution_time}초")
-        
-        # Firebase에서 최신 URL 목록 다시 조회
+        save_url_to_firebase(page_id, url)
+
+        # 2. 저장된 URL 목록 조회
         saved_urls = get_urls_from_firebase(page_id)
 
         return jsonify({
             "success": True,
-            "message": "URL 저장 및 크롤링 완료",
-            "urls": saved_urls,
-            "crawl_result": crawl_result,
-            "execution_time": execution_time
+            "message": "URL 저장 완료",
+            "urls": saved_urls
         }), 200
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": f"URL 저장 및 크롤링 중 오류 발생: {str(e)}"}), 500
 
+    except Exception as e:
+        return jsonify({"success": False, "error": f"URL 저장 중 오류 발생: {str(e)}"}), 500
 
 #url 목록 불러오기
 @url_load_bp.route('/get-urls/<page_id>', methods=['GET'])

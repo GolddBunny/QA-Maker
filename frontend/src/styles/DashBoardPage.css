@@ -1,0 +1,675 @@
+/* 헤더 스타일 */
+.dashboard-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-header-content {
+  height: 100%;
+  max-width: 100%;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 돌아가기 버튼 스타일 */
+.back-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.back-button:active {
+  transform: translateY(0);
+}
+
+.dashboard-logo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.dashboard-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.dashboard-nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* 대시보드 컨테이너 및 콘텐츠 여백 조정 */
+.dashboard-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding-top: 80px; /* 헤더 높이만큼 패딩 추가 */
+}
+
+.dashboard-content {
+  padding: 60px 55px 55px;
+  max-width: 85%;
+  margin: 0 auto;
+  transition: margin-left 0.3s ease;
+}
+
+.dashboard-content.sidebar-open {
+  margin-left: 280px;
+}
+
+/* 통계 섹션 */
+.stats-section {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f0f0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.url-card::before {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.docs-card::before {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.entities-card::before {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.relations-card::before {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.time-card::before {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.stat-icon {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #e8f5e8;
+    color: #2d8f2d;
+}
+
+.stat-change.positive {
+    background: #e8f5e8;
+    color: #2d8f2d;
+}
+
+.stat-change.negative {
+    background: #ffeaea;
+    color: #d32f2f;
+}
+
+.stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+/* URL 리스트 섹션 개선 */
+.url-list-section {
+    padding: 30px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.section-title-with-icon {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.section-title-with-icon .icon {
+    margin-right: 10px;
+    font-size: 24px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-width: 300px;
+}
+
+.search-box .search-icon {
+    margin-right: 8px;
+    color: #7f8c8d;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.search-box input::placeholder {
+    color: #bdc3c7;
+}
+
+/* URL 테이블 스타일 */
+.url-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+}
+
+.url-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.url-table thead {
+    background: #f8f9fa;
+}
+
+.url-table th {
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.url-table tbody tr {
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+}
+
+.url-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.url-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.url-table td {
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #495057;
+    vertical-align: middle;
+}
+
+.url-summary {
+    color: #6c757d;
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 400px;
+}
+
+.date-text {
+    color: #6c757d;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.empty-state .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* 시스템 정보 헤더 여백 조정 */
+.system-info-header {
+  margin-bottom: 32px; /* 아래 여백 추가 */
+}
+
+/* URL 목록과 문서 목록 섹션 사이 여백 늘리기 */
+.url-section,
+.document-section,
+.result-table-section {
+  margin-bottom: 60px; /* 섹션 간 간격 넓힘 */
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .stat-card:nth-child(4),
+    .stat-card:nth-child(5) {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: auto;
+    }
+    
+    .url-table th:nth-child(2),
+    .url-table td:nth-child(2) {
+        display: none;
+    }
+}
+
+/* 문서 목록 섹션 스타일 */
+.document-section {
+    padding: 30px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 60px;
+}
+
+/* QA 시스템 정보 보기 섹션 스타일 */
+.result-table-section {
+    padding: 30px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 60px;
+}
+
+/* 그래프 섹션 스타일 */
+.graph-section {
+    padding: 30px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 60px;
+}
+
+/* 헤더 컨트롤 영역 */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.search-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* 탭 스타일 개선 */
+.result-tabs {
+    display: flex;
+    background: white;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f0f0f0;
+}
+
+.result-tabs .tab {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.result-tabs .tab:hover {
+    color: #495057;
+    background: #f8f9fa;
+}
+
+.result-tabs .tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+/* 엔티티 카운트 스타일 */
+.entity-count {
+    background: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    border: 1px solid #f0f0f0;
+}
+
+/* 카테고리 필 스타일 */
+.category-pill {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* 네트워크 차트 래퍼 스타일 */
+.network-chart-wrapper {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    min-height: 400px;
+    border: none;
+}
+
+/* 테이블 스크롤 래퍼 */
+.table-scroll-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 8px;
+}
+
+/* 스크롤바 스타일링 */
+.table-scroll-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 엔티티 타이틀 스타일 */
+.entity-title {
+    display: block;
+    max-width: 10px;
+}
+
+/* 엔티티 ID 스타일 */
+.entity-id {
+    background: #f8f9fa;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 100;
+}
+
+/* 로딩 및 에러 메시지 스타일 */
+.loading-message, .error-message {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.error-message {
+    color: #dc3545;
+}
+
+/* 테이블 스크롤 래퍼 스타일 */
+.table-scroll-wrapper {
+    max-height: 500px; /* 테이블 최대 높이 설정 */
+    overflow-y: auto; /* 세로 스크롤 활성화 */
+    overflow-x: auto; /* 가로 스크롤 활성화 (필요시) */
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    position: relative;
+}
+
+/* 스크롤바 스타일링 (Webkit 기반 브라우저) */
+.table-scroll-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 테이블 내부에서 헤더 고정 */
+.table-scroll-wrapper .url-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    border: none;
+}
+
+.table-scroll-wrapper .url-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table-scroll-wrapper .url-table thead th {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    white-space: nowrap;
+}
+
+.table-scroll-wrapper .url-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-scroll-wrapper .url-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table-scroll-wrapper .url-table tbody td {
+    padding: 12px 16px;
+    vertical-align: top;
+}
+
+/* 로딩 및 에러 메시지 스타일 */
+.loading-message, .error-message {
+    padding: 40px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.error-message {
+    color: #dc3545;
+}
+
+/* 빈 상태 스타일 */
+.empty-state {
+    padding: 40px;
+    text-align: center;
+    color: #666;
+}
+
+.empty-state .empty-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* 추가적인 테이블 스타일 개선 */
+.url-link {
+    color: #007bff;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.url-link:hover {
+    text-decoration: underline;
+}
+
+.url-summary {
+    max-width: 300px;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.date-text {
+    color: #666;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.entity-id {
+    font-family: monospace;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.category-pill {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
