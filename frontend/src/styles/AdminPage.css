@@ -20,7 +20,7 @@
 }
 
 .admin-content.sidebar-open {
-  margin-left: 300px;
+  margin-left: 100px;
 }
 
 .input-container {
@@ -63,7 +63,7 @@
 .input-field input {
   padding: 8px 10px;
   font-size: 16px;
-  border: 1px solid #ddd;
+  border: 2px solid #b59ddd;
   border-radius: 8px;
   outline: none;
 }
@@ -222,11 +222,8 @@ background-color: #e2dbf0;
 .apply-btn-row {
   display: flex;
   justify-content: center;
+  gap: 1em;
   padding-top: 50px;
-}
-.apply-btn-row > button {
-  flex: 1; /* 버튼들이 동일한 너비를 가지도록 */
-  max-width: 200px;
 }
 
 
@@ -466,6 +463,13 @@ background-color: #e2dbf0;
   text-align: center;
   padding: 20px;
 }
+
+.search-firebase-sum {
+    margin-top: '10px';
+    font-weight: '600';
+    color: '#444'
+}
+
 .upload-table, .document-table, .user-table {
   width: 100%;
   border-collapse: collapse;
@@ -528,11 +532,12 @@ background-color: #e2dbf0;
 
 .document-table th:nth-child(2),
 .document-table td:nth-child(2) {
-  width: 18%;
+  width: 16%;
 }
 
-.category-pill {
+.category-pill-admin {
   background-color: #e0d4fa;
+  color: rgb(59, 59, 59);
   border-radius: 20px;
   padding: 5px 10px;
   display: inline-block;
@@ -544,7 +549,7 @@ background-color: #e2dbf0;
 
 .document-table th:nth-child(3),
 .document-table td:nth-child(3) {
-  width: 17%;
+  width: 20%;
 }
 
 .user-table th:nth-child(1),
@@ -904,4 +909,15 @@ background-color: #e2dbf0;
 .footer-note {
   font-size: 12px;
   color: #999;
+}
+
+.progressing-overlay {
+  max-height: 70%;
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 999; /* 필요한 경우 조정 */
+  border-radius: 12px;
+  padding: 40px 40px;
 }

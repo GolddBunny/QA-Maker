@@ -59,7 +59,7 @@ def upload_documents(page_id):
         # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
         blob.metadata = {
             "original_filename": original_filename,
-            "category": "학교",
+            "category": "unknown",
             "date": today_str
         }
 
@@ -73,7 +73,7 @@ def upload_documents(page_id):
             'download_url': blob.public_url,
             'page_id': page_id,
             'upload_date': today_str,
-            'category': "학교",   
+            'category': "unknown",   
             'date': today_str  
         }
 
@@ -110,7 +110,7 @@ def get_uploaded_documents(page_id):
                     'date': date
                 })
 
-        return jsonify({'success': True, 'uploaded_files': uploaded_files})
+        return jsonify({'success': True, 'uploaded_files': uploaded_files, 'total_count': len(uploaded_files)})
 
     except Exception as e:
         print("Firebase 오류:", str(e))

@@ -1,8 +1,9 @@
 /* ProgressingBar.css */
 .progress-wrapper {
+    position: relative;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 40px 40px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f8f5ff;
   margin-bottom: 160px;
@@ -62,7 +63,7 @@
   left: 60px;
   right: 60px;
   height: 4px;
-  background: linear-gradient(to right, #d4a8ff 25%, #e9ecef 25%, #e9ecef 50%, #e9ecef 75%, #e9ecef 100%);
+  background: linear-gradient(to right, #dcbefa 25%, #e9ecef 25%, #e9ecef 50%, #e9ecef 75%, #e9ecef 100%);
   z-index: 1;
 }
 
@@ -93,11 +94,11 @@
 }
 
 .circle.active {
-  background-color: #d4a8ff;
+  background-color: #dcbefa;
 }
 
 .step:first-child .circle {
-  background-color: #d4a8ff;
+  background-color: #dcbefa;
 }
 
 .step-desc {
@@ -154,4 +155,21 @@
     gap: 5px;
     text-align: center;
   }
+}
+
+.progress-close-button {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  font-size: 28px;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.progress-close-button:hover {
+  color: #333;
 }
