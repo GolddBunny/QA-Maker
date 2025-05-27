@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import "../styles/AdminPage.css";
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import NetworkChart from "../components/charts/NetworkChart";
 import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
@@ -106,6 +105,7 @@ const AdminPage = () => {
         console.error('ProgressingBar 닫을 때 상태 갱신 오류:', error);
       }
     };
+
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
@@ -193,16 +193,6 @@ const AdminPage = () => {
         setShowProgressing(false);
       }
 
-      // 페이지가 변경될 때마다 상태 초기화
-      setEntities([]);
-      setRelationships([]);
-      setGraphData(null);
-      setUploadedUrls([]);
-      setUploadedDocs([]);
-      setHasDocuments(false);
-      setHasOutput(null);
-
-
       // loadUploadedDocs(pageId)
       //   .then(docs => setUploadedDocs(docs))
       //   .catch(error => {
@@ -240,7 +230,7 @@ const AdminPage = () => {
           setSystemName(currentPage.sysname || "");
         }
       }
-    }, [pageId, navigate, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
+    }, [pageId, navigate]);
 
     const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
@@ -487,39 +477,48 @@ const AdminPage = () => {
         <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
           {/* 상단 입력부 */}
           <div className="input-container" id="name">
-          <div className="input-row-horizontal">
-            <div className="input-field">
-              <input
-                type="text"
-                placeholder="도메인 이름을 정해주세요"
-                value={domainName}
-                onChange={(e) => {
-                  const newName = e.target.value;
-                  setDomainName(newName);
-                  updatePageName(pageId, newName);
+            <div className="input-row-horizontal">
+              <div className="input-field">
+                <input
+                  type="text"
+                  placeholder="도메인 이름을 정해주세요"
+                  value={domainName}
+                  onChange={(e) => setDomainName(e.target.value)} // 실시간 동기화 제거
+                />
+              </div>
+
+              <div className="input-field">
+                <input
+                  type="text"
+                  placeholder="QA 시스템 이름을 정해주세요"
+                  value={systemName}
+                  onChange={(e) => setSystemName(e.target.value)}
+                />
+              </div>
+              <button
+                className="apply-button-admin"
+                onClick={() => {
+                  updatePageName(pageId, domainName);
+                  updatePageSysName(pageId, systemName);
+                  
+                  // localStorage도 함께 업데이트
+                  const pages = JSON.parse(localStorage.getItem('pages')) || [];
+                  const updatedPages = pages.map(page => {
+                    if (page.id === pageId) {
+                      return {
+                        ...page,
+                        name: domainName,
+                        sysname: systemName
+                      };
+                    }
+                    return page;
+                  });
+                  localStorage.setItem('pages', JSON.stringify(updatedPages));
                 }}
-              />
+              >
+                적용
+              </button>
             </div>
-
-            <div className="input-field">
-              <input
-                type="text"
-                placeholder="QA 시스템 이름을 정해주세요"
-                value={systemName}
-                onChange={(e) => setSystemName(e.target.value)}
-              />
-            </div>
-
-            <button
-              className="apply-button-admin"
-              onClick={() => {
-                updatePageName(pageId, domainName);
-                updatePageSysName(pageId, systemName);
-              }}
-            >
-              적용
-            </button>
-          </div>
         </div>
       
         <div className="upload-section-wrapper" id="register">
@@ -644,7 +643,7 @@ const AdminPage = () => {
                         sortedDocs.map((doc, index) => (
                           <tr key={index}>
                             <td>{doc.original_filename}</td>
-                            <td><span className="category-pill">{doc.category}</span></td>
+                            <td><span className="category-pill-admin">{doc.category}</span></td>
                             <td>{doc.date}</td>
                           </tr>
                         ))
@@ -710,7 +709,7 @@ const AdminPage = () => {
             <ProgressingBar 
               onClose={handleCloseProgressing}
               onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
-              isCompleted={hasOutput}       // ✅ output이 있을 때만 Analyzer 버튼 보여주기
+              isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
             />
           </div>
         )}

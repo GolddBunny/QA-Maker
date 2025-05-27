@@ -61,8 +61,9 @@ def update(page_id):
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         output_path = os.path.join(base_path, 'output')
 
-        # convert2txt(upload_path, input_path, bucket)
-        # print("모든 파일 .txt로 변환 완료")
+        downloaded = download_output_files_from_firebase(page_id, output_path)
+        if not downloaded:
+            print("⚠ 기존 결과 파일이 Firebase에 존재하지 않습니다.")
         
         start_time = time.time()
         subprocess.run(['graphrag', 'update', '--root', base_path])
@@ -112,3 +113,24 @@ def ensure_page_directory(page_id):
     os.makedirs(upload_path, exist_ok=True)
     
     return base_path, input_path, upload_path 
+
+
+def download_output_files_from_firebase(page_id, output_path):
+    prefix = f'pages/{page_id}/results/'
+    blobs = bucket.list_blobs(prefix=prefix)
+
+    os.makedirs(output_path, exist_ok=True)
+    
+    found = False
+    for blob in blobs:
+        if blob.name.endswith("/"):  # 디렉토리인 경우 무시
+            continue
+
+        filename = os.path.basename(blob.name)
+        local_path = os.path.join(output_path, filename)
+
+        blob.download_to_filename(local_path)
+        print(f"Downloaded {blob.name} → {local_path}")
+        found = True
+    
+    return found
