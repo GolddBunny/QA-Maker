@@ -24,6 +24,7 @@ export const loadUploadedDocs = async (pageId) => {
     const res = await fetch(`${BASE_URL}/documents/${pageId}`);
     const data = await res.json();
     if (data.success) {
+      console.log("firebase 업로드 된 총 문서 수 count: ", data.total_count);
       return {
         docs: data.uploaded_files,
         count: data.total_count || 0
