@@ -65,6 +65,12 @@ const AdminPage = () => {
     const [hasOutput, setHasOutput] = useState(null);
     const [isCheckingOutput, setIsCheckingOutput] = useState(false);
 
+    const [showProgressing, setShowProgressing] = useState(() => {
+      const saved = localStorage.getItem(`showProgressing_${pageId}`);
+      return saved === 'true';
+    });
+    const [docCount, setDocCount] = useState(0);
+
     const { handleFileDrop } = FileDropHandler({
       uploadedDocs,
       setUploadedDocs,
@@ -75,6 +81,12 @@ const AdminPage = () => {
       pageId
     });
 
+    const handleCloseProgressing = async () => {
+      setShowProgressing(false);
+      localStorage.removeItem(`showProgressing_${pageId}`);
+      await checkOutputFolder(pageId); // 상태 갱신
+      await loadAllData(pageId);
+    };
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
@@ -154,37 +166,48 @@ const AdminPage = () => {
       }
       console.log("현재 admin pageId:", pageId);
 
+      const savedShow = localStorage.getItem(`showProgressing_${pageId}`);
+      if (savedShow === 'true') {
+        setShowProgressing(true);
+      } else {
+        setShowProgressing(false);
+      }
+
       loadUploadedDocs(pageId)
-    .then(docs => setUploadedDocs(docs))
-    .catch(error => {
-      console.error("문서 목록 로드 중 오류:", error);
-      setUploadedDocs([]);
-    });
+        .then(({ docs, count }) => {
+            setUploadedDocs(docs);
+            setDocCount(count);
+          })
+          .catch(error => {
+            console.error("문서 목록 로드 중 오류:", error);
+            setUploadedDocs([]);
+            setDocCount(0);
+          });
 
-  // 페이지 ID가 유효한 경우에만 데이터 로드
-  if (pageId) {
-    Promise.all([
-      loadDocumentsInfo(pageId),
-      fetchSavedUrls(pageId),
-      checkOutputFolder(pageId),
-      loadAllData(pageId),
-      fetchGraphData({
-        pageId,
-        graphDataCacheRef,
-        setGraphData
-      }),
-    ]).catch(error => {
-      console.error("데이터 로드 중 오류:", error);
-    });
+      // 페이지 ID가 유효한 경우에만 데이터 로드
+      if (pageId) {
+        Promise.all([
+          loadDocumentsInfo(pageId),
+          fetchSavedUrls(pageId),
+          checkOutputFolder(pageId),
+          loadAllData(pageId),
+          fetchGraphData({
+            pageId,
+            graphDataCacheRef,
+            setGraphData
+          }),
+        ]).catch(error => {
+          console.error("데이터 로드 중 오류:", error);
+        });
 
-    const pages = JSON.parse(localStorage.getItem('pages')) || [];
-    const currentPage = pages.find(page => page.id === pageId);
-    if (currentPage) {
-      setDomainName(currentPage.name || "");
-      setSystemName(currentPage.sysname || "");
-    }
-  }
-}, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
+        const pages = JSON.parse(localStorage.getItem('pages')) || [];
+        const currentPage = pages.find(page => page.id === pageId);
+        if (currentPage) {
+          setDomainName(currentPage.name || "");
+          setSystemName(currentPage.sysname || "");
+        }
+      }
+    }, [pageId, loadDocumentsInfo, fetchSavedUrls, checkOutputFolder, loadAllData]);
 
 
     const toggleSidebar = () => {
@@ -290,13 +313,13 @@ const AdminPage = () => {
       }
 
       if (isAnyProcessing) return;
-
+      setShowProgressing(true);
+      localStorage.setItem(`showProgressing_${pageId}`, 'true');
       setIsApplyLoading(true);
 
       try {
         const result = await applyIndexing(pageId);
         if (result.success) {
-          alert("문서 인덱싱 완료");
           setIsNewPage(false);
 
           // 인덱싱 완료 후 데이터 다시 로드
@@ -313,8 +336,13 @@ const AdminPage = () => {
           ]);
         } else {
           alert(`문서 인덱싱 실패: ${result.error}`);
+          setShowProgressing(false); // 실패 시에만 자동으로 닫기
         }
-      } finally {
+      } catch (error) {
+        console.error("문서 인덱싱 중 오류:", error);
+        alert("문서 인덱싱 중 오류가 발생했습니다.");
+        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+      }finally {
         setIsApplyLoading(false);
       }
     };
@@ -326,9 +354,7 @@ const AdminPage = () => {
       }
 
       if (isAnyProcessing) return;
-
       setIsApplyLoading(true);
-
       try {
         const result = await updateIndexing(pageId);
         if (result.success) {
@@ -348,6 +374,7 @@ const AdminPage = () => {
           ]);
         } else {
           alert(`업데이트 실패: ${result.error}`);
+          setShowProgressing(false); 
         }
       } finally {
         setIsApplyLoading(false);
@@ -355,15 +382,15 @@ const AdminPage = () => {
     };
 
     const sortedDocs = [...uploadedDocs].sort((a, b) => {
-  const dateA = new Date(a.date);
-  const dateB = new Date(b.date);
-  
-  if (dateA.getTime() === dateB.getTime()) {
-    return a.original_filename.localeCompare(b.original_filename);
-  }
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      if (dateA.getTime() === dateB.getTime()) {
+        return a.original_filename.localeCompare(b.original_filename);
+      }
 
-  return dateB - dateA; // 최근 날짜가 먼저 오도록 (내림차순)
-});
+      return dateB - dateA; // 최근 날짜가 먼저 오도록 (내림차순)
+    });
 
     const filteredEntities = (entities || [])
       .filter((item) =>
@@ -502,24 +529,25 @@ const AdminPage = () => {
               </table>
               <div className="upload-table-wrapper">
                 <table className="upload-table">
-                <tbody>
-                  {uploadedUrls.length > 0 ? (
-                    uploadedUrls.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.url}</td>
-                        <td>{item.date}</td>
-                      </tr>
-                    ))
-                  ) : (
-                          <div className="no-message">
-                            업로드된 문서가 없습니다.<br />
-                            url을 등록해주세요.
-                          </div>
-                        )}
-                </tbody>
-              </table>
+                  <tbody>
+                    {uploadedUrls.length > 0 ? (
+                      uploadedUrls.map((item, idx) => (
+                        <tr key={idx}>
+                          <td>{item.url}</td>
+                          <td>{item.date}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <div className="no-message">
+                        업로드된 문서가 없습니다.<br />
+                        url을 등록해주세요.
+                      </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+             <div className='search-firebase-sum'>총 url 수</div> 
             </div>
-          </div>
           
           {/* 오른쪽 문서 섹션 */}
           <div className="doc-upload">
@@ -611,15 +639,13 @@ const AdminPage = () => {
                 </button>
               </div>
             )}
+            <div className='search-firebase-sum'>총 문서 수: {docCount}</div>
           </div>
         </div>
 
         {/* 적용 버튼 */}
-      <div className="apply-btn-row">
-          {isAnyProcessing ? (
-            <ProgressingBar />
-          ) : hasOutput ? (
-            // QA System이 구축된 후 - 두 개 버튼을 가로 정렬로 표시
+        <div className="apply-btn-row">
+          {showProgressing ? null : hasOutput ? (
             <>
               <button 
                 className="btn-apply-update"
@@ -630,14 +656,13 @@ const AdminPage = () => {
               </button>
               <button 
                 className="btn-apply-update"
-                onClick={handleAnalyzer} // 이 함수를 구현해야 함
+                onClick={handleAnalyzer}
                 disabled={isCheckingOutput}
               > 
-                Analyzer
+                Go to Analyzer
               </button>
             </>
           ) : (
-            // 처음 상태 - Build QA System 버튼만 표시
             <button 
               className="btn-apply-update"
               onClick={handleApply}
@@ -647,6 +672,17 @@ const AdminPage = () => {
             </button>
           )}
         </div>
+
+        {/* ProgressingBar는 중앙에 고정 */}
+        {showProgressing && (
+          <div className="progressing-overlay">
+            <ProgressingBar 
+              onClose={handleCloseProgressing}
+              onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
+              isCompleted={hasOutput}       // ✅ output이 있을 때만 Analyzer 버튼 보여주기
+            />
+          </div>
+        )}
 
         {/* <div className="apply-btn-row">
           <button 
