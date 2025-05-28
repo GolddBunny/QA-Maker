@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/HmnArt/10/258/artclView.doMarkdown Content:## 교과목 소개기록메타데이터를 생산, 관리, 사용하기 위한 원칙과 관련 기술 표준을 이해하고, 실무에서 기록메타데이터를 구현하고 사용하기 위한 적용 사례를 학습한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || A2056007 | 기록메타데이터 특강 | 3 |

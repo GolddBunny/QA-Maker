@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/Engineering/53/2700/artclView.doMarkdown Content:## 교과목 소개머신러닝 및 딥러닝 기반 인공지능을 위한 기초 수학 이론을 파이썬을 활용해 실제 결과값을 확인해가며 이해해본다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || Y030004 | 인공지능 수학 | 3 |

@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/Engineering/53/2928/artclView.doMarkdown Content:## 교과목 소개전공분야에서 접하게 되는 다양한 공학 관련 문제들을 해결할 수 있는 수학적 문제해결 능력을 배양하기 위하여, 선형대수학(Linear Algebra)에서는 기본이 되는 좌표계(Coordinate Systems)와 복소수(Complex Numbers)에 더하여 벡터(Vector) 및 행렬(Matrix), 그리그 그 응용과 관련된 내용을 학습하고자 한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || Y030002 | 선형대수 | 3 |

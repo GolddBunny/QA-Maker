@@ -21,7 +21,7 @@ models:
     async_mode: threaded # or asyncio
     retry_strategy: native
     max_retries: -1                   # set to -1 for dynamic retry logic (most optimal setting based on server response)
-    tokens_per_minute: 0              # set to 0 to disable rate limiting
+    tokens_per_minute: 180000              # set to 0 to disable rate limiting
     requests_per_minute: 0            # set to 0 to disable rate limiting
   default_embedding_model:
     type: openai_embedding # or azure_openai_embedding

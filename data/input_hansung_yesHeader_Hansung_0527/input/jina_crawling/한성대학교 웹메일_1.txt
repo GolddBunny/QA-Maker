@@ -1,0 +1,1 @@
+Title: 한성대학교 웹메일URL Source: https://mail.hansung.ac.kr/Markdown Content:##### 아이디@##### 비밀번호아이디 저장Language**▾***   Language*   한국어*   English[신규 아이디 신청](https://mail.hansung.ac.kr/agreement.do)[기존 아이디 해지](https://mail.hansung.ac.kr/deleteUser.do)[아이디 찾기](https://mail.hansung.ac.kr/idSearch.do)[비밀번호 찾기](https://mail.hansung.ac.kr/passwordFind.do)

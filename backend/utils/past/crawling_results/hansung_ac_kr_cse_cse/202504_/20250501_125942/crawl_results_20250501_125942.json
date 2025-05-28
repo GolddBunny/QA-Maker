@@ -1,0 +1,139 @@
+{
+  "timestamp": "20250501_125942",
+  "execution_time_seconds": 25.795997142791748,
+  "base_url": "https://hansung.ac.kr/sites/CSE/index.do",
+  "base_domain": "hansung.ac.kr",
+  "scope_patterns": [
+    "cse",
+    "cse"
+  ],
+  "scope_name": "cse_cse",
+  "total_pages_discovered": 15,
+  "total_documents_discovered": 3,
+  "page_urls": [
+    "https://hansung.ac.kr/sitemap/CSE/siteMapView.do?layout=unknown",
+    "https://hansung.ac.kr/CSE/10777/subview.do",
+    "https://hansung.ac.kr/CSE/10766/subview.do?enc=Zm5jdDF8QEB8JTJGYmJzJTJGQ1NFJTJGMTI0OCUyRjI2ODA1NSUyRmFydGNsVmlldy5kbyUzRg%3D%3D",
+    "https://hansung.ac.kr/CSE/10780/subview.do",
+    "https://hansung.ac.kr/CSE/10769/subview.do",
+    "https://hansung.ac.kr/CSE/10753/subview.do",
+    "https://hansung.ac.kr/CSE/10779/subview.do",
+    "https://hansung.ac.kr/CSE/10754/subview.do",
+    "https://hansung.ac.kr/sites/CSE/index.do",
+    "https://hansung.ac.kr/CSE/10726/subview.do",
+    "https://hansung.ac.kr/CSE/10729/subview.do",
+    "https://hansung.ac.kr/CSE/10755/subview.do",
+    "https://hansung.ac.kr/CSE/10759/subview.do",
+    "https://hansung.ac.kr/CSE/10766/subview.do?enc=Zm5jdDF8QEB8JTJGYmJzJTJGQ1NFJTJGMTI0OCUyRjI2NzM3OCUyRmFydGNsVmlldy5kbyUzRg%3D%3D",
+    "https://hansung.ac.kr/CSE/10768/subview.do"
+  ],
+  "document_urls": [
+    "https://hansung.ac.kr/bbs/CSE/1248/76400/download.do",
+    "https://hansung.ac.kr/bbs/CSE/1248/76401/download.do",
+    "https://hansung.ac.kr/bbs/CSE/1248/76402/download.do"
+  ],
+  "url_patterns": {
+    "domains": [
+      [
+        "hansung.ac.kr",
+        15
+      ]
+    ],
+    "patterns": [
+      [
+        "/CSE/{id}/subview.do",
+        13
+      ],
+      [
+        "/sitemap/CSE/siteMapView.do",
+        1
+      ],
+      [
+        "/sites/CSE/index.do",
+        1
+      ]
+    ],
+    "segments": {
+      "segment_1": [
+        [
+          "CSE",
+          13
+        ],
+        [
+          "sitemap",
+          1
+        ],
+        [
+          "sites",
+          1
+        ]
+      ],
+      "segment_2": [
+        [
+          "CSE",
+          2
+        ],
+        [
+          "10766",
+          2
+        ],
+        [
+          "10777",
+          1
+        ],
+        [
+          "10780",
+          1
+        ],
+        [
+          "10769",
+          1
+        ],
+        [
+          "10753",
+          1
+        ],
+        [
+          "10779",
+          1
+        ],
+        [
+          "10754",
+          1
+        ],
+        [
+          "10726",
+          1
+        ],
+        [
+          "10729",
+          1
+        ]
+      ],
+      "segment_3": [
+        [
+          "subview.do",
+          13
+        ],
+        [
+          "siteMapView.do",
+          1
+        ],
+        [
+          "index.do",
+          1
+        ]
+      ]
+    },
+    "query_params": [
+      [
+        "enc",
+        2
+      ],
+      [
+        "layout",
+        1
+      ]
+    ]
+  }
+}
