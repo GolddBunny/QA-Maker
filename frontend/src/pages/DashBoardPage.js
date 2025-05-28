@@ -33,12 +33,52 @@ const DashboardPage = () => {
     // URL과 문서 목록 상태 추가
     const [uploadedUrls, setUploadedUrls] = useState([]);
     const [uploadedDocs, setUploadedDocs] = useState([]);
-    
+
     const { currentPageId, domainName, setDomainName, systemName, setSystemName } = usePageContext();
     const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
 
     const urlCount = uploadedUrls?.length || 0;
     const docCount = uploadedDocs?.length || 0;
+
+        // 일별 데이터 집계 함수
+    const getDateStats = useCallback(() => {
+        // URL과 문서 데이터를 일별로 집계
+        const dateMap = {};
+        
+        // URL 데이터 집계
+        uploadedUrls.forEach(item => {
+            if (item.date) {
+                const date = item.date.substring(0, 10); // YYYY-MM-DD 형태로 추출
+                if (!dateMap[date]) {
+                    dateMap[date] = { url: 0, doc: 0 };
+                }
+                dateMap[date].url++;
+            }
+        });
+        
+        // 문서 데이터 집계
+        uploadedDocs.forEach(doc => {
+            if (doc.date) {
+                const date = doc.date.substring(0, 10); // YYYY-MM-DD 형태로 추출
+                if (!dateMap[date]) {
+                    dateMap[date] = { url: 0, doc: 0 };
+                }
+                dateMap[date].doc++;
+            }
+        });
+        
+        // 최근 15일 데이터로 정렬하여 반환
+        const sortedDates = Object.keys(dateMap).sort().slice(-15);
+        return sortedDates.map(date => ({
+            date: date.substring(8), // DD 부분만 표시
+            fullDate: date,
+            url: dateMap[date].url,
+            doc: dateMap[date].doc
+        }));
+    }, [uploadedUrls, uploadedDocs]);
+
+    const dateStats = getDateStats();
+    const maxValue = Math.max(...dateStats.map(item => Math.max(item.url, item.doc)), 1);
 
     const DashboardHeader = ({ isSidebarOpen, toggleSidebar }) => {
         return (
@@ -192,7 +232,6 @@ const DashboardPage = () => {
     return (
         <div className={`dashboard-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
             <DashboardHeader isSidebarOpen={isSidebarOpen} />
-            
             {/* 통계 섹션 */}
             <div className="stats-section">
                 <div className="stats-grid">
@@ -503,21 +542,28 @@ const DashboardPage = () => {
                         </div>
                     )}
                 </div>
-                </div>
                 {/* 그래프 보기 섹션 수정 */}
-                <div className="graph-section">
-                    <div className="graph-header">
-                        <h2 className="section-title-with-icon">
-                            🕸️ 지식그래프 네트워크 시각화 (Top 200 엔티티)
-                        </h2>
-                    </div>
-                    {showGraph && graphData && (
-                        <div className="url-table-container">
-                            <div className="network-chart-wrapper">
-                                <NetworkChart data={graphData} />
+                <div className="knowledge-graph-section">
+                    <h1 className="section-title-with-icon">
+                        <span className="icon">🕸️</span>
+                        지식 그래프
+                    </h1>
+                    <div className="knowledge-graph-container">
+                        {showGraph && graphData && !graphError ? (
+                            <NetworkChart 
+                                data={graphData} 
+                                pageId={pageId}
+                            />
+                        ) : graphError ? (
+                            <div className="graph-error-message">
+                                그래프를 불러올 수 없습니다: {graphError}
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="graph-loading-message">
+                                그래프를 불러오는 중...
+                            </div>
+                        )}
+                    </div>
                 </div>
                 {/* 통계 차트 섹션 */}
                 <div className="stats-charts-section">
@@ -525,46 +571,53 @@ const DashboardPage = () => {
                         {/* 날짜별 데이터 수집 현황 */}
                         <div className="chart-card">
                             <div className="chart-header">
-                                <h3 className="chart-title">
+                                <h1 className="section-title-with-icon">
                                     <span className="chart-icon">📊</span>
-                                    날짜별 데이터 수집 현황
-                                </h3>
+                                    일별 데이터 수집 현황
+                                </h1>
                             </div>
                             <div className="chart-content">
+                                <div className="chart-legend">
+                                    <div className="legend-item">
+                                        <div className="legend-color url-color"></div>
+                                        <span>URL</span>
+                                    </div>
+                                    <div className="legend-item">
+                                        <div className="legend-color doc-color"></div>
+                                        <span>문서</span>
+                                    </div>
+                                </div>
                                 <div className="bar-chart">
-                                    {[
-                                        {date: '01', url: 45, doc: 32, entity: 78, relationship: 56},
-                                        {date: '02', url: 23, doc: 18, entity: 41, relationship: 35},
-                                        {date: '03', url: 34, doc: 28, entity: 62, relationship: 48},
-                                        {date: '04', url: 12, doc: 15, entity: 27, relationship: 22},
-                                        {date: '05', url: 28, doc: 22, entity: 50, relationship: 38},
-                                        {date: '06', url: 42, doc: 35, entity: 77, relationship: 62},
-                                        {date: '07', url: 38, doc: 31, entity: 69, relationship: 55},
-                                        {date: '08', url: 52, doc: 45, entity: 97, relationship: 82},
-                                        {date: '09', url: 29, doc: 24, entity: 53, relationship: 41},
-                                        {date: '10', url: 46, doc: 39, entity: 85, relationship: 71},
-                                        {date: '11', url: 31, doc: 26, entity: 57, relationship: 44},
-                                        {date: '12', url: 48, doc: 41, entity: 89, relationship: 75}
-                                    ].map((item, index) => (
-                                        <div key={index} className="bar-group">
-                                            <div className="bars">
-                                                <div className="bar url-bar" style={{height: `${item.url}%`}}></div>
-                                                <div className="bar doc-bar" style={{height: `${item.doc}%`}}></div>
-                                                <div className="bar entity-bar" style={{height: `${item.entity}%`}}></div>
-                                                <div className="bar relationship-bar" style={{height: `${item.relationship}%`}}></div>
+                                    {dateStats.length > 0 ? (
+                                        dateStats.map((item, index) => (
+                                            <div key={index} className="bar-group">
+                                                <div className="bars">
+                                                    <div 
+                                                        className="bar url-bar" 
+                                                        style={{height: `${(item.url / maxValue) * 80}%`}}
+                                                        title={`URL: ${item.url}개`}
+                                                    ></div>
+                                                    <div 
+                                                        className="bar doc-bar" 
+                                                        style={{height: `${(item.doc / maxValue) * 80}%`}}
+                                                        title={`문서: ${item.doc}개`}
+                                                    ></div>
+                                                </div>
+                                                <div className="bar-label">{item.date}일</div>
                                             </div>
-                                            <div className="bar-label">{item.date}월</div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    ) : (
+                                        <div className="no-data-message">데이터가 없습니다</div>
+                                    )}
                                 </div>
                                 <div className="chart-stats">
                                     <div className="stat-item">
-                                        <span className="stat-label">오늘 수집</span>
-                                        <span className="stat-value">234개</span>
+                                        <span className="stat-label">총 URL</span>
+                                        <span className="stat-value">{urlCount}개</span>
                                     </div>
                                     <div className="stat-item">
-                                        <span className="stat-label">이번 주 수집</span>
-                                        <span className="stat-value">1,567개</span>
+                                        <span className="stat-label">총 문서</span>
+                                        <span className="stat-value">{docCount}개</span>
                                     </div>
                                 </div>
                             </div>
@@ -575,7 +628,7 @@ const DashboardPage = () => {
                             <div className="chart-header">
                                 <h3 className="chart-title">
                                     <span className="chart-icon">📈</span>
-                                    지식그래프 구축 현황
+                                    일별 지식그래프 구축 현황
                                 </h3>
                             </div>
                             <div className="chart-content">
@@ -616,6 +669,7 @@ const DashboardPage = () => {
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
