@@ -21,6 +21,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 import threading                                        # 스레드 안전성을 위한 락
 import heapq                                            # 우선순위 큐 구현
 from collections import OrderedDict                     # LRU 캐시 구현용
+from pathlib import Path
 
 # 로깅 설정
 logging.basicConfig(
@@ -34,7 +35,8 @@ logging.basicConfig(
 logger = logging.getLogger("scope_crawler")
 
 # 상수 정의
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "crawling")
+#BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "crawling")
+BASE_DIR = Path(__file__).parent / "urlCrawling_CSE"
 
 # 유저 에이전트 정의
 USER_AGENTS = [
@@ -460,11 +462,33 @@ class ScopeLimitedCrawler:
         try:
             parsed = urlparse(url)
             
-            # 도메인 확인 - 기본 도메인에 속하면 모두 허용
-            if self.base_domain in parsed.netloc:
-                return True
-            else:
+            # 도메인 확인 - 기본 도메인에 속해야 함
+            if self.base_domain not in parsed.netloc:
                 return False
+            
+            # scope_patterns가 비어있거나 빈 문자열만 있으면 도메인 전체 허용
+            if not self.scope_patterns or (len(self.scope_patterns) == 1 and self.scope_patterns[0] == ''):
+                return True
+            
+            # URL 경로를 소문자로 변환하여 패턴 매칭
+            url_path = parsed.path.lower()
+            url_query = parsed.query.lower()
+            full_url_lower = url.lower()
+            
+            # scope_patterns 중 하나라도 URL에 포함되어야 함
+            for pattern in self.scope_patterns:
+                pattern_lower = pattern.lower()
+                
+                # 패턴이 경로, 쿼리, 또는 전체 URL에 포함되는지 확인
+                if (pattern_lower in url_path or 
+                    pattern_lower in url_query or 
+                    pattern_lower in full_url_lower):
+                    logger.debug(f"URL이 범위 내에 있음: {url} (패턴: {pattern})")
+                    return True
+            
+            # 어떤 패턴도 매칭되지 않으면 범위 밖
+            logger.debug(f"URL이 범위 밖: {url} (패턴: {self.scope_patterns})")
+            return False
             
         except Exception as e:
             logger.error(f"URL 범위 확인 중 오류 발생: {e}")
@@ -606,6 +630,9 @@ class ScopeLimitedCrawler:
                 # 일반 URL 추가 (범위 확인)
                 if not is_doc and self.is_in_scope(normalized_url):
                     links.add(normalized_url)
+                elif not is_doc:
+                    # 범위 밖 URL 로깅 (디버그 레벨)
+                    logger.debug(f"범위 밖 URL 제외: {normalized_url}")
                     
             # 2. 메뉴 및 네비게이션 링크 특별 처리
             nav_selectors = [
@@ -630,6 +657,9 @@ class ScopeLimitedCrawler:
                                 not self.should_exclude_url(normalized_url) and 
                                 self.is_in_scope(normalized_url)):
                                 links.add(normalized_url)
+                            elif normalized_url:
+                                # 범위 밖 네비게이션 링크 로깅
+                                logger.debug(f"범위 밖 네비게이션 링크 제외: {normalized_url}")
 
             # 3. 첨부파일 추출
             attachment_links = self.extract_attachments(soup, base_url)
@@ -1282,30 +1312,58 @@ class ScopeLimitedCrawler:
         # 범위 패턴 설정
         if scope_patterns:
             self.scope_patterns = [p.lower() for p in scope_patterns]
+            logger.info(f"전달받은 범위 패턴 사용: {self.scope_patterns}")
         else:
-            # 시작 URL 경로에서 범위 패턴 추출
+            # 시작 URL 경로에서 범위 패턴 추출 (스마트 필터링)
             path_parts = parsed_url.path.lower().split('/')
+            
+            # 마지막 조각(파일명/페이지명) 제거
+            if path_parts and path_parts[-1]:
+                path_parts = path_parts[:-1]
             
             # 기본 범위 패턴을 시작 URL에서 추출
             extracted_patterns = []
             for part in path_parts:
                 if part and part not in ['index.do', 'web', '']:
-                    extracted_patterns.append(part.lower())
+                    # /sites/ 경로는 제외
+                    if part == 'sites':
+                        continue
+                    
+                    # netloc에 이미 포함된 단어는 제외 (예: hansung)
+                    if part in self.base_domain.lower():
+                        continue
+                    
+                    # 유효한 패턴이면 대문자/소문자 버전 모두 추가
+                    if part not in extracted_patterns:
+                        extracted_patterns.append(part)
+                        
+                        # 대문자 버전도 추가 (원본 경로에서 찾기)
+                        original_parts = parsed_url.path.split('/')
+                        # 마지막 조각 제거 후 검색
+                        if original_parts and original_parts[-1]:
+                            original_parts = original_parts[:-1]
+                        for original_part in original_parts:
+                            if (original_part.lower() == part and 
+                                original_part != part and 
+                                original_part not in extracted_patterns):
+                                extracted_patterns.append(original_part)
+                                break
             
             # 추출된 패턴이 있으면 사용, 없으면 빈 패턴 (전체 도메인)
             if extracted_patterns:
                 self.scope_patterns = extracted_patterns
-                logger.info(f"시작 URL에서 범위 패턴 추출: {self.scope_patterns}")
+                logger.info(f"시작 URL에서 범위 패턴 추출 (스마트 필터링): {self.scope_patterns}")
             else:
                 # 범위 패턴이 없으면 도메인 전체 허용
                 self.scope_patterns = ['']
                 logger.info("범위 패턴이 추출되지 않아 도메인 전체를 범위로 설정")
         
-        # 범위 패턴이 추출되지 않은 경우
-        if not self.scope_patterns:
-            logger.warning("범위 패턴이 지정되지 않았습니다. 도메인 전체 범위 사용.")
-            # 도메인 전체를 범위로 설정
-            self.scope_patterns = ['']  # 빈 문자열로 모든 경로 포함
+        # 범위 패턴 검증 및 로깅
+        logger.info(f"최종 적용된 범위 패턴: {self.scope_patterns}")
+        if self.scope_patterns and self.scope_patterns != ['']:
+            logger.info(f"범위 제한 활성화: {self.base_domain} 도메인에서 {self.scope_patterns} 패턴만 크롤링")
+        else:
+            logger.info(f"범위 제한 없음: {self.base_domain} 도메인 전체 크롤링")
         
         # 컬렉션 초기화 (스레드 안전)
         with self.url_lock:
@@ -1531,6 +1589,7 @@ class ScopeLimitedCrawler:
             logger.info(f"실행 시간: {execution_time:.1f}초")
             
             return {
+                "json_data": json_data,
                 "page_urls": self.all_page_urls,
                 "doc_urls": self.all_doc_urls,
                 "results_dir": domain_dir,
@@ -1632,6 +1691,9 @@ class ScopeLimitedCrawler:
                                 # URL 정규화 적용
                                 normalized_url = self.normalize_url(full_url)
                                 sitemap_links.add(normalized_url)
+                            else:
+                                # 범위 밖 사이트맵 링크 로깅
+                                logger.debug(f"범위 밖 사이트맵 링크 제외: {full_url}")
             
             logger.info(f"사이트맵에서 {len(sitemap_links)}개 링크 추출: {url}")
             
@@ -1672,7 +1734,10 @@ class ScopeLimitedCrawler:
                         # URL 정규화 적용
                         normalized_url = self.normalize_url(link)
                         xml_links.add(normalized_url)
-                        
+                    else:
+                        # 범위 밖 XML 사이트맵 링크 로깅
+                        logger.debug(f"범위 밖 XML 사이트맵 링크 제외: {link}")
+                
                 logger.info(f"XML 사이트맵에서 {len(xml_links)}개 링크 추출: {url}")
             
             return xml_links
@@ -1823,9 +1888,11 @@ class ScopeLimitedCrawler:
                             logger.info(f"XML 사이트맵에서 {len(xml_links)}개 URL 발견: {sitemap_url}")
                             for link in xml_links:
                                 with self.url_lock:
-                                    if link not in self.queued_urls:
+                                    if link not in self.queued_urls and self.is_in_scope(link):
                                         heapq.heappush(priority_queue, (URLPriority.HIGH, link, None))
                                         self.queued_urls.add(link)
+                                    elif link not in self.queued_urls:
+                                        logger.debug(f"범위 밖 XML 사이트맵 링크 큐 추가 제외: {link}")
                     except Exception as e:
                         logger.debug(f"XML 사이트맵 처리 중 오류 {sitemap_url}: {e}")
                 else:
@@ -1923,8 +1990,8 @@ if __name__ == "__main__":
         # 크롤링 실행
         results = main(
             # start_url="https://hansung.ac.kr/sites/CSE/index.do",
-            start_url="https://hansung.ac.kr/sites/hansung/index.do",
-            # scope=["CSE", "cse"],
+            # start_url="https://hansung.ac.kr/sites/hansung/index.do",
+            # start_url="https://dorm.hansung.ac.kr/kor/index.do",
             max_pages=100000,
             delay=1.0,
             timeout=20,

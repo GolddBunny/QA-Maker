@@ -21,6 +21,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 import threading                                        # 스레드 안전성을 위한 락
 import heapq                                            # 우선순위 큐 구현
 from collections import OrderedDict                     # LRU 캐시 구현용
+from pathlib import Path
 
 # 로깅 설정
 logging.basicConfig(
@@ -34,7 +35,8 @@ logging.basicConfig(
 logger = logging.getLogger("scope_crawler")
 
 # 상수 정의
-BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "crawling")
+#BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "crawling")
+BASE_DIR = Path(__file__).parent / "urlCrawling_CSE"
 
 # 유저 에이전트 정의
 USER_AGENTS = [
@@ -1960,9 +1962,9 @@ if __name__ == "__main__":
     try:
         # 크롤링 실행
         results = main(
-            start_url="https://hansung.ac.kr/sites/CSE/index.do",
-            # start_url="https://hansung.ac.kr/sites/hansung/index.do",
-            scope=["CSE", "cse"],
+            # start_url="https://hansung.ac.kr/sites/CSE/index.do",
+            start_url="https://hansung.ac.kr/sites/hansung/index.do",
+            # scope=["CSE", "cse"],
             max_pages=100000,
             delay=1.0,
             timeout=20,

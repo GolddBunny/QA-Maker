@@ -56,7 +56,7 @@ def apply_documents(page_id):
 
 @generate_bp.route('/update/<page_id>', methods=['POST'])
 def update(page_id):
-    """document 업데이트"""
+    """증분 인덱싱"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         output_path = os.path.join(base_path, 'output')
