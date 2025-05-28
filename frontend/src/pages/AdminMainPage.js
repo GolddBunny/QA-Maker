@@ -75,7 +75,7 @@ const AdminMainPage = () => {
         </div>
         
         <div className="organization-section">
-        {pages.map((page) => (
+        {pages.slice(0,6).map((page) => (
             <div
             key={page.id}
             className="org-item"

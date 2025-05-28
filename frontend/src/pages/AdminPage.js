@@ -377,7 +377,7 @@ const AdminPage = () => {
 
     return (
       <>
-      {isLoadingPage && <LoadingSpinner />}
+      {/* {isLoadingPage && <LoadingSpinner />} */}
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
