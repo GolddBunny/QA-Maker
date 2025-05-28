@@ -307,7 +307,7 @@ const AdminPage = () => {
         
         if (final_result.success) {
           setIsNewPage(false);
-          setApplyExecutionTime(result.execution_time);
+          setApplyExecutionTime(final_result.execution_time);
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
