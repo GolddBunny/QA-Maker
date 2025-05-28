@@ -10,7 +10,8 @@ export const FileDropHandler = ({
   setIsFileLoading,
   setHasDocuments,
   isAnyProcessing,
-  pageId
+  pageId,
+  setDocCount
 }) => {
   const allowedFileTypes = [
     'application/pdf',
@@ -70,6 +71,7 @@ export const FileDropHandler = ({
       setUploadedDocs(updated);
       //localStorage.setItem(`uploadedDocs_${currentPageId}`, JSON.stringify(updated));
       setHasDocuments(true);
+      setDocCount(updated.length);
 
     } catch (error) {
       console.error('파일 업로드 오류:', error);

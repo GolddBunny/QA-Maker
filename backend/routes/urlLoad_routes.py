@@ -79,8 +79,10 @@ def add_url(page_id):
 def get_saved_urls(page_id):
     try:
         urls = get_urls_from_firebase(page_id)
+        
         print(f"[get-urls] page_id: {page_id}, URL 수: {len(urls)}")
-        return jsonify({"success": True, "urls": urls}), 200
+        return jsonify({"success": True, 
+            "urls": urls if isinstance(urls, list) else []}), 200
     except Exception as e:
         print(f"[get-urls 오류] page_id: {page_id}, 에러: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

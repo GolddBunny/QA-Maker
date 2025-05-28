@@ -4,6 +4,9 @@ import "../../styles/Sidebar.css";
 import { usePageContext } from "../../utils/PageContext";
 import { savePages, getPages, changePageType } from '../../utils/storage';
 import { usePageHandlers } from '../hooks/usePageHandlers';
+import { findMainPage } from '../../utils/storage';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase/sdk';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -20,92 +23,64 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     
     useEffect(() => {
         const initializePages = async () => {
-            let savedPages = JSON.parse(localStorage.getItem('pages')) || [];
+            setIsLoading(true);
+            try {
+                const savedId = localStorage.getItem('currentPageId');
+                if (savedId) {
+                    const savedDoc = await getDoc(doc(db, 'pages', savedId));
+                    if (savedDoc.exists()) {
+                        const savedPage = { id: savedDoc.id, ...savedDoc.data() };
+                        updatePages([savedPage]);
+                        setCurrentPageId(savedPage.id);
+                        navigate(`/admin/${savedPage.id}`);
+                        return;
+                    }
+                }
 
-            if (savedPages.length === 0) {
-                setIsLoading(true);
+                // 1. Firestore에서 type == 'main' 페이지 검색
+                const firestoreMainPage = await findMainPage();
+                if (firestoreMainPage) {
+                    console.log("Firestore에서 메인 페이지 발견:", firestoreMainPage.id);
+                    updatePages([firestoreMainPage]);
+                    setCurrentPageId(firestoreMainPage.id);
+                    localStorage.setItem('currentPageId', firestoreMainPage.id);
+                    navigate(`/admin/${firestoreMainPage.id}`);
+                    return;
+                }
+
+                // 2. Firestore에 없으면 새 페이지 생성
                 const defaultPageId = Date.now().toString();
-
-                try {
-                    const response = await fetch(`${BASE_URL}/init/${defaultPageId}`, {
-                        method: 'POST'
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        const defaultPage = {
-                            id: defaultPageId,
-                            name: '기본 페이지',
-                            sysname: '',
-                            type: 'main',
-                            createdAt: new Date().toISOString()
-                        };
-
-                        savedPages = [defaultPage];
-                        localStorage.setItem('pages', JSON.stringify(savedPages));
-                        localStorage.setItem('currentPageId', defaultPageId);
-
-                        updatePages(savedPages);
-                        setCurrentPageId(defaultPageId);
-
-                        
-                        navigate(`/admin/${defaultPageId}`);
-                    } else {
-                        console.error('기본 페이지 초기화 실패:', data.error);
-                        alert('기본 페이지 초기화에 실패했습니다.');
-                    }
-                } catch (error) {
-                    console.error('기본 페이지 초기화 중 오류:', error);
-                    alert('기본 페이지 초기화 중 오류가 발생했습니다.');
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                const updatedPages = savedPages.map(page => {
-                    if (!page.hasOwnProperty('sysname')) {
-                        return { ...page, sysname: '' };
-                    }
-                    return page;
+                const response = await fetch(`${BASE_URL}/init/${defaultPageId}`, {
+                    method: 'POST'
                 });
-                // If pages were updated to add sysname, save them
-                if (JSON.stringify(updatedPages) !== JSON.stringify(savedPages)) {
-                    localStorage.setItem('pages', JSON.stringify(updatedPages));
-                    updatePages(updatedPages);
-                } else {
-                    updatePages(savedPages);
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.error('기본 페이지 초기화 실패:', data.error);
+                    alert('기본 페이지 초기화에 실패했습니다.');
+                    return;
                 }
 
-                // 저장된 현재 페이지 ID 확인
-                const storedCurrentPageId = localStorage.getItem('currentPageId');
-                
-                // 1. 저장된 currentPageId가 있고, 해당 ID를 가진 페이지가 존재하면 그 페이지 사용
-                if (storedCurrentPageId && savedPages.some(page => page.id === storedCurrentPageId)) {
-                    setCurrentPageId(storedCurrentPageId);
-                } 
-                // 2. main 타입 페이지가 있으면 그 페이지 사용
-                else {
-                    const mainPage = savedPages.find(page => page.type === 'main');
-                    if (mainPage) {
-                        setCurrentPageId(mainPage.id);
-                        localStorage.setItem('currentPageId', mainPage.id);
-                        console.log("메인 타입 페이지 ID 설정:", mainPage.id);
-                    }
-                    // 3. 없으면 첫 번째 페이지를 main으로 설정하고 사용
-                    else if (savedPages.length > 0) {
-                        const firstPage = savedPages[0];
-                        // 첫 번째 페이지를 main 타입으로 업데이트
-                        const updatedPages = [...savedPages];
-                        updatedPages[0] = { ...firstPage, type: 'main' };
-                        
-                        localStorage.setItem('pages', JSON.stringify(updatedPages));
-                        updatePages(updatedPages);
-                        
-                        setCurrentPageId(firstPage.id);
-                        localStorage.setItem('currentPageId', firstPage.id);
-                        console.log("첫 번째 페이지를 메인으로 설정:", firstPage.id);
-                    }
-                }
+                const defaultPage = {
+                    id: defaultPageId,
+                    name: '기본 페이지',
+                    sysname: '',
+                    type: 'main',
+                    createdAt: new Date().toISOString()
+                };
+
+                await setDoc(doc(db, "pages", defaultPageId), defaultPage);
+
+                updatePages([defaultPage]);
+                setCurrentPageId(defaultPageId);
+                localStorage.setItem('currentPageId', defaultPageId);
+                navigate(`/admin/${defaultPageId}`);
+            } catch (error) {
+                console.error('페이지 초기화 오류:', error);
+                alert('페이지 초기화 중 오류가 발생했습니다.');
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -243,6 +218,7 @@ function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
                     onContextMenu={(e) => handleRightClick(e, page.id)}
                     >
                     <strong>{page.name}</strong>
+                    {page.type === 'main' && '✰'}
                     </div>
                 ))
                 ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import { usePageContext } from '../utils/PageContext';
@@ -11,6 +11,7 @@ import { applyIndexing, updateIndexing } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
+import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
 import LoadingSpinner from '../services/LoadingSpinner';
 const BASE_URL = 'http://localhost:5000';
 
@@ -55,15 +56,16 @@ const AdminPage = () => {
     const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
     const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
 
-    const { handleFileDrop } = FileDropHandler({
+    const { handleFileDrop } = useMemo(() => FileDropHandler({  //문서 수 firebase 실시간 연동
       uploadedDocs,
       setUploadedDocs,
       setDuplicateFileName,
       setIsFileLoading,
       setHasDocuments,
       isAnyProcessing,
-      pageId
-    });
+      pageId,
+      setDocCount
+    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
 
     const handleCloseProgressing = async () => {
       setShowProgressing(false);
@@ -72,8 +74,7 @@ const AdminPage = () => {
       if (!pageId) return;
 
       try {
-        const outputExists = await checkOutputFolder(pageId);
-        setHasOutput(outputExists); //output 상태를 직접 반영해야 렌더링됨
+        await checkOutputFolder(pageId);
 
         await Promise.all([
           fetchSavedUrls(pageId),
@@ -87,9 +88,10 @@ const AdminPage = () => {
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
-      setUploadedUrls(urls);
-      setUrlCount(urls.length);
-    }, []);
+      const urlArray = Array.isArray(urls) ? urls : [];
+      setUploadedUrls(urlArray); // undefined 방지
+      setUrlCount(urlArray.length);
+    } , []);
 
     // 문서 정보 로드
     const loadDocumentsInfo = useCallback(async (pageId) => {
@@ -158,9 +160,10 @@ const AdminPage = () => {
       
       if (pageId) {
         Promise.all([
-          loadUploadedDocs(pageId)
+          loadUploadedDocsFromFirestore(pageId)
             .then(({ docs, count }) => {
-              setUploadedDocs(docs);
+              const docsArray = Array.isArray(docs) ? docs : []; // 배열인지 확인
+              setUploadedDocs(docsArray);
               setDocCount(count); // 문서 개수
             })
             .catch(error => {
@@ -228,8 +231,8 @@ const AdminPage = () => {
         if (result.success) {
           console.log('URL 저장 완료:', result.urls);
           setUploadedUrls(result.urls || []);
+          setUrlCount(result.urls.length);
           setUrlInput('');
-          alert("URL이 등록되었습니다.");
         } else {
           throw new Error('URL 저장 실패: ' + result.error);
         }
@@ -374,7 +377,7 @@ const AdminPage = () => {
 
     return (
       <>
-      {isLoadingPage && <LoadingSpinner />}
+      {/* {isLoadingPage && <LoadingSpinner />} */}
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
@@ -472,7 +475,7 @@ const AdminPage = () => {
               <div className="upload-table-wrapper">
                 <table className="upload-table">
                   <tbody>
-                    {uploadedUrls.length > 0 ? (
+                    {(Array.isArray(uploadedUrls) && uploadedUrls.length > 0) ? (
                       uploadedUrls.map((item, idx) => (
                         <tr key={idx}>
                           <td>{item.url}</td>
@@ -480,10 +483,12 @@ const AdminPage = () => {
                         </tr>
                       ))
                     ) : (
-                      <div className="no-message">
-                        업로드된 문서가 없습니다.<br />
-                        url을 등록해주세요.
-                      </div>
+                      <tr>
+                        <td colSpan={2} className="no-message">
+                          업로드된 문서가 없습니다.<br />
+                          url을 등록해주세요.
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -549,7 +554,7 @@ const AdminPage = () => {
                 <div className="document-table-scroll">
                   <table className="document-table">
                     <tbody>
-                      {uploadedDocs.length > 0 ? (
+                      {Array.isArray(uploadedDocs) && uploadedDocs.length > 0 ? (
                         
                         sortedDocs.map((doc, index) => (
                           <tr key={index}>
