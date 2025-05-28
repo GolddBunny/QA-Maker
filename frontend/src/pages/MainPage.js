@@ -4,6 +4,9 @@ import "../styles/MainPage.css";
 import Sidebar from "../components/navigation/Sidebar";
 import { usePageContext } from '../utils/PageContext';
 import { findMainPage } from '../utils/storage';
+import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
+import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
+import { GetEntitiesCount } from '../api/GetEntitiesCount';
 
 function MainPage() {
   const { currentPageId, setCurrentPageId } = usePageContext(); 
@@ -13,7 +16,7 @@ function MainPage() {
   const [searchType, setSearchType] = useState('url');
   const [selectedFile, setSelectedFile] = useState(null);
   const { systemName } = usePageContext();
-  const navigate = useNavigate(); // 페이지 이동을 위한 useNavigate
+  const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef(null);
 
@@ -21,24 +24,67 @@ function MainPage() {
   const [addedUrls, setAddedUrls] = useState([]);
   const [showUrlInput, setShowUrlInput] = useState(false);
 
-  useEffect(() => {
-  const fetchMainPage = async () => {
-    try {
-      const mainPage = await findMainPage();
-      if (mainPage) {
-        setCurrentPageId(mainPage.id);
-        localStorage.setItem('currentPageId', mainPage.id);
-        console.log("기본 페이지 ID 설정:", mainPage.id);
-      } else {
-        console.log("기본 페이지를 Firebase에서 찾을 수 없습니다.");
-      }
-    } catch (error) {
-      console.error("메인 페이지 가져오기 중 오류:", error);
-    }
-  };
+  // 문서, URL, 엔티티 개수 상태 추가
+  const [docCount, setDocCount] = useState(0);
+  const [urlCount, setUrlCount] = useState(0);
+  const [entityCount, setEntityCount] = useState(0);
 
-  fetchMainPage();
-}, [setCurrentPageId]);
+  useEffect(() => {
+    const fetchMainPage = async () => {
+      try {
+        const mainPage = await findMainPage();
+        if (mainPage) {
+          setCurrentPageId(mainPage.id);
+          localStorage.setItem('currentPageId', mainPage.id);
+          console.log("기본 페이지 ID 설정:", mainPage.id);
+        } else {
+          console.log("기본 페이지를 Firebase에서 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("메인 페이지 가져오기 중 오류:", error);
+      }
+    };
+
+    fetchMainPage();
+  }, [setCurrentPageId]);
+
+  // 문서, URL, 엔티티 개수 가져오기
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!currentPageId) return;
+
+      try {
+        // 문서 개수 가져오기
+        const { count: documentCount } = await loadUploadedDocsFromFirestore(currentPageId);
+        setDocCount(documentCount || 0);
+
+        // URL 개수 가져오기
+        const urls = await fetchSavedUrlsApi(currentPageId);
+        const urlArray = Array.isArray(urls) ? urls : [];
+        setUrlCount(urlArray.length);
+
+        // 엔티티 개수 가져오기
+        const entitiesResult = await GetEntitiesCount(currentPageId);
+        if (entitiesResult.success) {
+          setEntityCount(entitiesResult.totalCount);
+          console.log('엔티티 개수 업데이트:', entitiesResult.totalCount);
+        } else {
+          console.error('엔티티 개수 가져오기 실패:', entitiesResult.error);
+          setEntityCount(0);
+        }
+
+      } catch (error) {
+        console.error("개수 가져오기 중 오류:", error);
+        setDocCount(0);
+        setUrlCount(0);
+        setEntityCount(0);
+      }
+    };
+
+    if (currentPageId) {
+      fetchCounts();
+    }
+  }, [currentPageId]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -81,7 +127,6 @@ function MainPage() {
   const handleUrlOptionClick = () => {
     setSearchType('url');
     setShowUrlInput(true); // 입력창 보이게
-
   };
 
   const handleAddUrl = () => {
@@ -103,18 +148,18 @@ function MainPage() {
     <div className={`container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-      {/* 상단 버튼 추가 */}
+      {/* 상단 버튼 - 실제 개수로 수정 */}
       <div className="top-buttons">
         <div>
-          <div className="stats">URL 수 43231</div>
+          <div className="stats">URL 수 {urlCount}</div>
         </div>
         <span className="stats-divider">|</span>
         <div>
-          <div className="stats">문서 수 5308</div>
+          <div className="stats">문서 수 {docCount}</div>
         </div>
         <span className="stats-divider">|</span>
         <div>
-          <div className="stats">엔티티 수 328</div>
+          <div className="stats">엔티티 수 {entityCount}</div>
         </div>
       </div>
 

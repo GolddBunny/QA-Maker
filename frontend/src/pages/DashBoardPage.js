@@ -52,7 +52,6 @@ const DashboardPage = () => {
     const urlCount = uploadedUrls?.length || 0;
     const docCount = uploadedDocs?.length || 0;
 
-    // === Data Loading Functions ===
     const loadEntities = useCallback(async (id) => {
         if (!id) return;
         
@@ -117,7 +116,6 @@ const DashboardPage = () => {
         }
     }, []);
 
-    // === Statistics Functions ===
     const dateStats = useMemo(() => getDateStats(uploadedUrls, uploadedDocs), [uploadedUrls, uploadedDocs]);
     const knowledgeGraphDateStats = useMemo(() => getKnowledgeGraphDateStats(knowledgeGraphStats), [knowledgeGraphStats]);
     const graphDateStats = useMemo(() => getGraphBuildDateStats(graphBuildStats), [graphBuildStats]);
@@ -172,7 +170,6 @@ const DashboardPage = () => {
         return filtered;
     }, [relationships, relationshipSearchTerm]);
 
-    // === Page Info Loading ===
     const loadPageInfo = useCallback(() => {
         const pages = JSON.parse(localStorage.getItem('pages')) || [];
         const currentPage = pages.find(page => page.id === pageId);
@@ -232,7 +229,6 @@ const DashboardPage = () => {
         setLoading(true);
         loadedRef.current = true;
 
-        // Load all data
         const loadAllData = async () => {
             try {
                 await Promise.all([
@@ -277,7 +273,7 @@ const DashboardPage = () => {
                     <div className="stat-card url-card">
                         <div className="stat-header">
                             <span className="stat-icon">🌐</span>
-                            <span className="stat-change positive">+23</span>
+                            <span className="stat-change positive">+1</span>
                         </div>
                         <div className="stat-number">{urlCount}</div>
                         <div className="stat-label">등록된 URL</div>
@@ -286,7 +282,7 @@ const DashboardPage = () => {
                     <div className="stat-card docs-card">
                         <div className="stat-header">
                             <span className="stat-icon">📄</span>
-                            <span className="stat-change positive">+156</span>
+                            <span className="stat-change positive">+2</span>
                         </div>
                         <div className="stat-number">{docCount}</div>
                         <div className="stat-label">수집된 문서</div>
@@ -295,7 +291,7 @@ const DashboardPage = () => {
                     <div className="stat-card entities-card">
                         <div className="stat-header">
                             <span className="stat-icon">🔗</span>
-                            <span className="stat-change positive">+802</span>
+                            <span className="stat-change positive">+108</span>
                         </div>
                         <div className="stat-number">{filteredEntities.length}</div>
                         <div className="stat-label">추출된 엔티티</div>
@@ -304,7 +300,7 @@ const DashboardPage = () => {
                     <div className="stat-card relations-card">
                         <div className="stat-header">
                             <span className="stat-icon">⚡</span>
-                            <span className="stat-change positive">+1,445</span>
+                            <span className="stat-change positive">+105</span>
                         </div>
                         <div className="stat-number">{filteredRelationships.length}</div>
                         <div className="stat-label">구축된 관계</div>
@@ -330,10 +326,10 @@ const DashboardPage = () => {
 
                     <div className="stat-card time-card">
                         <div className="stat-header">
-                            <span className="stat-icon">📃</span>
+                            <span className="stat-icon">🧾</span>
                             <span className="stat-change positive">방금</span>
                         </div>
-                        <div className="stat-number">2시간</div>
+                        <div className="stat-number">3시간</div>
                         <div className="stat-label">url 전처리에 걸린 시간</div>
                     </div>
 
@@ -342,13 +338,13 @@ const DashboardPage = () => {
                             <span className="stat-icon">📑</span>
                             <span className="stat-change positive">방금</span>
                         </div>
-                        <div className="stat-number">{conversionTime || '0시간'}</div>
+                        <div className="stat-number">{conversionTime || '1시간'}</div>
                         <div className="stat-label">문서 전처리에 걸린 시간</div>
                     </div>
 
                     <div className="stat-card time-card">
                         <div className="stat-header">
-                            <span className="stat-icon">📑</span>
+                            <span className="stat-icon">📍</span>
                             <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">2시간</div>
