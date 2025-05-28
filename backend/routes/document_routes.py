@@ -11,6 +11,7 @@ from firebase_config import bucket
 from werkzeug.utils import secure_filename
 import uuid
 from firebase_admin import firestore
+import time
 
 document_bp = Blueprint('document', __name__)
 
@@ -94,24 +95,23 @@ def upload_documents(page_id):
 @document_bp.route('/documents/<page_id>', methods=['GET'])
 def get_uploaded_documents(page_id):
     try:
-        blobs = bucket.list_blobs(prefix=f"pages/{page_id}/documents")
-        uploaded_files = []
-        for blob in blobs:
-            # 메타데이터에서 original_filename 가져오기
-            blob.reload()  # 메타데이터 최신화
-            original_filename = blob.metadata.get('original_filename')
-            category = blob.metadata.get('category', '학교')
-            date = blob.metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
+        docs_ref = db.collection('document_files').where('page_id', '==', page_id)
+        docs = docs_ref.stream()
 
-            if original_filename:
-                uploaded_files.append({
-                    'original_filename': original_filename,
-                    'category': category,
-                    'date': date
-                })
+        result = []
+        for doc in docs:
+            data = doc.to_dict()
+            result.append({
+                'original_filename': data.get('original_filename'),
+                'category': data.get('category', 'unknown'),
+                'date': data.get('upload_date')
+            })
 
-        return jsonify({'success': True, 'uploaded_files': uploaded_files, 'total_count': len(uploaded_files)})
-
+        return jsonify({
+            'success': True,
+            'uploaded_files': result,
+            'total_count': len(result)
+        })
     except Exception as e:
         print("Firebase 오류:", str(e))
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -133,11 +133,18 @@ def process_documents(page_id):
             orig = data.get('original_filename')
             if fb and orig:
                 filename_mapping[fb] = orig
-        
-        convert2txt(firebase_path, input_path, bucket, filename_mapping)  # 🔸 매핑 전달
+                
+        start_time = time.time()
+        convert2txt(firebase_path, input_path, bucket, filename_mapping)
+        end_time = time.time()
+        execution_time = round(end_time - start_time)
 
         print("모든 파일 .txt로 변환 완료")
-        return jsonify({'success': True, 'message': '문서 변환 완료'})
+        return jsonify({
+            'success': True,
+            'message': '문서 변환 완료',
+            'execution_time': execution_time
+        })
     
     except Exception as e:
         print("Flask 서버 오류:", str(e))
