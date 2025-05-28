@@ -6,8 +6,8 @@ from urllib.parse import urlparse
 import logging
 
 # 로컬 모듈 임포트
-from Jina_crawling import batch_jina_crawling, jina_crawling
-from artclView_Crawling import Crawler, read_urls_from_file
+from .Jina_crawling import batch_jina_crawling, jina_crawling
+from .artclView_Crawling import Crawler, read_urls_from_file
 
 # 로깅 설정
 logging.basicConfig(
@@ -41,11 +41,12 @@ def filter_urls_by_patterns(urls, patterns):
     
     return matched_urls, unmatched_urls
 
-def create_temp_url_file(urls, prefix="temp_urls"):
+def create_temp_url_file(urls, page_id=None, prefix="temp_urls"):
     """URL 리스트를 임시 파일로 저장하는 함수
     
     Args:
         urls: URL 리스트
+        page_id: 페이지 ID (파일명에 포함됨)
         prefix: 파일명 접두사
         
     Returns:
@@ -55,7 +56,11 @@ def create_temp_url_file(urls, prefix="temp_urls"):
     temp_dir = Path(__file__).parent / "temp"
     temp_dir.mkdir(exist_ok=True)
     
-    temp_file_path = temp_dir / f"{prefix}_{timestamp}.txt"
+    # page_id가 있으면 파일명에 포함
+    if page_id:
+        temp_file_path = temp_dir / f"{prefix}_{page_id}_{timestamp}.txt"
+    else:
+        temp_file_path = temp_dir / f"{prefix}_{timestamp}.txt"
     
     with open(temp_file_path, 'w', encoding='utf-8') as f:
         for url in urls:
@@ -76,14 +81,12 @@ def cleanup_temp_file(file_path):
     except Exception as e:
         logger.warning(f"임시 파일 삭제 실패: {file_path}, 오류: {e}")
 
-def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_range=(0.5, 1.5), verbose=True):
+def integrated_crawling(page_id, url_list, output_base_dir=None, verbose=True):
     """통합 크롤링 함수
     
     Args:
         url_list: 크롤링할 URL 파일 경로
         output_base_dir: 결과를 저장할 기본 디렉토리 경로 (None이면 기본 경로 사용)
-        max_workers: Jina 크롤링 시 동시 작업자 수
-        delay_range: Jina 크롤링 시 요청 간 지연 시간 범위
         verbose: 상세 로그 출력 여부
         
     Returns:
@@ -94,14 +97,10 @@ def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_ran
     
     # 기본 저장 경로 설정
     if output_base_dir is None:
-        output_base_dir = Path(__file__).parent.parent.parent / "data" / "crawling" / "integrated_crawling"
+        page_id_url = page_id + "_url"
+        output_base_dir = Path(__file__).parent.parent.parent / "data" / "input" / f"{page_id_url}" / "input"
     else:
         output_base_dir = Path(output_base_dir)
-    
-    # 타임스탬프가 포함된 폴더 생성
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    output_base_dir = output_base_dir / f"crawling_{timestamp}"
-    output_base_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info(f"크롤링 결과 저장 기본 경로: {output_base_dir}")
 
@@ -139,8 +138,8 @@ def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_ran
         "total_urls": len(unique_urls),
         "artcl_urls_count": len(artcl_urls),
         "jina_urls_count": len(jina_urls),
-        "artcl_results": [],
-        "jina_results": [],
+        "artcl_results": {},
+        "jina_results": {},
         "errors": []
     }
     
@@ -172,8 +171,10 @@ def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_ran
             # 크롤러 정리
             if 'crawler' in locals():
                 try:
-                    crawler.driver.quit()
-                except:
+                    crawler.cleanup_driver()
+                    logger.info("artclView 크롤러 정리 완료")
+                except Exception as cleanup_error:
+                    logger.warning(f"artclView 크롤러 정리 중 오류 (무시됨): {cleanup_error}")
                     pass
     
     # 2. 일반 URL Jina 크롤링
@@ -184,14 +185,12 @@ def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_ran
             jina_output_dir = output_base_dir / "jina_crawling"
             
             # 임시 URL 파일 생성
-            temp_url_file = create_temp_url_file(jina_urls, "jina_urls")
+            temp_url_file = create_temp_url_file(jina_urls, page_id, "jina_urls")
             
             # Jina 배치 크롤링 실행
             jina_saved_files = batch_jina_crawling(
                 url_list_file=temp_url_file,
                 output_dir=str(jina_output_dir),
-                max_workers=max_workers,
-                delay_range=delay_range,
                 verbose=verbose
             )
             
@@ -215,20 +214,27 @@ def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_ran
     end_time = datetime.now()
     execution_time = end_time - start_time
     
+    # total_success_count 계산을 더 안전하게 수정
+    artcl_success = 0
+    jina_success = 0
+    
+    if isinstance(results.get("artcl_results"), dict):
+        artcl_success = results["artcl_results"].get("success_count", 0)
+    
+    if isinstance(results.get("jina_results"), dict):
+        jina_success = results["jina_results"].get("success_count", 0)
+    
     results.update({
         "end_time": end_time,
         "execution_time": str(execution_time),
-        "total_success_count": (
-            results.get("artcl_results", {}).get("success_count", 0) + 
-            results.get("jina_results", {}).get("success_count", 0)
-        )
+        "total_success_count": artcl_success + jina_success
     })
     
     logger.info(f"\n=== 통합 크롤링 완료 ===")
     logger.info(f"총 실행 시간: {execution_time}")
     logger.info(f"총 성공한 파일: {results['total_success_count']}개")
-    logger.info(f"artclView/artclList: {results.get('artcl_results', {}).get('success_count', 0)}개")
-    logger.info(f"Jina 크롤링: {results.get('jina_results', {}).get('success_count', 0)}개")
+    logger.info(f"artclView/artclList: {artcl_success}개")
+    logger.info(f"Jina 크롤링: {jina_success}개")
     
     if results["errors"]:
         logger.warning(f"발생한 오류: {len(results['errors'])}개")
@@ -237,48 +243,100 @@ def integrated_crawling(url_list, output_base_dir=None, max_workers=5, delay_ran
     
     return results
 
-def crawl_from_file(url_file_path, output_base_dir=None, **kwargs):
+def crawl_from_file(url_file_path, page_id, output_base_dir=None,  verbose=True, **kwargs):
     """파일에서 URL을 읽어 통합 크롤링을 수행하는 편의 함수
     
     Args:
-        url_file_path: URL 목록이 저장된 파일 경로
-        output_base_dir: 결과를 저장할 기본 디렉토리 경로
+        url_file_path (str): URL 목록이 저장된 파일 경로
+        page_id (str): 페이지 ID
+        output_base_dir (str, optional): 결과를 저장할 기본 디렉토리 경로. None이면 기본 경로 사용
+        verbose (bool): 상세 로그 출력 여부 (기본값: True)
         **kwargs: integrated_crawling 함수에 전달할 추가 인자
         
     Returns:
         dict: 크롤링 결과 정보
+            - success: 성공 여부 (bool)
+            - total_success_count: 총 성공한 파일 수 (int)
+            - output_base_dir: 저장된 기본 디렉토리 경로 (str)
+            - artcl_results: artclView 크롤링 결과 (dict)
+            - jina_results: Jina 크롤링 결과 (dict)
+            - execution_time: 실행 시간 (str)
+            - errors: 발생한 오류 목록 (list)
     """
-    return integrated_crawling(url_file_path, output_base_dir=output_base_dir, **kwargs)
-
-if __name__ == "__main__":
-    # 테스트 실행 예시
-    
-    # 1. 파일에서 URL 읽어서 크롤링 (테스트 모드)
-    url_file_path = Path(__file__).parent.parent.parent.parent / "data/crawling/20250526_0412_hansung_ac_kr_sites_hansung/page_urls_20250526_0412.txt"
-    
-    # 사용자 지정 저장 경로 (예시)
-    custom_output_dir = Path(__file__).parent.parent.parent / "data" / "crawling" / "20250526_0412_hansung_ac_kr_sites_hansung"
-    
-    if url_file_path.exists():
-        logger.info("파일 기반 테스트 크롤링 시작")
-        results = crawl_from_file(
-            str(url_file_path),
-            output_base_dir=str(custom_output_dir),
-            max_workers=3,
-            delay_range=(1.0, 2.0),
-            verbose=True
+    try:
+        logger.info(f"crawl_from_file 호출: {url_file_path}")
+        logger.info(f"verbose: {verbose}")
+        
+        # 파일 존재 여부 확인
+        if not os.path.exists(url_file_path):
+            error_msg = f"URL 파일을 찾을 수 없습니다: {url_file_path}"
+            logger.error(error_msg)
+            return {
+                "success": False,
+                "error": error_msg,
+                "total_success_count": 0
+            }
+        
+        # integrated_crawling 함수 호출
+        results = integrated_crawling(
+            page_id=page_id,
+            url_list=url_file_path,
+            output_base_dir=output_base_dir,
+            verbose=verbose,
+            **kwargs
         )
-        print(f"테스트 결과: {results['total_success_count']}개 파일 생성")
-        print(f"저장 위치: {results.get('output_base_dir', 'N/A')}")
-    else:
-        logger.warning(f"테스트 URL 파일을 찾을 수 없습니다: {url_file_path}")
+        
+        # 결과에 success 필드 추가
+        if "error" in results:
+            results["success"] = False
+        else:
+            results["success"] = True
+            
+        return results
+        
+    except Exception as e:
+        error_msg = f"crawl_from_file 실행 중 오류 발생: {str(e)}"
+        logger.error(error_msg)
+        import traceback
+        logger.error(f"상세 오류: {traceback.format_exc()}")
+        
+        return {
+            "success": False,
+            "error": error_msg,
+            "total_success_count": 0
+        }
 
-        logger.info("URL 리스트 기반 테스트 크롤링 시작")
-        results = crawl_from_file(
-            str(url_file_path),
-            output_base_dir=str(custom_output_dir),
-            max_workers=2,
-            verbose=True
-        )
-        print(f"테스트 결과: {results['total_success_count']}개 파일 생성")
-        print(f"저장 위치: {results.get('output_base_dir', 'N/A')}")
+# if __name__ == "__main__":
+#     # 테스트 실행 예시
+    
+#     # 1. 파일에서 URL 읽어서 크롤링 (테스트 모드)
+#     url_file_path = Path(__file__).parent.parent.parent.parent / "data/crawling/20250526_0412_hansung_ac_kr_sites_hansung/page_urls_20250526_0412.txt"
+    
+#     # 사용자 지정 저장 경로 (예시)
+#     custom_output_dir = Path(__file__).parent.parent.parent / "data" / "crawling" / "20250526_0412_hansung_ac_kr_sites_hansung"
+    
+#     if url_file_path.exists():
+#         logger.info("파일 기반 테스트 크롤링 시작")
+#         results = crawl_from_file(
+#             str(url_file_path),
+#             page_id="test_page",
+#             output_base_dir=str(custom_output_dir),
+#             max_workers=3,
+#             delay_range=(1.0, 2.0),
+#             verbose=True
+#         )
+#         print(f"테스트 결과: {results['total_success_count']}개 파일 생성")
+#         print(f"저장 위치: {results.get('output_base_dir', 'N/A')}")
+#     else:
+#         logger.warning(f"테스트 URL 파일을 찾을 수 없습니다: {url_file_path}")
+
+#         logger.info("URL 리스트 기반 테스트 크롤링 시작")
+#         results = crawl_from_file(
+#             str(url_file_path),
+#             page_id="test_page",
+#             output_base_dir=str(custom_output_dir),
+#             max_workers=2,
+#             verbose=True
+#         )
+#         print(f"테스트 결과: {results['total_success_count']}개 파일 생성")
+#         print(f"저장 위치: {results.get('output_base_dir', 'N/A')}")

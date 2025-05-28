@@ -10,11 +10,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from webdriver_manager.chrome import ChromeDriverManager
 from pathlib import Path
-
-# 저장 경로 설정 - 상대 경로로 변경
-BASE_DIR = Path(__file__).parent.parent.parent.parent / "data/crawling/20250526_0412_hansung_ac_kr_sites_hansung/artclView_Crawling"
 
 # User-Agent 목록
 USER_AGENTS = [
@@ -43,25 +42,19 @@ class Crawler:
             domain = "hansung.ac.kr"
         
         # 저장 경로 설정
-        if output_base_dir is None:
-            # 기본 경로 사용 (기존 로직)
-            date_str = datetime.now().strftime('%y%m%d%H%M')
-            folder_name = f"{date_str}_{domain}_multiple_pages"
-            self.output_dir = os.path.join(BASE_DIR, folder_name)
+        if output_base_dir is not None:
+            self.output_dir = output_base_dir
         else:
-            # 외부에서 지정한 경로 사용
-            timestamp = datetime.now().strftime('%y%m%d%H%M')
-            folder_name = f"{timestamp}_{domain}_multiple_pages"
-            self.output_dir = os.path.join(output_base_dir, folder_name)
+            # 기본 저장 경로 설정
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            domain_clean = domain.replace('.', '_')
+            self.output_dir = Path(__file__).parent.parent.parent / "data" / "qaSystem" / f"{timestamp}_{domain_clean}"
+            print(f"output_base_dir이 None이므로 기본 경로 사용: {self.output_dir}")
         
-        self.attachment_dir = os.path.join(self.output_dir, "attachments")
-        
-        # 폴더 생성
-        os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(self.attachment_dir, exist_ok=True)
+        # 디렉토리 생성
+        Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         
         print(f"크롤링 결과 저장 경로: {self.output_dir}")
-        print(f"첨부 파일 저장 경로: {self.attachment_dir}")
         print(f"크롤링할 URL 개수: {len(self.urls_to_crawl)}")
         
         # Selenium 설정
@@ -69,14 +62,72 @@ class Crawler:
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-software-rasterizer')
+        chrome_options.add_argument('--disable-background-timer-throttling')
+        chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+        chrome_options.add_argument('--disable-renderer-backgrounding')
+        chrome_options.add_argument('--disable-features=TranslateUI,VizDisplayCompositor')
+        chrome_options.add_argument('--disable-ipc-flooding-protection')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-plugins')
+        chrome_options.add_argument('--disable-images')
+        chrome_options.add_argument('--no-first-run')
+        chrome_options.add_argument('--no-default-browser-check')
+        chrome_options.add_argument('--disable-default-apps')
+        chrome_options.add_argument('--disable-popup-blocking')
+        chrome_options.add_argument('--disable-translate')
+        chrome_options.add_argument('--disable-background-networking')
+        chrome_options.add_argument('--disable-sync')
+        chrome_options.add_argument('--metrics-recording-only')
+        chrome_options.add_argument('--no-report-upload')
+        chrome_options.add_argument('--remote-debugging-port=0')  # 동적 포트 할당
         chrome_options.add_argument(f'user-agent={random.choice(USER_AGENTS)}')
-        self.driver = webdriver.Chrome(options=chrome_options)
-        self.driver.set_page_load_timeout(30) # 페이지 로드 타임아웃 30초
+        
+        # 메모리 사용량 최적화
+        chrome_options.add_argument('--memory-pressure-off')
+        chrome_options.add_argument('--max_old_space_size=4096')
+        
+        # 로그 레벨 설정 (오류 메시지 줄이기)
+        chrome_options.add_argument('--log-level=3')
+        chrome_options.add_argument('--silent')
+        
+        # macOS에서 Chrome 바이너리 경로 설정
+        import platform
+        if platform.system() == "Darwin":  # macOS
+            chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+            if os.path.exists(chrome_path):
+                chrome_options.binary_location = chrome_path
+        
+        # WebDriver 초기화 재시도 로직
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                service = Service(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                self.driver.set_page_load_timeout(30)
+                print(f"✅ Chrome WebDriver 초기화 성공 (시도 {attempt + 1})")
+                break
+            except Exception as e:
+                print(f"❌ Chrome WebDriver 초기화 실패 (시도 {attempt + 1}/{max_retries}): {e}")
+                if attempt == max_retries - 1:
+                    raise Exception(f"Chrome WebDriver 초기화에 {max_retries}번 실패했습니다: {e}")
+                time.sleep(2)  # 재시도 전 2초 대기
 
     def __del__(self):
         """드라이버 종료"""
-        if hasattr(self, 'driver'):
-            self.driver.quit()
+        self.cleanup_driver()
+    
+    def cleanup_driver(self):
+        """WebDriver 안전하게 종료"""
+        if hasattr(self, 'driver') and self.driver is not None:
+            try:
+                self.driver.quit()
+                print("✅ Chrome WebDriver 정리 완료")
+            except Exception as e:
+                print(f"⚠️ WebDriver 정리 중 오류 (무시됨): {e}")
+            finally:
+                self.driver = None
 
     def get_random_user_agent(self):
         return random.choice(USER_AGENTS)
@@ -733,7 +784,7 @@ def crawl_main(test_mode=False, test_limit=5):
         return saved_files, saved_attachments
     
     finally:
-        crawler.driver.quit() # 크롤러 종료 시 드라이버 닫기 
+        crawler.cleanup_driver() # 크롤러 종료 시 드라이버 닫기 
 
 if __name__ == "__main__":
     # 테스트를 위해서는 다음과 같이 실행:

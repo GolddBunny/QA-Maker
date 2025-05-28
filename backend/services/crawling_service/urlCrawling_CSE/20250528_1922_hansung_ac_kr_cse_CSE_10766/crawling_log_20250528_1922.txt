@@ -1,0 +1,79 @@
+2025-05-28 19:22:48,980 - INFO - 크롤링 로그 파일 생성: /Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/backend/services/crawling_service/urlCrawling_CSE/20250528_1922_hansung_ac_kr_cse_CSE_10766/crawling_log_20250528_1922.txt
+2025-05-28 19:22:48,981 - INFO - URL 발견 시작: https://hansung.ac.kr/CSE/10766/subview.do
+2025-05-28 19:22:48,981 - INFO - 기본 도메인: hansung.ac.kr
+2025-05-28 19:22:48,981 - INFO - 범위 패턴: ['cse', 'CSE', '10766']
+2025-05-28 19:22:48,981 - INFO - 최대 페이지: 1000
+2025-05-28 19:22:48,981 - INFO - 사이트맵 자동 발견 시작...
+2025-05-28 19:22:49,057 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemap.xml
+2025-05-28 19:22:49,071 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemap_index.xml
+2025-05-28 19:22:49,085 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemaps.xml
+2025-05-28 19:22:49,101 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemap/index.xml
+2025-05-28 19:22:49,102 - INFO - 사이트맵 자동 발견 완료. 총 4개 사이트맵 URL 처리됨.
+2025-05-28 19:22:49,102 - INFO - [1/1000] 배치 처리 중: 1개 URL
+2025-05-28 19:22:49,337 - INFO - 제외 패턴 '/login' 매칭으로 URL 제외: https://hansung.ac.kr/hnuLogin/hansung/loginView.do
+2025-05-28 19:22:49,408 - INFO - 페이지네이션 패턴 추출: https://hansung.ac.kr/CSE/10766/subview.do?page={page}, 마지막 페이지: 7
+2025-05-28 19:22:49,408 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/CSE/10766/subview.do?page=2
+2025-05-28 19:22:49,408 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/CSE/10766/subview.do?page=3
+2025-05-28 19:22:49,408 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/CSE/10766/subview.do?page=4
+2025-05-28 19:22:49,408 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/CSE/10766/subview.do?page=5
+2025-05-28 19:22:49,408 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/CSE/10766/subview.do?page=6
+2025-05-28 19:22:49,408 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/CSE/10766/subview.do?page=7
+2025-05-28 19:22:49,408 - INFO - [1/1000] 페이지네이션 발견: 6개 페이지
+2025-05-28 19:22:50,410 - INFO - [9/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:22:51,007 - INFO - [9/1000] 새 문서 발견: https://raw.githubusercontent.com/cse-hansung/capstone2024/main/cse-capstone2024.pdf
+2025-05-28 19:22:51,130 - INFO - [9/1000] 새 문서 발견: https://raw.githubusercontent.com/cse-hansung/capstone2023/main/cse-capstone2023.pdf
+2025-05-28 19:22:51,130 - INFO - [9/1000] 새 문서 발견: https://raw.githubusercontent.com/cse-hansung/capstone2022/main/cse-capstone2022.pdf
+2025-05-28 19:22:51,357 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:52,628 - INFO - [17/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:22:53,354 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:55,034 - INFO - [25/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:22:55,070 - WARNING - 오류 페이지 제목 감지 (패턴: '관리모드'): 관리모드
+			
+			
+			
+			
+			> 알림메세지
+2025-05-28 19:22:55,074 - WARNING - 오류 페이지 제목 감지, 건너뜁니다: https://hansung.ac.kr/CSE/10787/subview.do
+2025-05-28 19:22:56,421 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:56,502 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:56,566 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:56,686 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:57,687 - INFO - [33/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:22:57,813 - INFO - 제외 패턴 '/synap' 매칭으로 URL 제외: https://hansung.ac.kr/bbs/CSE/1248/74925/synapView.do
+2025-05-28 19:22:57,906 - INFO - 제외 패턴 '/synap' 매칭으로 URL 제외: https://hansung.ac.kr/bbs/CSE/1248/76608/synapView.do
+2025-05-28 19:22:57,911 - INFO - [33/1000] 새 문서 발견: https://hansung.ac.kr/bbs/CSE/1248/74925/download.do
+2025-05-28 19:22:57,945 - INFO - 제외 패턴 '/synap' 매칭으로 URL 제외: https://hansung.ac.kr/bbs/CSE/1248/76609/synapView.do
+2025-05-28 19:22:57,986 - INFO - 제외 패턴 '/synap' 매칭으로 URL 제외: https://hansung.ac.kr/bbs/CSE/1248/76751/synapView.do
+2025-05-28 19:22:58,021 - INFO - 제외 패턴 '/synap' 매칭으로 URL 제외: https://hansung.ac.kr/bbs/CSE/1248/76613/synapView.do
+2025-05-28 19:22:58,028 - INFO - [33/1000] 새 문서 발견: https://hansung.ac.kr/bbs/CSE/1248/76608/download.do
+2025-05-28 19:22:58,046 - INFO - [33/1000] 새 문서 발견: https://hansung.ac.kr/bbs/CSE/1248/76609/download.do
+2025-05-28 19:22:58,046 - INFO - [33/1000] 새 문서 발견: https://hansung.ac.kr/bbs/CSE/1248/76751/download.do
+2025-05-28 19:22:58,067 - INFO - [33/1000] 새 문서 발견: https://hansung.ac.kr/bbs/CSE/1248/76613/download.do
+2025-05-28 19:22:58,099 - INFO - 페이지네이션 패턴 추출 실패, 대체 방법 사용
+2025-05-28 19:22:59,104 - INFO - [41/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:22:59,280 - INFO - 제외 패턴 '/synap' 매칭으로 URL 제외: https://hansung.ac.kr/bbs/CSE/1248/76986/synapView.do
+2025-05-28 19:22:59,437 - INFO - [41/1000] 새 문서 발견: https://hansung.ac.kr/bbs/CSE/1248/76986/download.do
+2025-05-28 19:22:59,500 - INFO - 페이지네이션 패턴 추출: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page={page}, 마지막 페이지: 7
+2025-05-28 19:22:59,519 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=2
+2025-05-28 19:22:59,529 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=3
+2025-05-28 19:22:59,529 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=4
+2025-05-28 19:22:59,529 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=5
+2025-05-28 19:22:59,529 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=6
+2025-05-28 19:22:59,529 - INFO - 패턴 기반 페이지네이션 URL 추가: https://hansung.ac.kr/bbs/CSE/1248/artclList.do?page=7
+2025-05-28 19:22:59,529 - INFO - [41/1000] 페이지네이션 발견: 6개 페이지
+2025-05-28 19:22:59,529 - INFO - [41/1000] 게시판 목록 페이지 (URL 목록 제외): https://hansung.ac.kr/bbs/CSE/1248/artclList.do
+2025-05-28 19:23:00,535 - INFO - [49/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:00,601 - INFO - [49/1000] 게시판 목록 페이지 (URL 목록 제외): https://hansung.ac.kr/bbs/CSE/1248/rssList.do
+2025-05-28 19:23:01,784 - INFO - [57/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:02,092 - INFO - 증분 저장 완료: 54개 URL을 /Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/backend/services/crawling_service/urlCrawling_CSE/20250528_1922_hansung_ac_kr_cse_CSE_10766/page_urls_20250528_1922.txt에 추가
+2025-05-28 19:23:03,093 - INFO - [65/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:04,267 - INFO - [73/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:05,511 - INFO - [81/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:06,696 - INFO - [89/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:07,891 - INFO - [97/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:09,111 - INFO - [105/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:10,297 - INFO - [113/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:10,614 - INFO - 증분 저장 완료: 56개 URL을 /Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/backend/services/crawling_service/urlCrawling_CSE/20250528_1922_hansung_ac_kr_cse_CSE_10766/page_urls_20250528_1922.txt에 추가
+2025-05-28 19:23:11,615 - INFO - [121/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:12,803 - INFO - [129/1000] 배치 처리 중: 8개 URL
+2025-05-28 19:23:14,001 - INFO - [137/1000] 배치 처리 중: 8개 URL

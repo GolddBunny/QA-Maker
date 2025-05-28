@@ -17,7 +17,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, InvalidSelectorException
+from webdriver_manager.chrome import ChromeDriverManager
 import threading                                        # 스레드 안전성을 위한 락
 import heapq                                            # 우선순위 큐 구현
 from collections import OrderedDict                     # LRU 캐시 구현용
@@ -148,7 +150,7 @@ class LRUCache:
             return len(self.cache)
 
 class ScopeLimitedCrawler:
-    def __init__(self, max_pages: int = 1000, delay: float = 1, timeout: int = 5, use_requests: bool = True):
+    def __init__(self, max_pages: int = 100000, delay: float = 1.0, timeout: int = 20, use_requests: bool = True):
         """크롤러 초기화.
         
         Args:
@@ -253,14 +255,16 @@ class ScopeLimitedCrawler:
             chrome_options.add_experimental_option("prefs", prefs)
             
             try:
-                self.driver = webdriver.Chrome(options=chrome_options)
+                service = Service(ChromeDriverManager().install())
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
                 self.driver.set_page_load_timeout(self.timeout)
             except Exception as e:
                 logger.error(f"Selenium 드라이버 초기화 실패: {e}")
                 # 실패 시 재시도
                 try:
                     time.sleep(1)
-                    self.driver = webdriver.Chrome(options=chrome_options)
+                    service = Service(ChromeDriverManager().install())
+                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
                     self.driver.set_page_load_timeout(self.timeout)
                 except Exception as e:
                     logger.error(f"Selenium 드라이버 재초기화 실패: {e}")
@@ -475,20 +479,40 @@ class ScopeLimitedCrawler:
             url_query = parsed.query.lower()
             full_url_lower = url.lower()
             
-            # scope_patterns 중 하나라도 URL에 포함되어야 함
-            for pattern in self.scope_patterns:
-                pattern_lower = pattern.lower()
+            # scope_patterns가 2개 이상인 경우 모든 패턴이 포함되어야 함
+            if len(self.scope_patterns) >= 2:
+                matched_patterns = []
+                for pattern in self.scope_patterns:
+                    pattern_lower = pattern.lower()
+                    
+                    # 패턴이 경로, 쿼리, 또는 전체 URL에 포함되는지 확인
+                    if (pattern_lower in url_path or 
+                        pattern_lower in url_query or 
+                        pattern_lower in full_url_lower):
+                        matched_patterns.append(pattern)
                 
-                # 패턴이 경로, 쿼리, 또는 전체 URL에 포함되는지 확인
-                if (pattern_lower in url_path or 
-                    pattern_lower in url_query or 
-                    pattern_lower in full_url_lower):
-                    logger.debug(f"URL이 범위 내에 있음: {url} (패턴: {pattern})")
+                # 모든 패턴이 매칭되어야 범위 내로 판단
+                if len(matched_patterns) == len(self.scope_patterns):
+                    logger.debug(f"URL이 범위 내에 있음 (모든 패턴 매칭): {url} (패턴: {self.scope_patterns}, 매칭된 패턴: {matched_patterns})")
                     return True
-            
-            # 어떤 패턴도 매칭되지 않으면 범위 밖
-            logger.debug(f"URL이 범위 밖: {url} (패턴: {self.scope_patterns})")
-            return False
+                else:
+                    logger.debug(f"URL이 범위 밖 (일부 패턴만 매칭): {url} (패턴: {self.scope_patterns}, 매칭된 패턴: {matched_patterns})")
+                    return False
+            else:
+                # scope_patterns가 1개인 경우 기존 로직 유지 (하나라도 매칭되면 허용)
+                for pattern in self.scope_patterns:
+                    pattern_lower = pattern.lower()
+                    
+                    # 패턴이 경로, 쿼리, 또는 전체 URL에 포함되는지 확인
+                    if (pattern_lower in url_path or 
+                        pattern_lower in url_query or 
+                        pattern_lower in full_url_lower):
+                        logger.debug(f"URL이 범위 내에 있음: {url} (패턴: {pattern})")
+                        return True
+                
+                # 어떤 패턴도 매칭되지 않으면 범위 밖
+                logger.debug(f"URL이 범위 밖: {url} (패턴: {self.scope_patterns})")
+                return False
             
         except Exception as e:
             logger.error(f"URL 범위 확인 중 오류 발생: {e}")
@@ -1597,7 +1621,12 @@ class ScopeLimitedCrawler:
                 "log_file": log_file,
                 "execution_time": execution_time,
                 "unique_documents_saved": len(saved_doc_urls),
-                "validation_results": validation_results
+                "validation_results": validation_results,
+                # 호출하는 쪽에서 쉽게 접근할 수 있도록 최상위 레벨에도 추가
+                "base_domain": self.base_domain,
+                "scope_patterns": self.scope_patterns,
+                "total_pages_discovered": len(self.all_page_urls),
+                "total_documents_discovered": len(self.all_doc_urls)
             }
         
         except Exception as e:

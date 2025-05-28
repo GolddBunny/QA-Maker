@@ -274,15 +274,14 @@ def batch_jina_crawling(url_list_file, output_dir=None, max_workers=4, verbose=F
         return []
     
     # 출력 디렉토리 설정
-    if output_dir is None:
-        url_file_name = url_file_path.stem
-        output_url_file_name = datetime.now().strftime("%Y%m%d_%H%M") + "_" + url_file_name
-        output_dir = Path(__file__).parent.parent.parent / "data" / "crawling" / "20250526_0412_hansung_ac_kr_sites_hansung" / "jina_crawling" / output_url_file_name
-    else:
+    if output_dir is not None:
+        # 제공된 output_dir 그대로 사용
         output_dir = Path(output_dir)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    else:
+        # 기본 경로 생성 (output_dir이 None인 경우에만)
         url_file_name = url_file_path.stem
-        output_dir = output_dir / f"{timestamp}_{url_file_name}"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        output_dir = Path(__file__).parent.parent.parent / "data" / "qaSystem" / f"{timestamp}_{url_file_name}"
     
     output_dir.mkdir(parents=True, exist_ok=True)
     

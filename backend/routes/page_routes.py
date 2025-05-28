@@ -35,24 +35,31 @@ def create_env_file(page_id):
     else:
         print("Source .env file not found in ../data/parquet/.env")
 
-def update_prompts(page_id):
-    prompts_source_dir = '../data/parquet/prompts'
-    prompts_dest_dir = f'../data/input/{page_id}/prompts'
-    
-    if os.path.exists(prompts_source_dir):
-        if not os.path.exists(prompts_dest_dir):
-            os.makedirs(prompts_dest_dir)
-        
-        for file_name in os.listdir(prompts_source_dir):
-            source_file = os.path.join(prompts_source_dir, file_name)
-            dest_file = os.path.join(prompts_dest_dir, file_name)
-            
-            if os.path.isfile(source_file):
-                shutil.copy(source_file, dest_file)
-        
-        print(f"Updated prompts for page {page_id} by copying from parquet")
+def update_prompts(page_id, prompt_type='doc'):
+    if prompt_type == 'doc':
+        prompt_src = '../data/parquet/prompts'
+        prompt_dest = f'../data/input/{page_id}/prompts'
+    elif prompt_type == 'url':
+        prompt_src = '../data/parquet/url_prompts'
+        prompt_dest = f'../data/input/{page_id}/prompts'
+    elif prompt_type == 'change':
+        page_url_id = f'{page_id}_url'
+        prompt_src = f'../data/input/{page_url_id}/prompts'
+        prompt_dest = f'../data/input/{page_id}/prompts'
     else:
-        print(f"Source prompts directory not found in {prompts_source_dir}")
+        raise ValueError(f"지원하지 않는 prompt_type: {prompt_type}")
+
+    if not os.path.exists(prompt_src):
+        print(f"[경고] 프롬프트 소스 없음: {prompt_src}")
+        return
+
+    # 폴더가 이미 존재하면 먼저 삭제
+    if os.path.exists(prompt_dest):
+        shutil.rmtree(prompt_dest)
+
+    # 폴더 전체 복사
+    shutil.copytree(prompt_src, prompt_dest)
+    print(f"프롬프트 복사 완료: {prompt_src} -> {prompt_dest}")
 
 @page_bp.route('/init/<page_id>', methods=['POST'])
 def init_page(page_id):
@@ -133,35 +140,33 @@ def safe_copy_tree(src, dest):
     else:
         print(f"[경고] 디렉토리 없음: {src}")
 
-# await fetch(`${BASE_URL}/init_doc_url/${pageId}`);
-@page_bp.route('/init_doc_url/<page_id>', methods=['GET'])
+@page_bp.route('/init_doc_url/<page_id>', methods=['POST'])
 def init_doc_url(page_id):
     try:
         # 1. URL용 디렉토리 생성
-        url_base_path = f'../data/input/{page_id}_url'  
-        url_input_path = os.path.join(url_base_path, 'input') # 나중에 indexing 할 때 이 폴더 안에 있는 파일들을 doc_input_path로 옮겨야함
+        url_page_id = f"{page_id}_url"
+        url_base_path = f'../data/input/{url_page_id}'
+        url_input_path = os.path.join(url_base_path, 'input')
         os.makedirs(url_input_path, exist_ok=True)
 
-        # URL prompts, .env, settings.yaml 복사
-        safe_copy_tree('../data/input/parquet/url_prompts', os.path.join(url_base_path, 'prompts'))  # parquet/url_prompts에 url 프롬프트 넣어주기
-        shutil.copy2('../data/input/parquet/.env', os.path.join(url_base_path, '.env'))
-        shutil.copy2('../data/input/parquet/settings.yaml', os.path.join(url_base_path, 'settings.yaml'))
+        # 설정, 프롬프트, 환경변수 생성
+        update_settings_yaml(url_page_id)
+        create_env_file(url_page_id)
+        update_prompts(url_page_id, prompt_type='url')
 
         # 2. 문서용 디렉토리 생성
         doc_base_path = f'../data/input/{page_id}'
         doc_input_path = os.path.join(doc_base_path, 'input')
         os.makedirs(doc_input_path, exist_ok=True)
 
-        # doc prompts, .env, settings.yaml 복사
-        safe_copy_tree('../data/input/parquet/doc_prompts', os.path.join(doc_base_path, 'prompts'))
-        # TODO: 같은 방식으로 url_증분 업데이트할 때, url_prompts 폴더 안에 있는 파일들을 옮겨줘야함.
-        # TODO: 증분 인덱싱 할 때, input 폴더 안에 url_input 폴더 안에 있는 파일들을 옮겨줘야함.
-        shutil.copy2('../data/input/parquet/.env', os.path.join(doc_base_path, '.env'))
-        shutil.copy2('../data/input/parquet/settings.yaml', os.path.join(doc_base_path, 'settings.yaml'))
+        # 설정, 프롬프트, 환경변수 생성
+        update_settings_yaml(page_id)
+        create_env_file(page_id)
+        update_prompts(page_id, prompt_type='doc')
 
         return jsonify({
             'success': True,
-            'message': f'초기화 완료: {page_id}_url 및 {page_id} 디렉토리 설정 완료'
+            'message': f'초기화 완료: {url_page_id} 및 {page_id} 디렉토리 설정 완료'
         }), 200
 
     except Exception as e:
