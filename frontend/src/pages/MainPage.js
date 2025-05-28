@@ -96,7 +96,7 @@ function MainPage() {
     setShowUrlInput(false); // 입력창 닫기
   };
 
-  const headerText = "무엇이든 물어보세요!";
+  const headerText = "무엇이든 물어보세요 ";
   const headerLetters = headerText.split('');
   
   return (
@@ -119,7 +119,7 @@ function MainPage() {
       </div>
 
       {/* 제목 애니메이션 */}
-      <h1>
+      <h1> 💡 
         {headerLetters.map((letter, index) => (
           <span key={index}>
             {letter === ' ' ? '\u00A0' : letter}
