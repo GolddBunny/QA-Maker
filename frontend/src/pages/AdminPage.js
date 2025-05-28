@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
-import NetworkChart from "../components/charts/NetworkChart";
-import { getCurrentPageId, getPages, savePages } from '../utils/storage'; // 유틸리티 함수 임포트
 import { usePageContext } from '../utils/PageContext';
 import { useQAHistoryContext } from '../utils/QAHistoryContext'; // QA History Context 추가
 import { FileDropHandler } from '../api/handleFileDrop';
-import { fetchEntities, fetchRelationships } from '../api/AllParquetView';
-import { fetchGraphData } from '../api/AdminGraph';
-import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
@@ -16,23 +11,16 @@ import { applyIndexing, updateIndexing } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
-
+import LoadingSpinner from '../services/LoadingSpinner';
 const BASE_URL = 'http://localhost:5000';
-const UPLOAD_URL = `${BASE_URL}/upload-documents`;
-const PROCESS_URL = `${BASE_URL}/process-documents`;
-const UPDATE_URL = `${BASE_URL}/update`;
-const APPLY_URL = `${BASE_URL}/apply`;
-const URL_URL = `${BASE_URL}`;
-
 
 const AdminPage = () => {
     const navigate = useNavigate();
     const { pageId } = useParams();  // URL에서 페이지 ID 가져오기
     const [urlInput, setUrlInput] = useState("");
     const [uploadedUrls, setUploadedUrls] = useState([]);
-    //const [uploadedDocs, setUploadedDocs] = useState([]);
-    //const [currentPageId, setCurrentPageId] = useState(null);
     const [isNewPage, setIsNewPage] = useState(false);
+    const [isLoadingPage, setIsLoadingPage] = useState(true);
     const [isUrlLoading, setIsUrlLoading] = useState(false);
     const [isFileLoading, setIsFileLoading] = useState(false);
     const [isProcessLoading, setIsProcessLoading] = useState(false);
@@ -43,18 +31,6 @@ const AdminPage = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [duplicateFileName, setDuplicateFileName] = useState(null); //중복 파일 검사
 
-    const [activeTab, setActiveTab] = useState("entity"); //최종 결과물 활성화된 버튼 
-    const [entities, setEntities] = useState([]);
-    const [relationships, setRelationships] = useState([]);
-    const [entitySearchTerm, setEntitySearchTerm] = useState("");
-    const [relationshipSearchTerm, setRelationshipSearchTerm] = useState("");
-    const [isSearchHovered, setIsSearchHovered] = useState(false);
-    const [graphData, setGraphData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [graphError, setGraphError] = useState(null);
-    const [dataFetchError, setDataFetchError] = useState(null);
-    const [showGraph, setShowGraph] = useState(false);
-    const graphDataCacheRef = useRef({});
     const { currentPageId, updatePages, updatePageSysName, updatePageName,
       systemName, setSystemName, domainName, setDomainName
      } = usePageContext();
@@ -74,7 +50,10 @@ const AdminPage = () => {
       const saved = localStorage.getItem(`showProgressing_${pageId}`);
       return saved === 'true';
     });
-    const [docCount, setDocCount] = useState(0);
+    const [docCount, setDocCount] = useState(0);  //문서 수
+    const [urlCount, setUrlCount] = useState(0);
+    const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
+    const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
 
     const { handleFileDrop } = FileDropHandler({
       uploadedDocs,
@@ -97,7 +76,6 @@ const AdminPage = () => {
         setHasOutput(outputExists); //output 상태를 직접 반영해야 렌더링됨
 
         await Promise.all([
-          loadAllData(pageId),
           fetchSavedUrls(pageId),
           loadDocumentsInfo(pageId)
         ]);
@@ -110,21 +88,21 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       setUploadedUrls(urls);
+      setUrlCount(urls.length);
     }, []);
 
     // 문서 정보 로드
-    const loadDocumentsInfo = useCallback(async (id) => {
-      if (!id) return;
+    const loadDocumentsInfo = useCallback(async (pageId) => {
+      if (!pageId) return;
       
       try {
-        const res = await fetch(`${BASE_URL}/documents/${id}`);  // 문서 목록 api
+        const res = await fetch(`${BASE_URL}/documents/${pageId}`);  // 문서 목록 api
         const data = await res.json();
 
         if (data.success) {
-          const uploaded = data.uploaded_files;
-          setUploadedDocs(uploaded);
-          setHasDocuments(uploaded.length > 0);
-          setIsNewPage(uploaded.length === 0);
+            const uploaded = data.uploaded_files;
+            setUploadedDocs(data.uploaded_files);
+            setHasDocuments(data.uploaded_files.length > 0);
         } else {
           console.error("문서 목록 로드 실패:", data.error);
         }
@@ -149,31 +127,6 @@ const AdminPage = () => {
       }
     }, []);
 
-    const loadAllData = useCallback(async (id) => {
-      if (!id) return;
-      
-      setLoading(true);
-      setDataFetchError(null);
-      
-      try {
-        // 병렬로 데이터 로드
-        const [entitiesData, relationshipsData] = await Promise.all([
-          fetchEntities(id, setDataFetchError),
-          fetchRelationships(id, setDataFetchError)
-        ]);
-        
-        // 데이터 설정
-        if (entitiesData) setEntities(entitiesData);
-        if (relationshipsData) setRelationships(relationshipsData);
-        
-      } catch (error) {
-        console.error("데이터 로드 중 오류 발생:", error);
-        setDataFetchError("데이터 로드 중 오류가 발생했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    }, []);
-
     useEffect(() => {
       if (!pageId) {
         const savedPages = JSON.parse(localStorage.getItem("pages")) || [];
@@ -183,6 +136,7 @@ const AdminPage = () => {
         }
         return;
       }
+      setIsLoadingPage(true);
       
       console.log("현재 admin pageId:", pageId);
 
@@ -201,36 +155,23 @@ const AdminPage = () => {
       } else {
         setShowProgressing(false);
       }
-
-      // loadUploadedDocs(pageId)
-      //   .then(docs => setUploadedDocs(docs))
-      //   .catch(error => {
-      //     console.error("문서 목록 로드 중 오류:", error);
-      //     setUploadedDocs([]);
-      //   });
-      loadUploadedDocs(pageId)
-      .then(docs => setUploadedDocs(Array.isArray(docs) ? docs : []))
-      .catch(error => {
-        console.error("문서 목록 로드 중 오류:", error);
-        setUploadedDocs([]);
-      });
-
-      // 페이지 ID가 유효한 경우에만 데이터 로드
+      
       if (pageId) {
-        // 병렬로 데이터 로드 작업 실행
         Promise.all([
-          loadDocumentsInfo(pageId),
+          loadUploadedDocs(pageId)
+            .then(({ docs, count }) => {
+              setUploadedDocs(docs);
+              setDocCount(count); // 문서 개수
+            })
+            .catch(error => {
+              console.error("문서 목록 로드 중 오류:", error);
+              setUploadedDocs([]);
+              setDocCount(0);
+            }),
           fetchSavedUrls(pageId),
-          checkOutputFolder(pageId),
-          loadAllData(pageId),
-          fetchGraphData({
-            pageId: pageId,
-            graphDataCacheRef,
-            setGraphData
-          }),
-        ]).catch(error => {
-          console.error("데이터 로드 중 오류:", error);
-        });
+          checkOutputFolder(pageId)
+        ]).catch(error => console.error("데이터 로드 중 오류:", error))
+          .finally(() => setIsLoadingPage(false)); // 로딩 종료
         
         const pages = JSON.parse(localStorage.getItem('pages')) || [];
         const currentPage = pages.find(page => page.id === pageId);
@@ -319,7 +260,7 @@ const AdminPage = () => {
         const result = await processDocuments(pageId);
 
         if (result.success) {
-          alert("문서 처리 완료");
+          setConversionTime(result.executionTime); 
         } else {
           console.error("문서 처리 실패:", result.error);
           alert("문서 처리에 실패했습니다.");
@@ -352,18 +293,13 @@ const AdminPage = () => {
         const result = await applyIndexing(pageId);
         if (result.success) {
           setIsNewPage(false);
+          setApplyExecutionTime(result.execution_time);
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
-            loadAllData(pageId),
             fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
-            checkOutputFolder(pageId),
-            fetchGraphData({
-              pageId,
-              graphDataCacheRef,
-              setGraphData,
-            })
+            checkOutputFolder(pageId)
           ]);
         } else {
           alert(`문서 인덱싱 실패: ${result.error}`);
@@ -393,15 +329,9 @@ const AdminPage = () => {
 
           // 업데이트 완료 후 데이터 다시 로드
           await Promise.all([
-            loadAllData(pageId),
             fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
-            checkOutputFolder(pageId),
-            fetchGraphData({
-              pageId,
-              graphDataCacheRef,
-              setGraphData,
-            })
+            checkOutputFolder(pageId)
           ]);
         } else {
           alert(`업데이트 실패: ${result.error}`);
@@ -423,33 +353,6 @@ const AdminPage = () => {
       return dateB - dateA; // 최근 날짜가 먼저 오도록 (내림차순)
     });
 
-    const filteredEntities = (entities || [])
-      .filter((item) =>
-        item.title && item.title.toLowerCase().includes(entitySearchTerm.toLowerCase())
-      )
-      .sort((a, b) => a.id - b.id);
-
-    const filteredRelationships = (relationships|| [])
-      .filter(
-        (item) =>
-          item.description &&
-          item.description.toLowerCase().includes(relationshipSearchTerm.toLowerCase())
-      )
-      .sort((a, b) => a.id - b.id);
-
-    const handleShowGraph = () => {
-      if (!showGraph) {
-        // 그래프를 처음 여는 경우에만 fetch
-        if (!graphData && pageId) {
-          fetchGraphData({
-            pageId: pageId,
-            graphDataCacheRef,
-            setGraphData
-          });
-        }
-      }
-      setShowGraph(prev => !prev);
-    };
     
     const handleAnalyzer = async () => {
       if (!pageId) {
@@ -459,12 +362,10 @@ const AdminPage = () => {
 
       if (isAnyProcessing) return;
 
-      // Analyzer 로직 구현
       try {
-        // 여기에 analyzer 관련 API 호출 또는 동작 구현
         console.log("Analyzer 실행");
-        // 예: const result = await runAnalyzer(pageId);
-        alert("Analyzer 실행 완료");
+
+        navigate(`/dashboard/${pageId}`, { state: { conversionTime } });  //conversionTime : 문서 전처리 실행 시간
       } catch (error) {
         console.error("Analyzer 실행 중 오류:", error);
         alert("Analyzer 실행 중 오류가 발생했습니다.");
@@ -472,6 +373,8 @@ const AdminPage = () => {
     };
 
     return (
+      <>
+      {isLoadingPage && <LoadingSpinner />}
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
@@ -585,7 +488,7 @@ const AdminPage = () => {
                   </tbody>
                 </table>
               </div>
-             <div className='search-firebase-sum'>총 url 수</div> 
+             <div className='search-firebase-sum'>총 url 수: {urlCount}</div>
             </div>
           
           {/* 오른쪽 문서 섹션 */}
@@ -718,151 +621,12 @@ const AdminPage = () => {
               onClose={handleCloseProgressing}
               onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
               isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
+              conversionTime={conversionTime} //문서 전처리 시간
+              indexingTime={applyExecutionTime} //인덱싱 시간
             />
           </div>
         )}
 
-        {/* <div className="apply-btn-row">
-          <button 
-            className="btn-apply-update"
-            disabled={isAnyProcessing || isCheckingOutput || hasOutput === null}
-          > 
-            progress bar
-          </button>
-        </div> */}
-        
-        {/* <div className="result-table-section" id="info">
-          <div className="header-bar">
-            <div className="left-group">
-              <h2 className="section-title">QA 시스템 정보 보기</h2>
-              <div className="result-tabs">
-                <button
-                  className={`tab ${activeTab === "entity" ? "active" : ""}`}
-                  onClick={() => setActiveTab("entity")}
-                >
-                  entity
-                </button>
-                <button
-                  className={`tab ${activeTab === "relationship" ? "active" : ""}`}
-                  onClick={() => setActiveTab("relationship")}
-                >
-                  relationship
-                </button>
-              </div>
-            </div>
-            <div className="search-bar">
-              <div
-                className={`search-wrapper ${isSearchHovered ? "expanded" : ""}`}
-                onMouseEnter={() => setIsSearchHovered(true)}
-                onMouseLeave={() => setIsSearchHovered(false)}
-              >
-                  <div className="search-icon">
-                    🔍
-                  </div>
-                  <input
-                    type="text"
-                    placeholder={
-                      activeTab === "entity" ? "title로 검색" : "description 내용 검색"
-                    }
-                    value={activeTab === "entity" ? entitySearchTerm : relationshipSearchTerm}
-                    onChange={(e) =>
-                      activeTab === "entity"
-                        ? setEntitySearchTerm(e.target.value)
-                        : setRelationshipSearchTerm(e.target.value)
-                    }
-                    className="search-input"
-                  />
-                </div>
-              <div className="entity-count">
-                {activeTab === "entity"
-                  ? `총 엔티티 수: ${filteredEntities.length}`
-                  : `총 엣지 수: ${filteredRelationships.length}`}
-              </div>
-            </div>
-          </div>
-          {activeTab === "entity" ? (
-            <EntityTable entities={filteredEntities} />
-          ) : (
-            <RelationshipTable relationships={filteredRelationships} />
-          )}
-        </div> */}
-
-        {/* 그래프 보기
-        <div className="graph-section">
-          <h2 className="section-title">QA 시스템 그래프 보기</h2>
-          <button
-            className="btn_primary"
-            onClick={handleShowGraph}
-            disabled={isAnyProcessing}
-          >
-            {showGraph ? "×" : "⏵"}
-          </button>
-        </div>
-
-        {showGraph && graphData && (
-          <div className="network-chart-wrapper">
-            <NetworkChart data={graphData} />
-          </div>
-        )} */}
-        
-        {/* <div className="user-qa-analyze" id="user-questions">
-          <h2 className="section-title">유저 질문 분석</h2>
-          <div className="stat-cards">
-            <div className="card card-total-category">
-              <div className="card-text">
-                많이 묻는 질문 카테고리<br /><strong>장학금</strong>
-              </div>
-            </div>
-            <div className="card card-total-questions">
-              <div className="card-text">
-                사용자 질문 수<br /><strong>43231</strong>
-              </div>
-            </div>
-            <div className="card card-avg-satisfaction">
-              <div className="card-text">
-                평균 만족도<br /><strong>4.7 / 5</strong>
-              </div>
-            </div>
-          </div>
-        </div> */}
-
-        {/* <span className='user-table-info'>*정보 신뢰성: 제공한 정보의 정확성 평가</span> */}
-        {/* <div className="upload-table-wrapper">
-            <table className="user-table">
-              <thead>
-                <tr>
-                  <th>질문</th>
-                  <th>카테고리</th>
-                  <th>만족도</th>
-                  <th>정보 신뢰성</th>
-                </tr>
-              </thead>
-              <tbody>
-                {qaLoading ? (
-                  <tr>
-                    <td colSpan="4">QA 히스토리를 불러오는 중...</td>
-                  </tr>
-                ) : qaError ? (
-                  <tr>
-                    <td colSpan="4">QA 히스토리 로드 실패: {qaError}</td>
-                  </tr>
-                ) : qaHistory.length === 0 ? (
-                  <tr>
-                    <td colSpan="4">QA 히스토리가 없습니다.</td>
-                  </tr>
-                ) : (
-                  qaHistory.map((item, index) => (
-                    <tr key={item.id || index}>
-                      <td>{item.question}</td>
-                      <td>{item.category || "-"}</td>
-                      <td>{item.satisfaction || "-"}</td>
-                      <td>{item.trust || "-"}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div> */}
         </div>
         <footer className="site-footer">
           <div className="footer-content">
@@ -872,7 +636,7 @@ const AdminPage = () => {
           </div>
         </footer>
       </div>
-      
+      </>
     );
 };
 

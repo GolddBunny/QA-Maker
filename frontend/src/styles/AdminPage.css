@@ -35,6 +35,14 @@
   margin-bottom: 24px;
 }
 
+.search-firebase-sum {
+  margin-top: 5px;
+  margin-left: 5px;
+  font-size: 18px;
+  color:#575071;
+}
+
+
 .input-row {
   display: flex;
   align-items: center;

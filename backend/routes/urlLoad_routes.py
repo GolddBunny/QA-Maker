@@ -77,12 +77,13 @@ def add_url(page_id):
 #url 목록 불러오기
 @url_load_bp.route('/get-urls/<page_id>', methods=['GET'])
 def get_saved_urls(page_id):
-    urls = get_urls_from_firebase(page_id)
-    if urls:
-        print(f"Firebase에서 가져온 URL 목록 ({page_id}): {urls}")
+    try:
+        urls = get_urls_from_firebase(page_id)
+        print(f"[get-urls] page_id: {page_id}, URL 수: {len(urls)}")
         return jsonify({"success": True, "urls": urls}), 200
-    else:
-        return jsonify({"success": False, "error": "URL 조회 중 오류 발생"}), 500
+    except Exception as e:
+        print(f"[get-urls 오류] page_id: {page_id}, 에러: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
     
 # 없애도 되는 코드인가?
 @url_load_bp.route('/get-all-page-ids', methods=['GET'])
