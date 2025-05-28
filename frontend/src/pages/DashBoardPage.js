@@ -15,12 +15,12 @@ import {
     fetchGraphBuildStats, 
     fetchKnowledgeGraphStats 
 } from '../components/dashboard/dashboardDataLoaders';
+
 import { 
     getDateStats, 
     getKnowledgeGraphDateStats, 
     getGraphBuildDateStats 
 } from '../components/dashboard/dashboardStats';
-import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 
 const DashboardPage = () => {
     const navigate = useNavigate();
@@ -48,9 +48,32 @@ const DashboardPage = () => {
     const graphDataCacheRef = useRef({});
     const loadedRef = useRef(false); // 중복 로딩 방지
     const location = useLocation();
-
+    const { getCurrentPageSysName } = usePageContext();
     const urlCount = uploadedUrls?.length || 0;
     const docCount = uploadedDocs?.length || 0;
+
+    const DashboardHeader = ({ isSidebarOpen, toggleSidebar, pageId }) => {
+        return (
+            <header className="dashboard-header">
+                <div className="dashboard-header-content">
+                    <div className="dashboard-header-left">
+                        <button 
+                            className="back-button"
+                            onClick={() => navigate(`/admin/${pageId}`)}
+                            title="관리자 페이지로 돌아가기"
+                        >
+                            ← 돌아가기
+                        </button>
+                        <div className="dashboard-logo-section">
+                        <h1 className="dashboard-title">
+                            {systemName && `${systemName} `}Log Analyzer
+                        </h1>
+                    </div>
+                    </div>
+                </div>
+            </header>
+        );
+    };
 
     const loadEntities = useCallback(async (id) => {
         if (!id) return;
@@ -352,7 +375,7 @@ const DashboardPage = () => {
                     </div>
                 </div>
             </div>
-
+            <hr style={{ margin: "2rem 0", borderTop: "1px solid #ccc" }} />
             <div className={`dashboard-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
                 {/* URL 리스트 섹션 개선 */}
                 <div className="url-list-section">
