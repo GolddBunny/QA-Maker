@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/Engineering/53/2919/artclView.doMarkdown Content:## 교과목 소개본 과목에서는 최근 여러 분야에서 많이 사용되는 파이썬을 학습한다. 파이썬 개발환경에서부터 기본적인 문법 및 각종 라이브러리를 다룬다. 특히 인공지능, 머신러닝에서 많이 활용되는 넘파이와 판다스 라이브러리 학습을 통해 인공지능 학습을 위한 기초를 다진다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || Y030001 | Python for AI | 3 |

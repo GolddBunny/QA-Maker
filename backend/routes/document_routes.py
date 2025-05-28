@@ -54,7 +54,7 @@ def upload_documents(page_id):
         # 날짜 포맷 지정
         today_str = datetime.now().strftime('%Y-%m-%d')
 
-         # 1. Firebase blob 생성
+        # 1. Firebase blob 생성
         blob = bucket.blob(upload_path)
 
         # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
@@ -225,8 +225,8 @@ def get_document_content(page_id):
 def ensure_page_directory(page_id):
     """페이지 디렉토리 확인"""
     base_path = f'../data/input/{page_id}'
-    input_path = os.path.join(base_path, 'input')
-    upload_path = f'../frontend/public/data/{page_id}/input'
+    input_path = os.path.join(base_path, 'input')  # 처리된 문서 텍스트 파일들을 저장할 폴더
+    upload_path = f'../frontend/public/data/{page_id}/input' # 클라이언트에 노출할 폴더
     
     os.makedirs(base_path, exist_ok=True)
     os.makedirs(input_path, exist_ok=True)

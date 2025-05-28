@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/HmnArt/9/226/artclView.doMarkdown Content:## 교과목 소개상품진열을 진행함에 있어 상품의 MD구성, 상품진열 아이디어부터 현장 구현까지 진행하는 실무내용을 학습하고 각 단계별 핵심요소를 짚어 완성시키는 방법으로 진행### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || C2335563 | 상품기획과 브랜딩 | 3 |

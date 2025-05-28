@@ -15,7 +15,7 @@ export function usePageHandlers(pages, updatePages, setCurrentPageId) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${BASE_URL}/init/${newPageId}`, { method: 'POST' });
+      const response = await fetch(`${BASE_URL}/init_doc_url/${newPageId}`, { method: 'POST' });
       const data = await response.json();
 
       if (data.success) {

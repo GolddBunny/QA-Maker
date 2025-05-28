@@ -1,0 +1,22 @@
+2025-05-28 20:23:33,269 - INFO - 크롤링 로그 파일 생성: /Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/backend/services/crawling_service/urlCrawling_CSE/20250528_2023_hansung_ac_kr_ipp_IPP_10803/crawling_log_20250528_2023.txt
+2025-05-28 20:23:33,270 - INFO - URL 발견 시작: https://hansung.ac.kr/IPP/10803/subview.do
+2025-05-28 20:23:33,270 - INFO - 기본 도메인: hansung.ac.kr
+2025-05-28 20:23:33,270 - INFO - 범위 패턴: ['ipp', 'IPP', '10803']
+2025-05-28 20:23:33,270 - INFO - 최대 페이지: 1000
+2025-05-28 20:23:33,270 - INFO - 사이트맵 자동 발견 시작...
+2025-05-28 20:23:33,347 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemap.xml
+2025-05-28 20:23:33,365 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemap_index.xml
+2025-05-28 20:23:33,386 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemaps.xml
+2025-05-28 20:23:33,406 - INFO - XML 사이트맵에서 0개 링크 추출: https://hansung.ac.kr/sitemap/index.xml
+2025-05-28 20:23:33,406 - INFO - 사이트맵 자동 발견 완료. 총 4개 사이트맵 URL 처리됨.
+2025-05-28 20:23:33,407 - INFO - [1/1000] 배치 처리 중: 1개 URL
+2025-05-28 20:23:33,560 - INFO - 제외 패턴 '/login' 매칭으로 URL 제외: https://hansung.ac.kr/hnuLogin/IPP/loginView.do
+2025-05-28 20:23:34,633 - INFO - 증분 저장 완료: 1개 URL을 /Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/backend/services/crawling_service/urlCrawling_CSE/20250528_2023_hansung_ac_kr_ipp_IPP_10803/page_urls_20250528_2023.txt에 추가
+2025-05-28 20:23:34,634 - INFO - 모든 검증 통과
+2025-05-28 20:23:34,634 - INFO - 
+URL 발견 완료:
+2025-05-28 20:23:34,634 - INFO - 발견된 페이지: 1개, 문서: 0개
+2025-05-28 20:23:34,634 - INFO - 저장된 고유 문서: 0개
+2025-05-28 20:23:34,634 - INFO - 정규화 캐시 크기: 27개
+2025-05-28 20:23:34,634 - INFO - 결과 저장 위치: /Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/backend/services/crawling_service/urlCrawling_CSE/20250528_2023_hansung_ac_kr_ipp_IPP_10803
+2025-05-28 20:23:34,634 - INFO - 실행 시간: 1.4초

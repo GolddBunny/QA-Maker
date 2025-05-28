@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/Engineering/53/2704/artclView.doMarkdown Content:## 교과목 소개본 교과목에서는 부울 대수를 기초로 한 디지털 논리소자의 동작원리를 학습하며, 조합회로 및 순차회로를 분석하고 설계하는 기법들을 학습한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || Y030005 | 디지털 논리 및 회로 | 3 |

@@ -1,0 +1,37 @@
+Title: 대학(원)생 빅데이터 분석 경진대회 홍보
+
+URL Source: https://hansung.ac.kr/bbs/CSE/1248/264427/artclView.do
+
+Markdown Content:
+
+안녕하세요. 컴퓨터공학부 행정조교입니다.
+
+국립한밭대학교 빅데이터AI센터에서는 빅데이터 분석능력과 정책기획 및 개선의 능력을 겸비한 융합형 인재양성을 위하여 전국의 대학(원)생을 대상으로 「2024 대학(원)생 빅데이터 분석 경진대회」를 개최합니다.
+
+가. 대회명: 2024 대학(원)생 빅데이터 분석 경진대회
+
+나. 참가대상: 빅데이터 기초지식을 보유한 전국의 대학(원) 재학생
+
+다. 대회기간: 2024. 10.~11.
+
+라. 주요내용: 빅데이터 활용 아이디어, 빅데이터 활용 사례 및 성과, 빅데이터 분석 노하우
+
+마. 신청방법: 참가신청서 제출(chomj@hanbat.ac.kr)
+
+바. 문의처: 국립한밭대학교 LINC3.0사업단 조미정(042-828-8429)
+
+아래에 관련 서류 첨부합니다.
+
+## 첨부파일
+
+1. 첨부파일: 2. 참가신청서.hwp 함께 제공됨
+   - URL: https://hansung.ac.kr/bbs/CSE/1248/74268/download.do
+2. 첨부파일: 미리보기 함께 제공됨
+   - URL: https://hansung.ac.kr/bbs/CSE/1248/74268/synapView.do
+3. 첨부파일: 1. 2024 대학(원)생 빅데이터 분석 경진대회 공고문.pdf 함께 제공됨
+   - URL: https://hansung.ac.kr/bbs/CSE/1248/74269/download.do
+4. 첨부파일: 3. 평가제안서.hwp 함께 제공됨
+   - URL: https://hansung.ac.kr/bbs/CSE/1248/74270/download.do
+5. 첨부파일: 4. 발표자료 제출형식.hwp 함께 제공됨
+   - URL: https://hansung.ac.kr/bbs/CSE/1248/74271/download.do
+
