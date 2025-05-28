@@ -98,7 +98,7 @@ export const applyIndexing = async (pageId) => {
     const data = await response.json();
 
     return data.success
-      ? { success: true }
+      ? { success: true, execution_time: data.execution_time }
       : { success: false, error: data.error };
   } catch (err) {
     console.error("applyIndexing 에러:", err);

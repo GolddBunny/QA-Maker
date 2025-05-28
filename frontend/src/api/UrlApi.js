@@ -11,9 +11,12 @@ export const fetchSavedUrls = async (pageId) => {
     });
 
     const data = await response.json();
+    console.log(`[fetchSavedUrls] 응답 데이터:`, data);
 
     if (data.success) {
-      return data.urls || [];
+      const urls = Array.isArray(data.urls) ? data.urls : [];
+      console.log(`[fetchSavedUrls] 성공: ${urls.length}개 URL 로드`);
+      return urls;
     } else {
       console.error('URL 목록 불러오기 실패:', data.error);
       return [];

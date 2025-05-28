@@ -2,7 +2,7 @@
 import React from 'react';
 import '../styles/ProgressingBar.css';
 
-const ProgressingBar = ({ onClose, onAnalyzer, isCompleted }) => {
+const ProgressingBar = ({ onClose, onAnalyzer, isCompleted, conversionTime }) => {
   return (
     <div className="progress-wrapper">
         <button className="progress-close-button" onClick={onClose}>×</button>
@@ -34,7 +34,7 @@ const ProgressingBar = ({ onClose, onAnalyzer, isCompleted }) => {
         </div>
         <div className="step">
           <div className="circle">3</div>
-          <div className="step-desc">document structuring<br /><span className="status">대기중 (~30분)</span></div>
+          <div className="step-desc">document structuring<br /><span className="status">{conversionTime ? `완료 (${conversionTime}s)` : '대기중 (~30분)'}</span></div>
         </div>
         <div className="step">
           <div className="circle">4</div>

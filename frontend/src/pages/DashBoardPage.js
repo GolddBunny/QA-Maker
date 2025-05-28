@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+
 import "../styles/DashBoardPage.css";
 import NetworkChart from "../components/charts/NetworkChart";
 import { usePageContext } from '../utils/PageContext';
@@ -9,202 +10,322 @@ import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
 import { fetchSavedUrls as fetchSavedUrlsApi } from '../api/UrlApi';
 
-const BASE_URL = 'http://localhost:5000';
+import { 
+    loadDocumentsInfo, 
+    fetchGraphBuildStats, 
+    fetchKnowledgeGraphStats 
+} from '../components/dashboard/dashboardDataLoaders';
+
+import { 
+    getDateStats, 
+    getKnowledgeGraphDateStats, 
+    getGraphBuildDateStats 
+} from '../components/dashboard/dashboardStats';
 
 const DashboardPage = () => {
     const navigate = useNavigate();
     const { pageId } = useParams();
+    const { currentPageId, domainName, setDomainName, systemName, setSystemName } = usePageContext();
+    const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    
     const [activeTab, setActiveTab] = useState("entity");
-    const [entities, setEntities] = useState([]);
-    const [relationships, setRelationships] = useState([]);
+    const [showGraph, setShowGraph] = useState(true);
+    const [loading, setLoading] = useState(true);
     const [entitySearchTerm, setEntitySearchTerm] = useState("");
     const [relationshipSearchTerm, setRelationshipSearchTerm] = useState("");
     const [isSearchHovered, setIsSearchHovered] = useState(false);
+    const [entities, setEntities] = useState([]);
+    const [relationships, setRelationships] = useState([]);
     const [graphData, setGraphData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [graphError, setGraphError] = useState(null);
-    const [dataFetchError, setDataFetchError] = useState(null);
-    const [showGraph, setShowGraph] = useState(true);
-    const graphDataCacheRef = useRef({});
-    
-    // URL과 문서 목록 상태 추가
     const [uploadedUrls, setUploadedUrls] = useState([]);
     const [uploadedDocs, setUploadedDocs] = useState([]);
-    
-    const { currentPageId, domainName, setDomainName, systemName, setSystemName } = usePageContext();
-    const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
+    const [graphBuildStats, setGraphBuildStats] = useState([]);
+    const [knowledgeGraphStats, setKnowledgeGraphStats] = useState([]);
+    const [createdDate, setCreatedDate] = useState("");
+    const [graphError, setGraphError] = useState(null);
+    const [dataFetchError, setDataFetchError] = useState(null);
+    const [conversionTime, setConversionTime] = useState(null);
+    const graphDataCacheRef = useRef({});
+    const loadedRef = useRef(false); // 중복 로딩 방지
+    const location = useLocation();
+    const { getCurrentPageSysName } = usePageContext();
+    const urlCount = uploadedUrls?.length || 0;
+    const docCount = uploadedDocs?.length || 0;
 
-    const DashboardHeader = ({ isSidebarOpen, toggleSidebar }) => {
+    const DashboardHeader = ({ isSidebarOpen, toggleSidebar, pageId }) => {
         return (
             <header className="dashboard-header">
                 <div className="dashboard-header-content">
                     <div className="dashboard-header-left">
                         <button 
                             className="back-button"
-                            onClick={() => navigate('/admin')}
+                            onClick={() => navigate(`/admin/${pageId}`)}
                             title="관리자 페이지로 돌아가기"
                         >
                             ← 돌아가기
                         </button>
                         <div className="dashboard-logo-section">
-                            <h1 className="dashboard-title">한성대 QA System dashboard</h1>
-                        </div>
+                        <h1 className="dashboard-title">
+                            {systemName && `${systemName} `}Log Analyzer
+                        </h1>
                     </div>
-                    
-                    <div className="dashboard-header-right">
-                        <div className="dashboard-nav-links">
-                            <a href="/" className="dashboard-nav-link">QA 시스템</a>
-                        </div>
                     </div>
                 </div>
             </header>
         );
     };
 
-    // URL 목록 불러오기
-    const fetchSavedUrls = useCallback(async (pageId) => {
-        const urls = await fetchSavedUrlsApi(pageId);
-        setUploadedUrls(urls);
-    }, []);
-
-    // 문서 정보 로드
-    const loadDocumentsInfo = useCallback(async (id) => {
+    const loadEntities = useCallback(async (id) => {
         if (!id) return;
         
         try {
-            const res = await fetch(`${BASE_URL}/documents/${id}`);
-            const data = await res.json();
-
-            if (data.success) {
-                const uploaded = data.uploaded_files;
-                setUploadedDocs(uploaded);
+            console.log("엔티티 데이터 로드 중...");
+            const entitiesData = await fetchEntities(id, setDataFetchError);
+            
+            if (entitiesData) {
+                console.log("엔티티 데이터 로드 완료:", entitiesData.length);
+                setEntities(entitiesData);
             } else {
-                console.error("문서 목록 로드 실패:", data.error);
+                console.warn("엔티티 데이터가 null 또는 undefined입니다");
+                setEntities([]);
             }
         } catch (error) {
-            console.error("문서 정보 로드 실패:", error);
+            console.error("엔티티 데이터 로드 중 오류:", error);
+            setDataFetchError("엔티티 데이터 로드 중 오류가 발생했습니다.");
         }
     }, []);
 
-    // 모든 데이터 로드
-    const loadAllData = useCallback(async (id) => {
+    const loadRelationships = useCallback(async (id) => {
         if (!id) return;
         
-        setLoading(true);
-        setDataFetchError(null);
-        
         try {
-            // 병렬로 데이터 로드
-            const [entitiesData, relationshipsData] = await Promise.all([
-                fetchEntities(id, setDataFetchError),
-                fetchRelationships(id, setDataFetchError)
-            ]);
+            console.log("🔗 관계 데이터 로드 중...");
+            const relationshipsData = await fetchRelationships(id, setDataFetchError);
             
-            // 데이터 설정
-            if (entitiesData) setEntities(entitiesData);
-            if (relationshipsData) setRelationships(relationshipsData);
-            
+            if (relationshipsData) {
+                console.log("관계 데이터 로드 완료:", relationshipsData.length);
+                setRelationships(relationshipsData);
+            } else {
+                console.warn("관계 데이터가 null 또는 undefined");
+                setRelationships([]);
+            }
         } catch (error) {
-            console.error("데이터 로드 중 오류 발생:", error);
-            setDataFetchError("데이터 로드 중 오류가 발생했습니다.");
-        } finally {
-            setLoading(false);
+            console.error("관계 데이터 로드 중 오류:", error);
+            setDataFetchError("관계 데이터 로드 중 오류가 발생했습니다.");
         }
     }, []);
 
+    const loadGraphData = useCallback(async (pageId) => {
+        if (!pageId) return;
+        
+        try {
+            await fetchGraphData({
+                pageId,
+                graphDataCacheRef,
+                setGraphData
+            });
+        } catch (error) {
+            console.error('그래프 데이터 로드 중 오류:', error);
+            setGraphError('그래프 데이터를 불러올 수 없습니다.');
+        }
+    }, []);
+
+    const fetchSavedUrls = useCallback(async (pageId) => {
+        try {
+            const urls = await fetchSavedUrlsApi(pageId);
+            setUploadedUrls(urls);
+        } catch (error) {
+            console.error('URL 목록 로드 중 오류:', error);
+        }
+    }, []);
+
+    const dateStats = useMemo(() => getDateStats(uploadedUrls, uploadedDocs), [uploadedUrls, uploadedDocs]);
+    const knowledgeGraphDateStats = useMemo(() => getKnowledgeGraphDateStats(knowledgeGraphStats), [knowledgeGraphStats]);
+    const graphDateStats = useMemo(() => getGraphBuildDateStats(graphBuildStats), [graphBuildStats]);
+
+    const maxValue = Math.max(...dateStats.map(item => Math.max(item.url, item.doc)), 1);
+    const knowledgeGraphMaxValue = Math.max(
+        ...knowledgeGraphDateStats.map(item => Math.max(item.entity, item.relationship)), 
+        1
+    );
+    const maxGraphValue = Math.max(...graphDateStats.map(item => Math.max(item.entity, item.relationship)), 1);
+
+    // === Filtered Data ===
+    const filteredEntities = useMemo(() => {
+        if (!entities.length) return [];
+        
+        const filtered = entities
+            .filter((item) => {
+                const hasTitle = item.title && typeof item.title === 'string';
+                const matchesSearch = hasTitle ? 
+                    item.title.toLowerCase().includes(entitySearchTerm.toLowerCase()) : false;
+                
+                return hasTitle && matchesSearch;
+            })
+            .sort((a, b) => a.id - b.id);
+            
+        // console.log("엔티티 필터링 완료:", {
+        //     filteredCount: filtered.length,
+        //     removedCount: entities.length - filtered.length,
+        // });
+        
+        return filtered;
+    }, [entities, entitySearchTerm]);
+
+    const filteredRelationships = useMemo(() => {
+        if (!relationships.length) return [];
+        
+        const filtered = relationships
+            .filter((item) => {
+                const hasDescription = item.description && typeof item.description === 'string';
+                const matchesSearch = hasDescription ? 
+                    item.description.toLowerCase().includes(relationshipSearchTerm.toLowerCase()) : false;
+                
+                return hasDescription && matchesSearch;
+            })
+            .sort((a, b) => a.id - b.id);
+            
+        // console.log("관계 필터링 완료:", {
+        //     filteredCount: filtered.length,
+        //     removedCount: relationships.length - filtered.length,
+        // });
+        
+        return filtered;
+    }, [relationships, relationshipSearchTerm]);
+
+    const loadPageInfo = useCallback(() => {
+        const pages = JSON.parse(localStorage.getItem('pages')) || [];
+        const currentPage = pages.find(page => page.id === pageId);
+        console.log("📄 현재 페이지 정보:", currentPage);
+        
+        if (currentPage) {
+            setDomainName(currentPage.name || "");
+            setSystemName(currentPage.sysname || "");
+            
+            if (currentPage.createdAt) {
+                try {
+                    const date = new Date(currentPage.createdAt);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    console.log('날짜 파싱 성공:', currentPage.createdAt);
+                    setCreatedDate(`${year}.${month}.${day}`);
+                } catch (error) {
+                    console.log('날짜 파싱 실패:', currentPage.createdAt);
+                    setCreatedDate("2025.05.27");
+                }
+            } else {
+                console.log("createdAt 필드가 없으므로 기본 설정 날짜로 대신합니다.");
+                setCreatedDate("2025.05.27");
+            }
+        } else {
+            console.warn("현재 페이지를 찾을 수 없으므로 기본 설정 날짜로 대신합니다.");
+            setCreatedDate("2025.05.27");
+        }
+    }, [pageId, setDomainName, setSystemName]);
+
     useEffect(() => {
+        console.log("useEffect 실행 - location.state:", location.state);
+        console.log("useEffect 실행 - conversionTime:", location.state?.conversionTime);
+        // 중복 실행 방지
+        if (loadedRef.current) return;
+        if (location.state?.conversionTime) {
+            console.log("conversionTime 설정:", location.state.conversionTime);
+            setConversionTime(location.state.conversionTime);
+        } else {
+            console.log("conversionTime이 없음");
+        }
+        
         if (!pageId) {
             const savedPages = JSON.parse(localStorage.getItem("pages")) || [];
             if (savedPages.length > 0) {
                 const fallbackPageId = savedPages[0].id;
+                console.log("Fallback pageId로 리다이렉트:", fallbackPageId);
                 navigate(`/dashboard/${fallbackPageId}`);
+            } else {
+                console.log("저장된 페이지가 없습니다");
             }
             return;
         }
         
-        console.log("현재 dashboard pageId:", pageId);
+        console.log("Dashboard 초기화 시작:", { pageId });
+        setLoading(true);
+        loadedRef.current = true;
 
-        // 페이지 ID가 유효한 경우에만 데이터 로드
-        if (pageId) {
-            Promise.all([
-                loadAllData(pageId),
-                fetchGraphData({
-                    pageId,
-                    graphDataCacheRef,
-                    setGraphData
-                }),
-                // URL과 문서 목록 로드 추가
-                fetchSavedUrls(pageId),
-                loadDocumentsInfo(pageId),
-            ]).catch(error => {
+        const loadAllData = async () => {
+            try {
+                await Promise.all([
+                    loadEntities(pageId),
+                    loadRelationships(pageId),
+                    loadGraphData(pageId),
+                    fetchSavedUrls(pageId),
+                    loadDocumentsInfo(pageId, setUploadedDocs),
+                    fetchGraphBuildStats(pageId, setGraphBuildStats),
+                    fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
+                ]);
+                console.log("모든 데이터 로드 완료");
+            } catch (error) {
                 console.error("데이터 로드 중 오류:", error);
-            });
-
-            // 페이지 정보 불러오기
-            const pages = JSON.parse(localStorage.getItem('pages')) || [];
-            const currentPage = pages.find(page => page.id === pageId);
-            if (currentPage) {
-                setDomainName(currentPage.name || "");
-                setSystemName(currentPage.sysname || "");
+            } finally {
+                setLoading(false);
             }
-        }
-    }, [pageId, loadAllData, navigate, fetchSavedUrls, loadDocumentsInfo]);
-    const filteredEntities = (entities || [])
-        .filter((item) =>
-            item.title && item.title.toLowerCase().includes(entitySearchTerm.toLowerCase())
-        )
-        .sort((a, b) => a.id - b.id);
+        };
 
-    const filteredRelationships = (relationships || [])
-        .filter(
-            (item) =>
-                item.description &&
-                item.description.toLowerCase().includes(relationshipSearchTerm.toLowerCase())
-        )
-        .sort((a, b) => a.id - b.id);
+        loadAllData();
+        loadPageInfo();
+
+        // Cleanup function
+        return () => {
+            loadedRef.current = false;
+        };
+    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, fetchSavedUrls, loadPageInfo, location.state]);
 
     return (
         <div className={`dashboard-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
             <DashboardHeader isSidebarOpen={isSidebarOpen} />
-            
             {/* 통계 섹션 */}
             <div className="stats-section">
                 <div className="stats-grid">
+                    <div className="stat-card date-card">
+                        <div className="stat-header">
+                            <span className="stat-icon">📅</span>
+                        </div>
+                        <div className="stat-number">{createdDate || ""}</div>
+                        <div className="stat-label">생성된 날짜</div>
+                    </div>
                     <div className="stat-card url-card">
                         <div className="stat-header">
                             <span className="stat-icon">🌐</span>
-                            <span className="stat-change positive">+23</span>
+                            <span className="stat-change positive">+1</span>
                         </div>
-                        <div className="stat-number">1,247</div>
+                        <div className="stat-number">{urlCount}</div>
                         <div className="stat-label">등록된 URL</div>
                     </div>
                     
                     <div className="stat-card docs-card">
                         <div className="stat-header">
                             <span className="stat-icon">📄</span>
-                            <span className="stat-change positive">+156</span>
+                            <span className="stat-change positive">+2</span>
                         </div>
-                        <div className="stat-number">2,843</div>
+                        <div className="stat-number">{docCount}</div>
                         <div className="stat-label">수집된 문서</div>
                     </div>
                     
                     <div className="stat-card entities-card">
                         <div className="stat-header">
                             <span className="stat-icon">🔗</span>
-                            <span className="stat-change positive">+802</span>
+                            <span className="stat-change positive">+108</span>
                         </div>
-                        <div className="stat-number">28,391</div>
+                        <div className="stat-number">{filteredEntities.length}</div>
                         <div className="stat-label">추출된 엔티티</div>
                     </div>
                     
                     <div className="stat-card relations-card">
                         <div className="stat-header">
                             <span className="stat-icon">⚡</span>
-                            <span className="stat-change positive">+1,445</span>
+                            <span className="stat-change positive">+105</span>
                         </div>
-                        <div className="stat-number">52,743</div>
+                        <div className="stat-number">{filteredRelationships.length}</div>
                         <div className="stat-label">구축된 관계</div>
                     </div>
                     
@@ -216,11 +337,46 @@ const DashboardPage = () => {
                         <div className="stat-number">2시간 전</div>
                         <div className="stat-label">마지막 업데이트</div>
                     </div>
+
+                    <div className="stat-card time-card">
+                        <div className="stat-header">
+                            <span className="stat-icon">🕷️</span>
+                            <span className="stat-change positive">방금</span>
+                        </div>
+                        <div className="stat-number">2시간</div>
+                        <div className="stat-label">크롤링에 걸린 시간</div>
+                    </div>
+
+                    <div className="stat-card time-card">
+                        <div className="stat-header">
+                            <span className="stat-icon">🧾</span>
+                            <span className="stat-change positive">방금</span>
+                        </div>
+                        <div className="stat-number">3시간</div>
+                        <div className="stat-label">url 전처리에 걸린 시간</div>
+                    </div>
+
+                    <div className="stat-card time-card">
+                        <div className="stat-header">
+                            <span className="stat-icon">📑</span>
+                            <span className="stat-change positive">방금</span>
+                        </div>
+                        <div className="stat-number">{conversionTime || '1시간'}</div>
+                        <div className="stat-label">문서 전처리에 걸린 시간</div>
+                    </div>
+
+                    <div className="stat-card time-card">
+                        <div className="stat-header">
+                            <span className="stat-icon">📍</span>
+                            <span className="stat-change positive">방금</span>
+                        </div>
+                        <div className="stat-number">2시간</div>
+                        <div className="stat-label">인덱싱에 걸린 시간</div>
+                    </div>
                 </div>
             </div>
-
+            <hr style={{ margin: "2rem 0", borderTop: "1px solid #ccc" }} />
             <div className={`dashboard-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-                
                 {/* URL 리스트 섹션 개선 */}
                 <div className="url-list-section">
                     <div className="section-header">
@@ -228,13 +384,18 @@ const DashboardPage = () => {
                             <span className="icon">🌐</span>
                             URL 리스트
                         </h2>
-                        <div className="search-box">
-                            <span className="search-icon">🔍</span>
-                            <input 
-                                type="text" 
-                                placeholder="URL에서 도메인으로 검색..."
-                            />
-                        </div>
+                            <div className="search-controls">
+                                <div className="search-box">
+                                    <span className="search-icon">🔍</span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="URL에서 도메인으로 검색..."
+                                    />
+                                </div>
+                                <div className="entity-count">
+                                {`총 URL 수: ${urlCount}`}
+                                </div>
+                            </div>
                     </div>
                     
                     <div className="url-table-container">
@@ -243,7 +404,7 @@ const DashboardPage = () => {
                                 <thead>
                                     <tr>
                                         <th>URL</th>
-                                        <th>설명</th>
+                                        <th>카테고리</th>
                                         <th>수집일</th>
                                     </tr>
                                 </thead>
@@ -286,12 +447,17 @@ const DashboardPage = () => {
                             <span className="icon">📄</span>
                             문서 목록
                         </h2>
-                        <div className="search-box">
-                            <span className="search-icon">🔍</span>
-                            <input 
-                                type="text" 
-                                placeholder="문서명으로 검색..."
-                            />
+                        <div className="search-controls">
+                            <div className="search-box">
+                                <span className="search-icon">🔍</span>
+                                <input 
+                                    type="text" 
+                                    placeholder="문서명으로 검색..."
+                                />
+                            </div>
+                            <div className="entity-count">
+                                {`총 문서 수: ${docCount}`}
+                            </div>
                         </div>
                     </div>
                     
@@ -362,7 +528,7 @@ const DashboardPage = () => {
                                     <input
                                         type="text"
                                         placeholder={
-                                            activeTab === "entity" ? "title로 검색" : "description 내용 검색"
+                                            activeTab === "entity" ? "title로 검색" : "엔티티나 관계로 검색..."
                                         }
                                         value={activeTab === "entity" ? entitySearchTerm : relationshipSearchTerm}
                                         onChange={(e) =>
@@ -375,7 +541,7 @@ const DashboardPage = () => {
                                 <div className="entity-count">
                                     {activeTab === "entity"
                                         ? `총 엔티티 수: ${filteredEntities.length}`
-                                        : `총 엣지 수: ${filteredRelationships.length}`}
+                                        : `총 관계 수: ${filteredRelationships.length}`}
                                 </div>
                             </div>
                         </div>
@@ -463,23 +629,145 @@ const DashboardPage = () => {
                         </div>
                     )}
                 </div>
-            </div>
-                </div>
                 {/* 그래프 보기 섹션 수정 */}
-                <div className="graph-section">
-                    <div className="graph-header">
-                        <h2 className="section-title-with-icon">
-                            🕸️ 지식그래프 네트워크 시각화 (Top 200 엔티티)
-                        </h2>
+                <div className="knowledge-graph-section">
+                    <h1 className="section-title-with-icon">
+                        <span className="icon">🕸️</span>
+                        지식 그래프
+                    </h1>
+                    <div className="knowledge-graph-container">
+                        {showGraph && graphData && !graphError ? (
+                            <NetworkChart 
+                                data={graphData} 
+                                pageId={pageId}
+                            />
+                        ) : graphError ? (
+                            <div className="graph-error-message">
+                                그래프를 불러올 수 없습니다: {graphError}
+                            </div>
+                        ) : (
+                            <div className="graph-loading-message">
+                                그래프를 불러오는 중...
+                            </div>
+                        )}
                     </div>
-                    {showGraph && graphData && (
-                        <div className="url-table-container">
-                            <div className="network-chart-wrapper">
-                                <NetworkChart data={graphData} />
+                </div>
+                {/* 통계 차트 섹션 */}
+                <div className="stats-charts-section">
+                    <div className="charts-container">
+                        {/* 날짜별 데이터 수집 현황 */}
+                        <div className="chart-card">
+                            <div className="chart-header">
+                                <h1 className="section-title-with-icon">
+                                    <span className="chart-icon">📊</span>
+                                    일별 데이터 수집 현황
+                                </h1>
+                            </div>
+                            <div className="chart-content">
+                                <div className="chart-legend">
+                                    <div className="legend-item">
+                                        <div className="legend-color url-color"></div>
+                                        <span>URL</span>
+                                    </div>
+                                    <div className="legend-item">
+                                        <div className="legend-color doc-color"></div>
+                                        <span>문서</span>
+                                    </div>
+                                </div>
+                                <div className="bar-chart">
+                                    {dateStats.length > 0 ? (
+                                        dateStats.map((item, index) => (
+                                            <div key={index} className="bar-group">
+                                                <div className="bars">
+                                                    <div 
+                                                        className="bar url-bar" 
+                                                        style={{height: `${(item.url / maxValue) * 80}%`}}
+                                                        title={`URL: ${item.url}개`}
+                                                    ></div>
+                                                    <div 
+                                                        className="bar doc-bar" 
+                                                        style={{height: `${(item.doc / maxValue) * 80}%`}}
+                                                        title={`문서: ${item.doc}개`}
+                                                    ></div>
+                                                </div>
+                                                <div className="bar-label">{item.date}일</div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="no-data-message">데이터가 없습니다</div>
+                                    )}
+                                </div>
+                                <div className="chart-stats">
+                                    <div className="stat-item">
+                                        <span className="stat-label">총 URL</span>
+                                        <span className="stat-value">{urlCount}개</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">총 문서</span>
+                                        <span className="stat-value">{docCount}개</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    )}
+
+                        {/* 지식그래프 구축 현황 */}
+                        <div className="chart-card">
+                            <div className="chart-header">
+                                <h1 className="section-title-with-icon">
+                                    <span className="chart-icon">📈</span>
+                                    일별 지식그래프 구축 현황
+                                </h1>
+                            </div>
+                            <div className="chart-content">
+                                <div className="chart-legend">
+                                    <div className="legend-item">
+                                        <div className="legend-color entity-color"></div>
+                                        <span>엔티티</span>
+                                    </div>
+                                    <div className="legend-item">
+                                        <div className="legend-color relationship-color"></div>
+                                        <span>관계</span>
+                                    </div>
+                                </div>
+                                <div className="bar-chart">
+                                    {knowledgeGraphDateStats.length > 0 ? (
+                                        knowledgeGraphDateStats.map((item, index) => (
+                                            <div key={index} className="bar-group">
+                                                <div className="bars">
+                                                    <div 
+                                                        className="bar entity-bar" 
+                                                        style={{height: `${(item.entity / knowledgeGraphMaxValue) * 80}%`}}
+                                                        title={`엔티티: ${item.entity}개`}
+                                                    ></div>
+                                                    <div 
+                                                        className="bar relationship-bar" 
+                                                        style={{height: `${(item.relationship / knowledgeGraphMaxValue) * 80}%`}}
+                                                        title={`관계: ${item.relationship}개`}
+                                                    ></div>
+                                                </div>
+                                                <div className="bar-label">{item.date}일</div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="no-data-message">데이터가 없습니다</div>
+                                    )}
+                                </div>
+                                <div className="chart-stats">
+                                    <div className="stat-item">
+                                        <span className="stat-label">총 엔티티</span>
+                                        <span className="stat-value">{entities.length}개</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">총 관계</span>
+                                        <span className="stat-value">{relationships.length}개</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
         </div>
     );
 };
