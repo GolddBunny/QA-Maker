@@ -4,6 +4,8 @@ import time
 from flask import Blueprint, jsonify, request
 from services.document_service.convert2txt import convert2txt
 from firebase_config import bucket
+from firebase_admin import firestore
+from datetime import datetime
 
 generate_bp = Blueprint('generate', __name__)
 
@@ -21,6 +23,9 @@ def apply_documents(page_id):
         execution_time = end_time - start_time
         print(execution_time)
 
+        # 날짜 포맷 지정
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
         # output 폴더 내부 파일 Firebase로 업로드
         uploaded_files = []
         if os.path.exists(output_path):
@@ -32,6 +37,14 @@ def apply_documents(page_id):
                     firebase_path = f'pages/{page_id}/results/{filename}'
 
                     blob = bucket.blob(firebase_path)
+
+                    # 메타데이터에 인덱싱 날짜 저장
+                    blob.metadata = {
+                        "process_type": "index",
+                        "date": today_str,
+                        "execution_time": str(execution_time)
+                    }
+
                     blob.upload_from_filename(file_path)
                     blob.make_public()
 
@@ -71,6 +84,9 @@ def update(page_id):
         execution_time = end_time - start_time
         print(f'execution_time: {execution_time}')
         
+        # 날짜 포맷 지정
+        today_str = datetime.now().strftime('%Y-%m-%d')
+
         # output 폴더 내부 파일 Firebase로 업로드
         uploaded_files = []
         if os.path.exists(output_path):
@@ -82,6 +98,14 @@ def update(page_id):
                     firebase_path = f'pages/{page_id}/results/{filename}'
 
                     blob = bucket.blob(firebase_path)
+
+                    # 메타데이터에 업데이트 날짜 저장
+                    blob.metadata = {
+                        "process_type": "update",
+                        "date": today_str,
+                        "execution_time": str(execution_time)
+                    }
+
                     blob.upload_from_filename(file_path)
                     blob.make_public()
 

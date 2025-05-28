@@ -358,11 +358,23 @@ def all_graph():
         base_path = os.path.join(BASE_PATH, str(page_id), "output")
         #print("base_path:", base_path)
 
-        entities_parquet = os.path.join(base_path, "entities.parquet")
-        relationships_parquet = os.path.join(base_path, "relationships.parquet")
+        prefix = f'pages/{page_id}/results/'
 
-        entities_df = pd.read_parquet(entities_parquet)
-        relationships_df = pd.read_parquet(relationships_parquet)
+        blobs = list(bucket.list_blobs(prefix=prefix))
+
+        blob_dict = {}
+        for blob in blobs:
+            filename = blob.name.replace(prefix, '')
+            if filename:
+                blob_dict[filename] = blob.download_as_bytes()
+        # 파이어베이스의 파케이 읽어서 가져오게 
+        entities_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
+        relationships_df = pd.read_parquet(io.BytesIO(blob_dict["relationships.parquet"]))
+        # entities_parquet = os.path.join(base_path, "entities.parquet")
+        # relationships_parquet = os.path.join(base_path, "relationships.parquet")
+
+        # entities_df = pd.read_parquet(entities_parquet)
+        # relationships_df = pd.read_parquet(relationships_parquet)
 
         # entities: degree 기준 상위 100개
         top_entities = (
