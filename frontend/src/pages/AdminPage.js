@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import { usePageContext } from '../utils/PageContext';
@@ -11,6 +11,7 @@ import { applyIndexing, updateIndexing } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
+import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
 import LoadingSpinner from '../services/LoadingSpinner';
 const BASE_URL = 'http://localhost:5000';
 
@@ -55,15 +56,16 @@ const AdminPage = () => {
     const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
     const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
 
-    const { handleFileDrop } = FileDropHandler({
+    const { handleFileDrop } = useMemo(() => FileDropHandler({  //문서 수 firebase 실시간 연동
       uploadedDocs,
       setUploadedDocs,
       setDuplicateFileName,
       setIsFileLoading,
       setHasDocuments,
       isAnyProcessing,
-      pageId
-    });
+      pageId,
+      setDocCount
+    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
 
     const handleCloseProgressing = async () => {
       setShowProgressing(false);
@@ -149,7 +151,7 @@ const AdminPage = () => {
       
       if (pageId) {
         Promise.all([
-          loadUploadedDocs(pageId)
+          loadUploadedDocsFromFirestore(pageId)
             .then(({ docs, count }) => {
               const docsArray = Array.isArray(docs) ? docs : []; // 배열인지 확인
               setUploadedDocs(docsArray);
@@ -220,8 +222,8 @@ const AdminPage = () => {
         if (result.success) {
           console.log('URL 저장 완료:', result.urls);
           setUploadedUrls(result.urls || []);
+          setUrlCount(result.urls.length);
           setUrlInput('');
-          alert("URL이 등록되었습니다.");
         } else {
           throw new Error('URL 저장 실패: ' + result.error);
         }
