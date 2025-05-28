@@ -464,18 +464,16 @@ const AdminPage = () => {
               )}
               </div>
 
-              <table className="upload-table">
-                <thead>
-                  <tr>
-                    <th>URL</th>
-                    <th>업로드 날짜</th>
-                  </tr>
-                </thead>
-              </table>
               <div className="upload-table-wrapper">
                 <table className="upload-table">
+                  <thead>
+                    <tr>
+                      <th>URL</th>
+                      <th>업로드 날짜</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {(Array.isArray(uploadedUrls) && uploadedUrls.length > 0) ? (
+                    {uploadedUrls.length > 0 ? (
                       uploadedUrls.map((item, idx) => (
                         <tr key={idx}>
                           <td>{item.url}</td>
@@ -542,53 +540,39 @@ const AdminPage = () => {
               )}
             </div>
 
-            <table className="document-table">
-              <thead>
-                <tr>
-                  <th>문서 이름</th>
-                  <th>카테고리</th>
-                  <th>업로드 날짜</th>
-                </tr>
-              </thead>
+            <div className="document-table-scroll">
+              <table className="document-table">
+                <thead>
+                  <tr>
+                    <th>문서 이름</th>
+                    <th>카테고리</th>
+                    <th>업로드 날짜</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(uploadedDocs) && uploadedDocs.length > 0 ? (
+                    sortedDocs.map((doc, index) => (
+                      <tr key={index}>
+                        <td>{doc.original_filename}</td>
+                        <td><span className="category-pill-admin">{doc.category}</span></td>
+                        <td>{doc.date}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="no-message">
+                        업로드된 문서가 없습니다.<br />
+                        문서를 등록해주세요.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
-                <div className="document-table-scroll">
-                  <table className="document-table">
-                    <tbody>
-                      {Array.isArray(uploadedDocs) && uploadedDocs.length > 0 ? (
-                        
-                        sortedDocs.map((doc, index) => (
-                          <tr key={index}>
-                            <td>{doc.original_filename}</td>
-                            <td><span className="category-pill-admin">{doc.category}</span></td>
-                            <td>{doc.date}</td>
-                          </tr>
-                        ))
-                      ) : (
-                          <div className="no-message">
-                            업로드된 문서가 없습니다.<br />
-                            문서를 등록해주세요.
-                          </div>
-                        )}
-                    </tbody>
-                  </table>
-                </div>
-            {duplicateFileName && (
-              <div className="duplicate-warning-box">
-                <div className="duplicate-warning-message">
-                  <strong>중복된 문서</strong><br />
-                  <span>{duplicateFileName}은 이미 등록된 문서입니다. 문서명을 변경해주세요.</span>
-                </div>
-                <button
-                  className="close-warning-button"
-                  onClick={() => setDuplicateFileName(null)}
-                >
-                  ×
-                </button>
-              </div>
-            )}
-            <div className='search-firebase-sum'>총 문서 수: {docCount}</div>
+            </div>
+            <div className="search-firebase-sum">총 문서 수: {docCount}</div>
           </div>
         </div>
+
         {/* 적용 버튼 */}
         <div className="apply-btn-row">
           {showProgressing ? null : hasOutput ? (

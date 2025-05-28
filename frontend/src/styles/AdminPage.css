@@ -42,7 +42,6 @@
   color:#575071;
 }
 
-
 .input-row {
   display: flex;
   align-items: center;
@@ -146,6 +145,7 @@ background-color: #e2dbf0;
   gap: 1rem;
   margin-bottom: 2rem;
 }
+
 .card {
   flex: 1;
   background-color: #f3f0ff;
@@ -161,30 +161,39 @@ background-color: #e2dbf0;
   box-shadow: 0 7px 5px rgba(15, 4, 37, 0.15); /* 그림자 추가 */
   transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
+
 .card:hover {
   transform: translateY(-2px); /* hover 시 살짝 띄우기 */
 }
+
 .card .card-text {
   text-align: left;
 }
+
 .card-total-url::after {
   content: '🌐';
 }
+
 .card-total-docs::after {
   content: '📄';
 }
+
 .card-total-entities::after {
   content: '🙆🏻‍♀️';
 }
+
 .card-total-questions::after {
   content: '💬';
 }
+
 .card-avg-satisfaction::after {
   content: '⭐';
 }
+
 .card-total-category::after{
   content: '📚';
 }
+
 .card::after {
   font-size: 35px;
   transition: transform 0.3s ease, font-size 0.3s ease;
@@ -207,6 +216,7 @@ background-color: #e2dbf0;
   transition: transform 0.5s ease;
   opacity: 0;
 }
+
 .card:hover::before {
   animation: cardShine 1.5s ease forwards;
 }
@@ -225,15 +235,12 @@ background-color: #e2dbf0;
   }
 }
 
-
-
 .apply-btn-row {
   display: flex;
   justify-content: center;
   gap: 1em;
   padding-top: 50px;
 }
-
 
 .btn-apply-update {
   width: 300px;
@@ -585,6 +592,49 @@ background-color: #e2dbf0;
   color: #888;
   padding: 10px;
 }
+
+@media (max-width: 768px) {
+  .upload-table-wrapper,
+  .document-table-scroll {
+    max-height: 200px;
+    min-height: 200px;
+
+  .upload-table, .document-table, .user-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .upload-table tr th,
+  .upload-table th,
+  .document-table th,
+  .user-table th,
+  .upload-table td,
+  .document-table td,
+  .user-table td {
+    font-size: 13px !important;
+    padding: 5px;
+  }
+
+  file-support-text,
+  .upload-container p {
+    font-size: 12px;
+  }
+
+  .category-pill-admin {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .search-firebase-sum {
+    font-size: 12px;
+  }
+
+  .main-header {
+    height: 50px;      /* 높이 줄임 */
+    font-size: 14px;   /* 글자 크기 줄임 */
+  }
+}}
 
 .duplicate-warning-box {
   position: relative;
