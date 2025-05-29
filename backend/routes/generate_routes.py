@@ -102,8 +102,8 @@ def apply_documents(page_id):
                     uploaded_files.append(firebase_path)
 
                     # 업로드 후 파일 삭제
-                    os.remove(file_path)
-                    print(f"Deleted local file: {file_path}")
+                    # os.remove(file_path)
+                    # print(f"Deleted local file: {file_path}")
 
         return jsonify({
             'success': True,
@@ -131,7 +131,7 @@ def update(page_id):
         # input 폴더와 prompts 폴더 _url에서 복사해오기
         url_page_id = f"{page_id}_url"
         url_base_path = f'../data/input/{url_page_id}'
-        
+
         # input 폴더 복사
         url_input_path = os.path.join(url_base_path, 'input')
         if os.path.exists(url_input_path):
@@ -204,8 +204,8 @@ def update(page_id):
                     uploaded_files.append(firebase_path)
 
                     # 업로드 후 파일 삭제
-                    os.remove(file_path)
-                    print(f"Deleted local file: {file_path}")
+                    # os.remove(file_path)
+                    # print(f"Deleted local file: {file_path}")
 
         return jsonify({
             'success': True,
