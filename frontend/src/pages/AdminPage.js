@@ -484,7 +484,7 @@ const AdminPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {uploadedUrls.length > 0 ? (
+                  {Array.isArray(uploadedUrls) && uploadedUrls.length > 0 ?  (
                       uploadedUrls.map((item, idx) => (
                         <tr key={idx}>
                           <td>{item.url}</td>
