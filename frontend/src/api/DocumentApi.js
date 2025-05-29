@@ -9,8 +9,13 @@ export const processDocuments = async (pageId) => {
     const data = await response.json();
 
     if (data.success) {
-      return { success: true,
-        executionTime: data.execution_time };
+      return { 
+        success: true,
+        results: {
+          executionTime: data.execution_time,
+          message: '문서 구조화 완료'
+        }
+      };
     } else {
       return { success: false, error: data.error,executionTime: data.execution_time };
     }
