@@ -117,6 +117,7 @@ def get_uploaded_documents(page_id):
         return jsonify({'success': False, 'error': str(e)}), 500
     
 
+# 문서 업로드 시 텍스트 추출
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):
     """document 처리"""
@@ -150,6 +151,7 @@ def process_documents(page_id):
         print("Flask 서버 오류:", str(e))
         return jsonify({'success': False, 'error': str(e)}), 500
     
+# 문서 직접 업로드 시 텍스트 추출
 @document_bp.route('/process-document-direct', methods=['POST'])
 def process_document_direct():
     if 'file' not in request.files:
@@ -240,11 +242,37 @@ def download_crawled_documents(page_id):
     try:
         data = request.get_json()
         if not data or 'doc_urls' not in data:
-            return jsonify({'success': False, 'message': 'doc_urls가 필요합니다'}), 400
+            return jsonify({
+                'success': True,
+                'message': '크롤링된 문서 URL이 없습니다. 다음 단계로 진행합니다.',
+                'stats': {
+                    'total': 0,
+                    'success': 0,
+                    'failed': 0,
+                    'skipped': 0,
+                    'filtered_out': 0,
+                    'firebase_uploaded': 0,
+                    'firebase_failed': 0,
+                    'local_deleted': 0
+                }
+            })
         
         doc_urls = data['doc_urls']
         if not isinstance(doc_urls, list) or not doc_urls:
-            return jsonify({'success': False, 'message': '유효한 doc_urls 목록이 필요합니다'}), 400
+            return jsonify({
+                'success': True,
+                'message': '다운로드할 문서 URL이 없습니다. 다음 단계로 진행하세요.',
+                'stats': {
+                    'total': 0,
+                    'success': 0,
+                    'failed': 0,
+                    'skipped': 0,
+                    'filtered_out': 0,
+                    'firebase_uploaded': 0,
+                    'firebase_failed': 0,
+                    'local_deleted': 0
+                }
+            })
         
         # DocumentDownloader 임포트
         import sys
