@@ -114,7 +114,13 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
             return null;
         }
         
-        const cleanAnswer = answer.replace(/\[Data:[^\]]*\]/g, "");
+        let cleanAnswer = answer;
+
+    // [Data: ...] 제거
+        cleanAnswer = cleanAnswer.replace(/\[Data:[^\]]*\]/g, "");
+
+        // INFO: ~ Response: 구간 제거 (줄바꿈 포함)
+        cleanAnswer = cleanAnswer.replace(/INFO:([\s\S]*?)Response:/g, "");
 
         // Markdown → HTML 변환
         const htmlAnswer = marked.parse(cleanAnswer);
