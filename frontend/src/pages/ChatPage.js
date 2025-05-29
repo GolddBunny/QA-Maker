@@ -419,6 +419,8 @@ function ChatPage() {
                 });
             };
 
+            let calculatedLocalConfidence = null;
+
             try {
                 // 1. 로컬 답변 요청 및 즉시 표시
                 console.log("1. 로컬 응답 요청 시작");
@@ -513,6 +515,7 @@ function ChatPage() {
                 if (localAnswer && localAnswer !== "답변을 불러오는 중..." && localAnswer !== "응답을 받지 못했습니다.") {
                     try {
                         const accuracy = await calculateAccuracy(questionText, localAnswer, 'local');
+                        calculatedLocalConfidence = accuracy;
                         const accuracyEndTime = performance.now();
                         console.log(`5. 로컬 정확도 계산 완료 (${(accuracyEndTime - accuracyStartTime).toFixed(2)}ms):`, accuracy);
                         
@@ -543,6 +546,7 @@ function ChatPage() {
                         globalAnswer = globalData.response;
                         updateQaList((updatedList, lastIndex) => {
                             updatedList[lastIndex].globalAnswer = globalAnswer;
+                            updatedList[lastIndex].globalConfidence = calculatedLocalConfidence;
                             return updatedList;
                         });
                         console.log("6. 글로벌 답변 화면 표시 완료");
@@ -555,7 +559,7 @@ function ChatPage() {
                 setServerResponseReceived(true);
                 
                 // 대화 히스토리에 저장
-                saveToQAHistory(questionText, localAnswer, globalAnswer, "", "", headlinesList, sourcesData, relatedQuestions);
+                saveToQAHistory(questionText, localAnswer, globalAnswer, "", "", headlinesList, sourcesData, relatedQuestions, calculatedLocalConfidence);
                 
             } catch (error) {
                 console.error("네트워크 오류:", error);
@@ -580,7 +584,7 @@ function ChatPage() {
     };
 
     // QA 히스토리에 저장하는 함수
-    const saveToQAHistory = (question, localAnswer, globalAnswer, entities, relationships, headlines, sources, relatedQuestions = []) => {
+    const saveToQAHistory = (question, localAnswer, globalAnswer, entities, relationships, headlines, sources, relatedQuestions = [], localConfidence = null) => {
         const params = new URLSearchParams(location.search);
         const qaId = params.get("qaId");
         
@@ -601,9 +605,9 @@ function ChatPage() {
             actionButtonVisible: true,
             relatedQuestionsVisible: relatedQuestions.length > 0,
             // 정확도 정보 완전히 저장 (글로벌 정확도 제외)
-            confidence: lastQa?.localConfidence || 0.0,
-            localConfidence: lastQa?.localConfidence || 0.0,
-            globalConfidence: null, // 글로벌 정확도는 계산하지 않음
+            confidence: localConfidence || 0.0,
+            localConfidence: localConfidence || 0.0,    //lastQa?.localConfidence || 0.0,
+            globalConfidence: localConfidence || 0.0,
             // 관련 질문 저장
             relatedQuestions: relatedQuestions || [],
             headlines: headlines || [], // 근거 문서 목록 추가
@@ -642,12 +646,13 @@ function ChatPage() {
     };
 
     // 최신 질문의 답변 업데이트
-    const updateLastAnswer = (localAnswer, globalAnswer, newEntities, newRelationships, headlines, sources, relatedQuestions = []) => {
+    const updateLastAnswer = (localAnswer, globalAnswer, newEntities, newRelationships, headlines, sources, relatedQuestions = [], localConfidence = null) => {
         setQaList((prevQaList) => {
             if (prevQaList.length === 0) return prevQaList;
 
             const newList = [...prevQaList];
             const lastIndex = newList.length - 1;
+            const confidenceValue = localConfidence !== null ? localConfidence : newList[lastIndex].localConfidence;
 
             const existingLocalConfidence = newList[lastIndex].localConfidence;
 
@@ -656,9 +661,9 @@ function ChatPage() {
                 answer: localAnswer || "답변을 불러오는 중...", // 기본 답변은 로컬 답변으로 설정
                 localAnswer: localAnswer || "로컬 답변을 불러오는 중...",
                 globalAnswer: globalAnswer || "글로벌 답변을 불러오는 중...",
-                confidence: existingLocalConfidence,
-                localConfidence: existingLocalConfidence,
-                globalConfidence: null, // 글로벌 정확도는 계산하지 않음
+                confidence: confidenceValue,
+                localConfidence: confidenceValue,
+                globalConfidence: confidenceValue, // 글로벌 정확도는 계산하지 않음
                 entities: newEntities,
                 relationships: newRelationships,
                 headlines: headlines || [], // 근거 문서 목록 추가
