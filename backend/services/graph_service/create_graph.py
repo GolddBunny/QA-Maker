@@ -1,4 +1,3 @@
-import io
 import pandas as pd
 import networkx as nx
 import asyncio
@@ -16,12 +15,17 @@ sys.path.append(str(backend_dir))
 from utils.graphml2json import convert_graphml_to_json
 
 # 엔티티와 관계 데이터를 기반으로 그래프를 생성하는 함수
-def create_graph(entities_list, relationships_list, entities_df, relationships_df, communities_df):
+def create_graph(entities_list, relationships_list, entities_file, relationships_file, communities_file):
     G = nx.DiGraph()
+
+    # Parquet 파일에서 데이터 읽기
+    entities_df = pd.read_parquet(entities_file)
+    relationships_df = pd.read_parquet(relationships_file)
+    communities_df = pd.read_parquet(communities_file)
 
     # 추가할 엔티티 ID 세트 생성 (중복 방지)
     all_entity_ids = set(entities_list)
-    
+
     # relationships_list에서 엔티티 추가
     for relationship_id in relationships_list:
         relationship_row = relationships_df[relationships_df["human_readable_id"] == relationship_id]
@@ -29,16 +33,16 @@ def create_graph(entities_list, relationships_list, entities_df, relationships_d
             relationship_row = relationship_row.iloc[0]
             source_title = relationship_row["source"]
             target_title = relationship_row["target"]
-            
+
             # source와 target의 엔티티 ID 찾기
             source_entity = entities_df[entities_df["title"] == source_title]
             target_entity = entities_df[entities_df["title"] == target_title]
-            
+
             # source 엔티티가 있으면 ID 추가
             if not source_entity.empty:
                 source_entity_human_id = source_entity.iloc[0]["human_readable_id"]
                 all_entity_ids.add(source_entity_human_id)
-            
+
             # target 엔티티가 있으면 ID 추가
             if not target_entity.empty:
                 target_entity_human_id = target_entity.iloc[0]["human_readable_id"]
@@ -48,7 +52,7 @@ def create_graph(entities_list, relationships_list, entities_df, relationships_d
     for entity_id in all_entity_ids:
         # 엔티티 데이터 찾기 (human_readable_id로 비교)
         entity_row = entities_df[entities_df["human_readable_id"] == entity_id]
-        
+
         if entity_row.empty:
             #print(f"Warning: Entity with human_readable_id {entity_id} not found. Skipping.")
             continue
@@ -63,6 +67,7 @@ def create_graph(entities_list, relationships_list, entities_df, relationships_d
         degree = entity_row["degree"]
         #cluster = entity_row["frequency"]
         # community 값 찾기
+
         cluster = -1  # 기본값
 
         # 커뮤니티 데이터에서 클러스터 찾기
@@ -70,7 +75,7 @@ def create_graph(entities_list, relationships_list, entities_df, relationships_d
             try:
                 # entity_ids가 문자열로 저장되어 있을 가능성 처리
                 entity_ids = community_row["entity_ids"]
-                
+
                 # 문자열인 경우 파싱 시도
                 if isinstance(entity_ids, str):
                     entity_ids = eval(entity_ids)  # 문자열을 리스트로 변환
@@ -123,61 +128,45 @@ def snapshot_graphml(input_graph: nx.Graph, name: str):
     # `.graphml` 확장자가 없으면 추가
     if not name.endswith(".graphml"):
         name += ".graphml"
-    
+
     # 파일 저장
     nx.write_graphml(input_graph, name, encoding='utf-8')
 
+
 # 생성된 그래프를 GraphML로 저장하는 함수
-def read_parquet_from_firebase(firebase_path):
-    """
-    Firebase Storage에서 parquet 파일을 메모리로 바로 읽어 pandas DataFrame으로 반환
-    """
-    blob = bucket.blob(firebase_path)
-    if not blob.exists():
-        raise FileNotFoundError(f"Firebase에 파일이 존재하지 않음: {firebase_path}")
-
-    parquet_bytes = blob.download_as_bytes()
-    parquet_io = io.BytesIO(parquet_bytes)
-    return pd.read_parquet(parquet_io)
-
-from firebase_config import bucket
 def generate_and_save_graph(entities_list, relationships_list, page_id, 
                             graphml_path=None, 
                             json_path=None):
-    
+
     # 기본 경로 설정
     if graphml_path is None:
         graphml_path = os.path.join(backend_dir, "..", "data", "graphs", "answer_graph.graphml")
-    
+
     if json_path is None:
         json_path = os.path.join(backend_dir, "..", "frontend", "src", "json", "answer_graphml_data.json")
-    
+
     # 그래프 저장 경로가 존재하지 않으면 생성
     graph_dir = os.path.dirname(graphml_path)
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir, exist_ok=True)
-        
-    # .json 파일이 이미 존재하면 삭제
-    # if os.path.exists(json_path):
-    #     os.remove(json_path)
-    #     print(f"기존의 .json 파일 {json_path} 삭제됨.")
 
-    # ✅ Firebase Storage에서 parquet 파일 경로 지정
-    entities_firebase_path = f"pages/{page_id}/results/entities.parquet"
-    relationships_firebase_path = f"pages/{page_id}/results/relationships.parquet"
-    communities_firebase_path = f"pages/{page_id}/results/communities.parquet"
+    # # .json 파일이 이미 존재하면 삭제
+    if os.path.exists(json_path):
+        os.remove(json_path)
+        print(f"기존의 .json 파일 {json_path} 삭제됨.")
 
-    # Firebase에서 parquet 파일을 메모리에서 바로 DataFrame으로 읽기
-    entities_df = read_parquet_from_firebase(entities_firebase_path)
-    relationships_df = read_parquet_from_firebase(relationships_firebase_path)
-    communities_df = read_parquet_from_firebase(communities_firebase_path)
+    base_output_folder = os.path.join(backend_dir, "..", "data", "input", str(page_id), "output")
 
-    # 기존 create_graph 함수 수정: 파일 경로 대신 DataFrame 직접 전달 버전 작성 필요
-    graph = create_graph(entities_list, relationships_list, entities_df, relationships_df, communities_df)
+    entities_file = os.path.join(base_output_folder, "entities.parquet")
+    relationships_file = os.path.join(base_output_folder, "relationships.parquet")
+    communities_file = os.path.join(base_output_folder, "communities.parquet")
+
+    graph = create_graph(entities_list, relationships_list, 
+                         entities_file, relationships_file, communities_file)
 
     snapshot_graphml(graph, graphml_path)
-    
-    # graphml을 JSON으로 변환
+
+    # graphml2json.py 실행
     convert_graphml_to_json(graphml_path, json_path)
 
 # 테스트

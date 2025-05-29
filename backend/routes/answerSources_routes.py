@@ -32,46 +32,103 @@ def extract_sources_from_answer(answer_text: str) -> List[int]:
     return sources
 
 def find_url_and_title_from_source_id(df: pd.DataFrame, source_id: int) -> Optional[Dict[str, str]]:
-    """DataFrame에서 source_id에 해당하는 URL과 Title 추출"""
+    """DataFrame에서 source_id에 해당하는 URL과 Title 추출 (다양한 형태 지원)"""
     try:
         print("find url and title from source id")
         row = df[df['human_readable_id'] == source_id]
         print("row ", row)
+        
         if not row.empty:
             text = row.iloc[0]['text']
             print("row text[0]: ", text)
-            title_match = re.search(r'Title:\s*([^\n]+)', text)
-            print("row text[0]: ", title_match)
-            url_match = re.search(r'URL Source:\s*(https?://[^\s\n]+)', text)
-            print("row text[0]: ", url_match)
             
-            if not url_match: 
-            # fallback: 줄여서 탐색
-                for i in range(1, 5):
-                    prev_id = source_id - i
-                    row = df[df['human_readable_id'] == prev_id]
-                    if not row.empty:
-                        text = row.iloc[0]['text']
-                        print("row text[0]: ", text)
-                        title_match = re.search(r'Title:\s*([^\n]+)', text)
-                        print("row title_match text[0]: ", title_match)
-                        url_match = re.search(r'URL Source:\s*(https?://[^\s\n]+)', text)
-                        print("row url_match text[0]: ", url_match)
-                       
+            # 패턴 수정: URL 뒤에 Markdown이나 다른 텍스트가 오는 경우 처리
+            # Title과 URL Source 사이에 줄바꿈이 없는 경우
+            combined_match = re.search(r'Title:\s*([^U]+?)URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
+            
+            title_match = None
+            url_match = None
+            
+            if combined_match:
+                title_match = type('Match', (), {'group': lambda self, n: combined_match.group(1).strip()})()
+                url_match = type('Match', (), {'group': lambda self, n: combined_match.group(2).strip()})()
+            else:
+                # 대안 패턴: 각각 따로 찾기
+                title_match_regex = re.search(r'Title:\s*([^U\n]+)', text)
+                url_match_regex = re.search(r'URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
+                
+                if title_match_regex:
+                    title_match = type('Match', (), {'group': lambda self, n: title_match_regex.group(1).strip()})()
+                if url_match_regex:
+                    url_match = type('Match', (), {'group': lambda self, n: url_match_regex.group(2).strip()})()
+            
+            print("title_match: ", title_match)
+            print("url_match: ", url_match)
+            
+            # 현재 행에서 찾았으면 반환
+            if title_match and url_match:
+                title = title_match.group(1).strip()
+                # title이 20글자 넘으면 줄이기
+                if len(title) > 20:
+                    title = title[:20] + "..."
+                return {
+                    'title': title,
+                    'url': url_match.group(1).strip()
+                }
+            
+            # fallback: 이전 행들에서 탐색
+            for i in range(1, 5):
+                prev_id = source_id - i
+                prev_row = df[df['human_readable_id'] == prev_id]
+                if not prev_row.empty:
+                    prev_text = prev_row.iloc[0]['text']
+                    print(f"fallback row text[{prev_id}]: ", prev_text)
+                    
+                    # 동일한 패턴으로 이전 행에서도 찾기
+                    prev_combined_match = re.search(r'Title:\s*([^U]+?)URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', prev_text)
+                    
+                    prev_title_match = None
+                    prev_url_match = None
+                    
+                    if prev_combined_match:
+                        prev_title_match = type('Match', (), {'group': lambda self, n: prev_combined_match.group(1).strip()})()
+                        prev_url_match = type('Match', (), {'group': lambda self, n: prev_combined_match.group(2).strip()})()
+                    else:
+                        # 대안 패턴
+                        prev_title_match_regex = re.search(r'Title:\s*([^U\n]+)', prev_text)
+                        prev_url_match_regex = re.search(r'URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', prev_text)
+                        
+                        if prev_title_match_regex:
+                            prev_title_match = type('Match', (), {'group': lambda self, n: prev_title_match_regex.group(1).strip()})()
+                        if prev_url_match_regex:
+                            prev_url_match = type('Match', (), {'group': lambda self, n: prev_url_match_regex.group(2).strip()})()
+                    
+                    print(f"fallback title_match[{prev_id}]: ", prev_title_match)
+                    print(f"fallback url_match[{prev_id}]: ", prev_url_match)
+                    
+                    if prev_title_match and prev_url_match:
+                        title = prev_title_match.group(1).strip()
+                        # title이 20글자 넘으면 줄이기
+                        if len(title) > 20:
+                            title = title[:20] + "..."
                         return {
-                            'title': title_match.group(1).strip() if title_match else None,
-                            'url': url_match.group(1).strip() if url_match else None
+                            'title': title,
+                            'url': prev_url_match.group(1).strip()
                         }
-
             
+            # 부분적으로라도 찾은 경우 반환
+            title = title_match.group(1).strip() if title_match else None
+            if title and len(title) > 20:
+                title = title[:20] + "..."
             return {
-                'title': title_match.group(1).strip() if title_match else None,
+                'title': title,
                 'url': url_match.group(1).strip() if url_match else None
             }
-
+        
+        return None
         
     except Exception as e:
-        print(f"Error extracting source: {e}")
+        print(f"Error in find_url_and_title_from_source_id: {e}")
         return None
 
 @url_source_bp.route('/extract-sources', methods=['POST'])
