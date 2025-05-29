@@ -31,7 +31,7 @@ from graphrag.query.structured_search.global_search.community_context import (
 )
 from graphrag.query.structured_search.global_search.search import GlobalSearch
 from firebase_config import bucket
-
+from flask_cors import cross_origin
 query_bp = Blueprint('query', __name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
 
@@ -54,7 +54,8 @@ def run_async(coro):
     finally:
         loop.close()
 
-@query_bp.route('/run-local-query', methods=['POST'])
+@query_bp.route('/run-local-query', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def run_local_query():
     # 외부에서 질문을 받음
     page_id = request.json.get('page_id', '')
@@ -219,7 +220,8 @@ def run_local_query():
         return jsonify({'error': str(e)}), 500
 
 
-@query_bp.route('/run-global-query', methods=['POST'])
+@query_bp.route('/run-global-query', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def run_global_query():
     page_id = request.json.get('page_id', '')
 

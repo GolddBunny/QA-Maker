@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/flask';
 
 export const fetchEntities = async (id, setError) => {
   if (!id) return null;

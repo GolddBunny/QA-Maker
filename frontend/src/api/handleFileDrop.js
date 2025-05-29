@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/flask';
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 
 export const FileDropHandler = ({
