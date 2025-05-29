@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import time
 import sys
+from datetime import datetime
 from flask import Blueprint, jsonify, request, make_response
 from services.document_service.convert2txt import convert2txt
 from firebase_config import bucket
@@ -167,10 +168,10 @@ def update(page_id):
         start_time = time.time()
         if not downloaded:
             print("🔄 'graphrag index' 명령어 실행 중...")
-            subprocess.run(['graphrag', 'index', '--root', base_path])
+            process = subprocess.run(['graphrag', 'index', '--root', base_path])
         else:
             print("🔁 'graphrag update' 명령어 실행 중...")
-            subprocess.run(['graphrag', 'update', '--root', base_path])
+            process = subprocess.run(['graphrag', 'update', '--root', base_path])
             
         end_time = time.time()
         execution_time = end_time - start_time
@@ -184,9 +185,6 @@ def update(page_id):
                 'success': False,
                 'error': error_msg
             }), 500
-
-        # 날짜 포맷 지정
-        today_str = datetime.now().strftime('%Y-%m-%d')
 
         # output 폴더 내부 파일 Firebase로 업로드
         uploaded_files = []
