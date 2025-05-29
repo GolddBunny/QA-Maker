@@ -17,6 +17,16 @@ def apply_documents(page_id):
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         output_path = os.path.join(base_path, 'output')
 
+        #여기서 base_path/input 폴더에 txt 파일이 하나라도 없으면 밑에 명령어 실행하지 않고 그냥 리턴
+        txt_files = [f for f in os.listdir(input_path) if f.endswith('.txt')]
+        if not txt_files:
+            print(f"[{page_id}] input 폴더에 .txt 파일이 없습니다. 문서 인덱싱 건너뜀.")
+            return jsonify({
+                'success': True,
+                'execution_time': 0
+            })
+
+
         # graphrag index 명령어 실행
         start_time = time.time()
         process = subprocess.run(['graphrag', 'index', '--root', base_path])
@@ -86,6 +96,16 @@ def update(page_id):
         # input 폴더 복사
         url_input_path = os.path.join(url_base_path, 'input')
         if os.path.exists(url_input_path):
+            # 📌 .txt 파일이 하나라도 없으면 종료
+            txt_files = [f for f in os.listdir(url_input_path) if f.lower().endswith('.txt')]
+            if not txt_files:
+                print(f"[중단] {url_input_path} 폴더에 .txt 파일이 없습니다.")
+                return jsonify({
+                    'success': True,
+                    'execution_time': 0
+                })
+            
+        if os.path.exists(url_input_path):
             # 기존 input 폴더가 있으면 삭제 후 복사
             if os.path.exists(input_path):
                 shutil.rmtree(input_path)
@@ -107,7 +127,13 @@ def update(page_id):
             print(f"[경고] URL prompts 폴더 없음: {url_prompts_path}")
         
         start_time = time.time()
-        subprocess.run(['graphrag', 'update', '--root', base_path])
+        if not downloaded:
+            print("🔄 'graphrag index' 명령어 실행 중...")
+            subprocess.run(['graphrag', 'index', '--root', base_path])
+        else:
+            print("🔁 'graphrag update' 명령어 실행 중...")
+            subprocess.run(['graphrag', 'update', '--root', base_path])
+            
         end_time = time.time()
         execution_time = end_time - start_time
         print(f'execution_time: {execution_time}')
@@ -144,7 +170,10 @@ def update(page_id):
                     os.remove(file_path)
                     print(f"Deleted local file: {file_path}")
 
-        return jsonify({'success': True})
+        return jsonify({
+            'success': True,
+            'execution_time': execution_time
+        })
     
     except Exception as e:
         print("Flask update 오류: ", str(e))
