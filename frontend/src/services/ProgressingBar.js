@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import '../styles/ProgressingBar.css';
 
 const ProgressingBar = ({ 
@@ -9,46 +9,50 @@ const ProgressingBar = ({
   currentStep = 'crawling' 
 }) => {
   const [progress, setProgress] = useState(0);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
-    let interval = null;
-
-    if (currentStep === 'crawling') {
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev < 25) return Math.min(prev + 2, 25);
-          clearInterval(interval);
-          return prev;
-        });
-      }, 2000);
-    } else if (currentStep === 'structuring') {
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev < 50) return Math.min(prev + Math.floor(Math.random() * 4) + 2, 50);
-          clearInterval(interval);
-          return prev;
-        });
-      }, 2000);
-    } else if (currentStep === 'document') {
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev < 75) return Math.min(prev + Math.floor(Math.random() * 4) + 2, 75);
-          clearInterval(interval);
-          return prev;
-        });
-      }, 2000);
-    } else if (currentStep === 'indexing') {
-      interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev < 100) return Math.min(prev + Math.floor(Math.random() * 4) + 1, 100);
-          clearInterval(interval);
-          return prev;
-        });
-      }, 3000); // 3초 간격
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
-    return () => clearInterval(interval);
-  }, [currentStep]);
+    if (isCompleted) {
+      setProgress(100);
+      return;
+    }
+
+    const stepConfigs = {
+      crawling: { max: 25, interval: 3000 },
+      structuring: { max: 50, interval: 5000 },
+      document: { max: 75, interval: 6000 },
+      indexing: { max: 99, interval: 15000 },
+    };
+
+    const config = stepConfigs[currentStep];
+
+    if (config) {
+      intervalRef.current = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= config.max) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+            return prev;
+          }
+
+          const increment = Math.floor(Math.random() * 4) + 2;
+          return Math.min(prev + increment, config.max);
+        });
+      }, config.interval);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [currentStep, isCompleted]);
 
   const displayProgress = `${Math.min(progress, 100)}%`;
 
@@ -139,7 +143,9 @@ const ProgressingBar = ({
 
   return (
     <div className="progress-wrapper">
+      {isCompleted && (
       <button className="progress-close-button" onClick={onClose}>×</button>
+    )}
       
       <h2 className="progress-title">한성대 Q&A 시스템 구축 중 ...</h2>
       <p className="progress-desc">

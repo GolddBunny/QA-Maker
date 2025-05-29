@@ -301,7 +301,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                             <button 
                                 type="button" 
                                 className="action-button-left" 
-                                onClick={handleShowGraph}
+                                onClick={() => handleShowGraph(qa.id, index)}
                             >
                                 <span className="button-icon">
                                     지식 그래프 보기 
