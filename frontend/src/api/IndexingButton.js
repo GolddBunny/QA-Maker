@@ -143,10 +143,6 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
       onStepComplete('line1', executionTimes.line1);
     }
 
-
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
     // 2단계-3: 문서 다운로더 (document_downloader.py)
     console.log("2️⃣-3 문서 다운로더 시작...");
     const documentDownloaderResult = await documentDownloader(pageId);
@@ -156,10 +152,6 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     }
 
     console.log("✅ 문서 다운로더 완료:", documentDownloaderResult.results);
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
     // 3단계: 문서 구조화
     console.log("3️⃣ 문서 구조화 시작...");
