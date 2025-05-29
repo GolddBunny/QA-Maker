@@ -135,7 +135,7 @@ def generate_related_questions():
             "return_candidate_context": False,
             "embedding_vectorstore_key": EntityVectorStoreKey.ID,
             "max_tokens": 12000,
-            "temperature": 0.5,
+            "temperature": 0.3,
         }
 
         custom_system_prompt = """
