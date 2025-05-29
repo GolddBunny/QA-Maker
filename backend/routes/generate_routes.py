@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import time
+import sys
 from flask import Blueprint, jsonify, request
 from services.document_service.convert2txt import convert2txt
 from firebase_config import bucket
@@ -12,17 +13,65 @@ generate_bp = Blueprint('generate', __name__)
 
 @generate_bp.route('/apply/<page_id>', methods=['POST'])
 def apply_documents(page_id):
-    """GraphRAG 인덱싱 처리"""
+    """문서 인덱싱"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
+        
+        # 프롬프트 폴더 복사 (GraphRAG 인덱싱 전에 필요)
+        prompt_src = '../data/parquet/prompts'
+        prompt_dest = os.path.join(base_path, 'prompts')
+        
+        if os.path.exists(prompt_src):
+            # 기존 prompts 폴더가 있으면 삭제 후 복사
+            if os.path.exists(prompt_dest):
+                shutil.rmtree(prompt_dest)
+            shutil.copytree(prompt_src, prompt_dest)
+            print(f"프롬프트 복사 완료: {prompt_src} -> {prompt_dest}")
+        else:
+            print(f"[경고] 프롬프트 소스 폴더 없음: {prompt_src}")
+            return jsonify({
+                'success': False,
+                'error': f'프롬프트 폴더를 찾을 수 없습니다: {prompt_src}'
+            }), 500
+
         output_path = os.path.join(base_path, 'output')
 
         # graphrag index 명령어 실행
         start_time = time.time()
-        process = subprocess.run(['graphrag', 'index', '--root', base_path])
+        print(f"GraphRAG 인덱싱 시작: {base_path}")
+        
+        # 실시간 로그 출력을 위해 Popen 사용
+        process = subprocess.Popen(
+            ['graphrag', 'index', '--root', base_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+        
+        # 실시간 로그 출력
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(output.strip())
+                sys.stdout.flush()
+        
+        process.wait()
         end_time = time.time()
         execution_time = end_time - start_time
-        print(execution_time)
+        print(f"GraphRAG 인덱싱 실행 시간: {execution_time}초")
+        
+        # 인덱싱 실패 시 오류 반환
+        if process.returncode != 0:
+            error_msg = f"GraphRAG 인덱싱 실패 (코드: {process.returncode})"
+            print(error_msg)
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
 
         # 날짜 포맷 지정
         today_str = datetime.now().strftime('%Y-%m-%d')
@@ -107,11 +156,41 @@ def update(page_id):
             print(f"[경고] URL prompts 폴더 없음: {url_prompts_path}")
         
         start_time = time.time()
-        subprocess.run(['graphrag', 'update', '--root', base_path])
+        print(f"GraphRAG 업데이트 시작: {base_path}")
+        
+        # 실시간 로그 출력을 위해 Popen 사용
+        process = subprocess.Popen(
+            ['graphrag', 'update', '--root', base_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+        
+        # 실시간 로그 출력
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(output.strip())
+                sys.stdout.flush()
+        
+        process.wait()
         end_time = time.time()
         execution_time = end_time - start_time
-        print(f'execution_time: {execution_time}')
+        print(f'GraphRAG 업데이트 실행 시간: {execution_time}초')
         
+        # 업데이트 실패 시 오류 반환
+        if process.returncode != 0:
+            error_msg = f"GraphRAG 업데이트 실패 (코드: {process.returncode})"
+            print(error_msg)
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+
         # 날짜 포맷 지정
         today_str = datetime.now().strftime('%Y-%m-%d')
 

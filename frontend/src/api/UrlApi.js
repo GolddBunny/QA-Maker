@@ -27,6 +27,33 @@ export const fetchSavedUrls = async (pageId) => {
   }
 };
 
+// 저장된 문서 URL 목록 가져오기
+export const fetchSavedDocumentUrls = async (pageId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/get-document-urls/${pageId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const data = await response.json();
+    console.log(`[fetchSavedDocumentUrls] 응답 데이터:`, data);
+
+    if (data.success) {
+      const urls = Array.isArray(data.urls) ? data.urls : [];
+      console.log(`[fetchSavedDocumentUrls] 성공: ${urls.length}개 문서 URL 로드`);
+      return urls;
+    } else {
+      console.error('문서 URL 목록 불러오기 실패:', data.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('문서 URL 목록 불러오기 오류:', error);
+    return [];
+  }
+};
+
 // url 추가
 export const uploadUrl = async (pageId, url) => {
   try {
@@ -116,6 +143,58 @@ export const line1 = async (pageId) => {
     }
   } catch (error) {
     console.error("UrlApi.js: 웹 크롤링 텍스트 line1 정리 API 오류:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+// 4단계 문서 다운로더 - 크롤링된 문서 URL을 다운로드하여 Firebase에 저장
+export const documentDownloader = async (pageId) => {
+  try {
+    console.log("UrlApi.js: 문서 다운로더 시작:", pageId);
+    
+    // 먼저 저장된 문서 URL 목록을 직접 가져오기
+    const savedDocumentUrls = await fetchSavedDocumentUrls(pageId);
+    if (!savedDocumentUrls || savedDocumentUrls.length === 0) {
+      return { success: false, error: "저장된 문서 URL이 없습니다" };
+    }
+    
+    console.log("저장된 문서 URL 데이터:", savedDocumentUrls.slice(0, 3)); // 처음 3개 요소 확인
+    
+    // 문서 URL 목록에서 URL 문자열만 추출
+    const docUrls = savedDocumentUrls.map(urlData => {
+      return typeof urlData === 'object' && urlData.url ? urlData.url : urlData;
+    }).filter(url => typeof url === 'string');
+    
+    console.log(`문서 URL ${docUrls.length}개 발견:`, docUrls);
+    
+    if (docUrls.length === 0) {
+      return { success: false, error: "다운로드할 문서 URL이 없습니다" };
+    }
+    
+    // 크롤링된 문서 다운로드 API 호출
+    const response = await fetch(`${BASE_URL}/download-crawled-documents/${pageId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ doc_urls: docUrls })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      return { 
+        success: true, 
+        results: {
+          message: data.message,
+          stats: data.stats,
+          total_doc_urls: docUrls.length
+        }
+      };
+    } else {
+      return { success: false, error: data.error };
+    }
+  } catch (error) {
+    console.error("UrlApi.js: 문서 다운로더 API 오류:", error);
     return { success: false, error: error.message };
   }
 };

@@ -4,6 +4,7 @@
 한성대학교 문서 다운로더
 Document URLs에서 파일들을 다운로드하여 input 폴더에 저장
 특정 확장자의 문서 파일만 저장
+Firebase Storage에 업로드 후 로컬 파일 삭제 기능 추가
 """
 
 import os
@@ -13,13 +14,27 @@ import re
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import hashlib
 import mimetypes
+import sys
+import uuid
+from datetime import datetime
+
+# Firebase 관련 import 추가
+try:
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+    from firebase_config import bucket, db
+    FIREBASE_AVAILABLE = True
+except ImportError as e:
+    print(f"Firebase 설정을 불러올 수 없습니다: {e}")
+    FIREBASE_AVAILABLE = False
 
 class DocumentDownloader:
     def __init__(self, input_folder: str, 
-                domain: str = "hansung", delay: float = 1.0):
+                domain: str = "hansung", delay: float = 1.0, 
+                upload_to_firebase: bool = True, delete_local_after_upload: bool = True,
+                page_id: str = None):
         """
         문서 다운로더 초기화
         
@@ -27,14 +42,20 @@ class DocumentDownloader:
             input_folder: 다운로드할 파일들을 저장할 기본 폴더
             domain: 도메인 이름 (폴더명에 사용)
             delay: 요청 간 지연 시간 (초)
+            upload_to_firebase: Firebase Storage에 업로드 여부
+            delete_local_after_upload: 업로드 후 로컬 파일 삭제 여부
+            page_id: Firebase 저장 시 사용할 페이지 ID
         """
         self.input_folder = Path(input_folder)
         self.domain = domain
         self.delay = delay
         self.download_folder = self.input_folder / f"{domain}_document"
+        self.upload_to_firebase = upload_to_firebase and FIREBASE_AVAILABLE
+        self.delete_local_after_upload = delete_local_after_upload
+        self.page_id = page_id
         
         # 허용할 문서 확장자 목록
-        self.allowed_extensions = {'.pdf', '.docx', '.doc', '.hwp', '.txt', '.hwpx', '.word'}
+        self.allowed_extensions = {'.pdf', '.docx', '.hwp', '.txt', '.hwpx', '.word'}
         
         # 중복 파일 기록을 위한 파일 경로
         self.duplicate_log_file = self.download_folder / "duplicate_files_log.txt"
@@ -73,7 +94,10 @@ class DocumentDownloader:
             'failed': 0,
             'skipped': 0,
             'filtered_out': 0,  # 확장자 필터링으로 제외된 파일 수
-            'duplicates_renamed': 0  # 크기가 달라서 번호를 추가한 파일 수
+            'duplicates_renamed': 0,  # 크기가 달라서 번호를 추가한 파일 수
+            'firebase_uploaded': 0,  # Firebase에 업로드된 파일 수
+            'firebase_failed': 0,  # Firebase 업로드 실패 파일 수
+            'local_deleted': 0  # 로컬에서 삭제된 파일 수
         }
 
     def load_urls_from_file(self, file_path: str) -> List[str]:
@@ -304,6 +328,14 @@ class DocumentDownloader:
                     self.logger.info(f"다운로드 완료 (크기 다름, 새 파일명): {final_file_path.name} ({temp_file_size} bytes)")
                     self.stats['duplicates_renamed'] += 1
                     
+                    # Firebase 업로드 시도
+                    if self.upload_to_firebase_storage(final_file_path, final_file_path.name):
+                        # 업로드 성공 시 로컬 파일 삭제
+                        if self.delete_local_after_upload:
+                            final_file_path.unlink()
+                            self.stats['local_deleted'] += 1
+                            self.logger.info(f"로컬 파일 삭제됨: {final_file_path.name}")
+                    
                 elif final_file_path.exists() and final_file_path.stat().st_size == temp_file_size:
                     # 같은 크기의 파일이 이미 존재함
                     temp_file_path.unlink()  # 임시 파일 삭제
@@ -319,6 +351,14 @@ class DocumentDownloader:
                     temp_file_path.rename(final_file_path)
                     self.logger.info(f"다운로드 완료 (문서 파일): {final_file_path.name} ({temp_file_size} bytes)")
                     self.stats['success'] += 1
+                    
+                    # Firebase 업로드 시도
+                    if self.upload_to_firebase_storage(final_file_path, final_file_path.name):
+                        # 업로드 성공 시 로컬 파일 삭제
+                        if self.delete_local_after_upload:
+                            final_file_path.unlink()
+                            self.stats['local_deleted'] += 1
+                            self.logger.info(f"로컬 파일 삭제됨: {final_file_path.name}")
                     
                 return True
             else:
@@ -375,6 +415,10 @@ class DocumentDownloader:
         self.logger.info(f"건너뜀 (이미 존재): {self.stats['skipped']}")
         self.logger.info(f"제외됨 (문서 파일 아님): {self.stats['filtered_out']}")
         self.logger.info(f"중복 처리 (크기 다름): {self.stats['duplicates_renamed']}")
+        if self.upload_to_firebase:
+            self.logger.info(f"Firebase 업로드 성공: {self.stats['firebase_uploaded']}")
+            self.logger.info(f"Firebase 업로드 실패: {self.stats['firebase_failed']}")
+            self.logger.info(f"로컬 파일 삭제: {self.stats['local_deleted']}")
         self.logger.info(f"저장 폴더: {self.download_folder}")
         self.logger.info(f"허용 확장자: {', '.join(self.allowed_extensions)}")
         if self.stats['duplicates_renamed'] > 0 or self.stats['skipped'] > 0:
@@ -441,7 +485,6 @@ class DocumentDownloader:
             action: 처리 방식 ("renamed" 또는 "skipped")
         """
         try:
-            from datetime import datetime
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             if action == "renamed":
@@ -469,6 +512,129 @@ class DocumentDownloader:
                 
         except Exception as e:
             self.logger.warning(f"중복 파일 로그 기록 실패: {e}")
+
+    def upload_to_firebase_storage(self, file_path: Path, original_filename: str) -> bool:
+        """
+        파일을 Firebase Storage에 업로드 (upload_documents와 동일한 방식)
+        
+        Args:
+            file_path: 업로드할 로컬 파일 경로
+            original_filename: 원본 파일명
+            
+        Returns:
+            업로드 성공 여부
+        """
+        if not self.upload_to_firebase or not self.page_id:
+            return False
+            
+        try:
+            # upload_documents와 동일한 방식으로 Firebase 경로 생성
+            ext = os.path.splitext(original_filename)[1]
+            uuid_name = f"{uuid.uuid4().hex}{ext}"
+            upload_path = f"pages/{self.page_id}/documents/{uuid_name}"
+
+            # 날짜 포맷 지정
+            today_str = datetime.now().strftime('%Y-%m-%d')
+
+            # 1. Firebase blob 생성
+            blob = bucket.blob(upload_path)
+
+            # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
+            blob.metadata = {
+                "original_filename": original_filename,
+                "category": "crawled",  # 크롤링으로 수집된 문서임을 표시
+                "date": today_str
+            }
+
+            # 3. 파일 업로드
+            with open(file_path, 'rb') as f:
+                blob.upload_from_file(f, content_type=mimetypes.guess_type(str(file_path))[0])
+            blob.make_public()
+
+            # 4. Firestore에 문서 정보 저장 (upload_documents와 동일한 방식)
+            document_data = {
+                'original_filename': original_filename,
+                'firebase_filename': uuid_name,
+                'download_url': blob.public_url,
+                'page_id': self.page_id,
+                'upload_date': today_str,
+                'category': "crawled",   
+                'date': today_str  
+            }
+
+            db.collection('document_files').add(document_data)
+
+            self.logger.info(f"Firebase 업로드 성공: {blob.public_url} (원본: {original_filename})")
+            self.stats['firebase_uploaded'] += 1
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Firebase 업로드 실패: {original_filename}, 오류: {e}")
+            self.stats['firebase_failed'] += 1
+            return False
+
+    def download_from_crawled_urls(self, doc_urls: List[str]) -> None:
+        """
+        urlCrawling.py에서 추출한 문서 URL 목록을 다운로드
+        
+        Args:
+            doc_urls: 크롤링으로 추출된 문서 URL 목록
+        """
+        if not doc_urls:
+            self.logger.warning("다운로드할 문서 URL이 없습니다.")
+            return
+            
+        self.logger.info(f"크롤링된 문서 URL {len(doc_urls)}개 다운로드를 시작합니다.")
+        if self.upload_to_firebase and self.page_id:
+            self.logger.info(f"Firebase 업로드 활성화 (page_id: {self.page_id})")
+        
+        # download_all 메서드 재사용
+        self.download_all(doc_urls)
+
+def download_from_crawling_results(crawling_results: Dict[str, Any], page_id: str, 
+                                  input_folder: str = None, delay: float = 1.0) -> Dict[str, Any]:
+    """
+    urlCrawling.py의 크롤링 결과를 받아서 문서를 다운로드하고 Firebase에 저장
+    
+    Args:
+        crawling_results: urlCrawling.py의 discover_urls 결과
+        page_id: Firebase 저장 시 사용할 페이지 ID
+        input_folder: 다운로드 폴더 (기본값: 크롤링 결과 디렉토리)
+        delay: 요청 간 지연 시간
+        
+    Returns:
+        다운로드 결과 통계
+    """
+    # urlCrawling.py에서 문서 URL 추출
+    from urlCrawling import extract_document_urls_from_results
+    
+    doc_urls = extract_document_urls_from_results(crawling_results)
+    if not doc_urls:
+        return {"error": "크롤링 결과에서 문서 URL을 찾을 수 없습니다"}
+    
+    # 다운로드 폴더 설정
+    if input_folder is None:
+        input_folder = crawling_results.get('results_dir', f'../data/temp_download/{page_id}')
+    
+    # DocumentDownloader 인스턴스 생성
+    downloader = DocumentDownloader(
+        input_folder=input_folder,
+        domain="crawled",
+        delay=delay,
+        upload_to_firebase=True,
+        delete_local_after_upload=True,
+        page_id=page_id
+    )
+    
+    # 문서 다운로드 실행
+    downloader.download_from_crawled_urls(doc_urls)
+    
+    return {
+        "success": True,
+        "stats": downloader.stats,
+        "total_doc_urls": len(doc_urls),
+        "page_id": page_id
+    }
 
 def main():
     """메인 함수"""
