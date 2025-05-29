@@ -695,19 +695,9 @@ function ChatPage() {
 
         try {
             setIsLoading(true);
-            console.log("그래프 데이터 로딩 시작");
+            console.log("그래프 데이터 로딩 시작 (최신 질의응답 기준)");
 
-            const cacheKey = `${entities}-${relationships}`;
-            
-            if (graphDataCacheRef.current[cacheKey]) {
-                console.log("메모리 캐시에서 그래프 데이터 로드");
-                setGraphData(graphDataCacheRef.current[cacheKey]);
-                setShowGraph(true);
-                setIsLoading(false);
-                return;
-            }
-
-            // 여기서 fetch 대신 import로 가져온 데이터를 사용
+            // 캐시 사용하지 않고 항상 최신 데이터 로드
             const jsonData = answerGraphData;
 
             console.log("그래프 데이터 로드 성공:", jsonData);
@@ -716,7 +706,6 @@ function ChatPage() {
                 throw new Error("유효하지 않은 그래프 데이터입니다.");
             }
 
-            graphDataCacheRef.current[cacheKey] = jsonData;
             setGraphData(jsonData);
             setShowGraph(true);
 
