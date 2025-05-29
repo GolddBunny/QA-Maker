@@ -147,9 +147,15 @@ def process_documents(page_id):
         })
     
     except Exception as e:
+        end_time = time.time()
+        execution_time = round(end_time - start_time) if 'start_time' in locals() else None
         print("Flask 서버 오류:", str(e))
-        return jsonify({'success': False, 'error': str(e)}), 500
-    
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'execution_time': execution_time
+        }), 500
+
 @document_bp.route('/process-document-direct', methods=['POST'])
 def process_document_direct():
     if 'file' not in request.files:

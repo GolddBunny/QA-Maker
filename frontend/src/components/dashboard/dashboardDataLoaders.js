@@ -1,36 +1,6 @@
 import { getStorage, ref, listAll, getMetadata } from 'firebase/storage';
 
-const BASE_URL = 'http://localhost:5000';
-
-export const loadDocumentsInfo = async (id, setUploadedDocs) => {
-    if (!id) return;
-    
-    try {
-        const res = await fetch(`${BASE_URL}/documents/${id}`);
-        const data = await res.json();
-
-        if (data.success) {
-            const uploaded = data.uploaded_files;
-            setUploadedDocs(uploaded);
-        } else {
-            console.error("문서 목록 로드 실패:", data.error);
-        }
-    } catch (error) {
-        console.error("문서 정보 로드 실패:", error);
-    }
-};
-
-export const fetchGraphBuildStats = async (pageId, setGraphBuildStats) => {
-    try {
-        const response = await fetch(`${BASE_URL}/api/graph-build-stats/${pageId}`);
-        if (response.ok) {
-            const data = await response.json();
-            setGraphBuildStats(data);
-        }
-    } catch (error) {
-        console.error('Graph build stats 로드 중 오류:', error);
-    }
-};
+const BASE_URL = 'http://localhost:5000/flask';
 
 export const fetchKnowledgeGraphStats = async (pageId, setKnowledgeGraphStats) => {
     try {
