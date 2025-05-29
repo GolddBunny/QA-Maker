@@ -9,8 +9,10 @@ import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
 import Modal from '../components/modal/Modal';
 import answerGraphData from '../json/answer_graphml_data.json';
+const BASE_URL = 'http://localhost:5000/flask';
 
 function ChatPage() {
+    
     const { currentPageId, setCurrentPageId } = usePageContext();
     const { qaHistory, addQA, updateQAHeadlines, updateSelectedHeadline, updateQASources } = useQAHistoryContext();
     const [qaList, setQaList] = useState([]);
@@ -194,7 +196,7 @@ function ChatPage() {
                 return [];
             }
             
-            const response = await fetch("http://localhost:5000/extract-sources", {
+            const response = await fetch(`${BASE_URL}/extract-sources`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -290,7 +292,7 @@ function ChatPage() {
                     formData.append('file', selectedFile);
 
                     // 문서 처리 요청
-                    const documentResponse = await fetch("http://localhost:5000/process-document-direct", {
+                    const documentResponse = await fetch(`${BASE_URL}/process-document-direct`, {
                         method: "POST",
                         body: formData
                     });
@@ -314,7 +316,7 @@ function ChatPage() {
 
             // 각 방식별 서버 요청 함수
             const fetchLocalResponse = async () => {
-                const response = await fetch("http://localhost:5000/run-local-query", {
+                const response = await fetch(`${BASE_URL}/run-local-query`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -329,7 +331,7 @@ function ChatPage() {
             };
             
             const fetchGlobalResponse = () => {
-                return fetch("http://localhost:5000/run-global-query", {
+                return fetch(`${BASE_URL}/run-global-query`, {
                     method: "POST",
                     headers: { 
                         "Content-Type": "application/json",
@@ -345,7 +347,7 @@ function ChatPage() {
             // 사용된 근거 문서 목록 가져오기
             const fetchHeadlinesForAnswer = async () => {
                 try {
-                    const response = await fetch(`http://localhost:5000/api/context-sources?page_id=${currentPageId}`);
+                    const response = await fetch(`${BASE_URL}/api/context-sources?page_id=${currentPageId}`);
                     if (!response.ok) {
                         throw new Error(`서버 응답 오류: ${response.status}`);
                     }
@@ -373,7 +375,7 @@ function ChatPage() {
                     }
 
                     console.log("관련 질문 요청 시작:", pageId, questionText);
-                    const response = await fetch("http://localhost:5000/generate-related-questions", {
+                    const response = await fetch(`${BASE_URL}/generate-related-questions`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ page_id: pageId, question: questionText })
@@ -824,7 +826,7 @@ function ChatPage() {
         // 서버에서 headline 정보 가져오기
         setHeadlinesLoading(true);
         try {
-            const response = await fetch(`http://localhost:5000/api/context-sources?page_id=${currentPageId}`);
+            const response = await fetch(`${BASE_URL}/api/context-sources?page_id=${currentPageId}`);
             if (!response.ok) {
                 throw new Error(`서버 응답 오류: ${response.status}`);
             }
@@ -870,7 +872,7 @@ function ChatPage() {
         try {
             const processedHeadline = headline.trim();
             const encodedHeadline = encodeURIComponent(processedHeadline);
-            const url = `http://localhost:5000/api/document/${encodedHeadline}?page_id=${currentPageId}`;
+            const url = `${BASE_URL}/api/document/${encodedHeadline}?page_id=${currentPageId}`;
             
             const response = await fetch(url, { method: 'HEAD' });
             
@@ -893,7 +895,7 @@ function ChatPage() {
     const handleHwpDownload = (headline) => {
         const processedHeadline = headline.trim();
         const encodedHeadline = encodeURIComponent(processedHeadline);
-        const downloadUrl = `http://localhost:5000/api/download/${encodedHeadline}?page_id=${currentPageId}`;
+        const downloadUrl = `${BASE_URL}/api/download/${encodedHeadline}?page_id=${currentPageId}`;
         
         showConfirm(
             "문서 다운로드", 
@@ -929,7 +931,7 @@ function ChatPage() {
         const encodedHeadline = encodeURIComponent(processedHeadline); // 한글 인코딩 처리
         
         // 파일명에 사용될 수 있는 확장자 체크를 서버에서 처리하도록 함
-        const url = `http://localhost:5000/api/document/${encodedHeadline}?page_id=${currentPageId}`;
+        const url = `${BASE_URL}/api/document/${encodedHeadline}?page_id=${currentPageId}`;
         
         console.log(`문서 요청 URL: ${url}`);
         setPdfUrl(url);
@@ -1056,7 +1058,7 @@ function ChatPage() {
             const encodedHeadline = encodeURIComponent(processedHeadline);
             
             // 다운로드 URL 생성 (기존 document API와 다른 download API 사용)
-            const downloadUrl = `http://localhost:5000/api/download/${encodedHeadline}?page_id=${currentPageId}`;
+            const downloadUrl = `${BASE_URL}/api/download/${encodedHeadline}?page_id=${currentPageId}`;
             
             console.log(`문서 다운로드 URL: ${downloadUrl}`);
             
@@ -1118,7 +1120,7 @@ function ChatPage() {
             }
             console.log(`${answerType} 정확도 계산 요청:`, { question, answer });
             
-            const response = await fetch("http://localhost:5000/calculate-accuracy", {
+            const response = await fetch(`${BASE_URL}/calculate-accuracy`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

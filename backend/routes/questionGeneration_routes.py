@@ -44,7 +44,7 @@ def read_parquet_from_firebase(bucket_path: str) -> pd.DataFrame:
     data = blob.download_as_bytes()  # Blob을 byte stream으로 읽음
     return pd.read_parquet(BytesIO(data))  # 메모리 버퍼로 읽기
     
-@question_bp.route('/generate-related-questions', methods=['POST'])
+@question_bp.route('/generate-related-questions', methods=['POST', 'OPTIONS'])
 def generate_related_questions():
     data = request.get_json()
     page_id = data.get("page_id")

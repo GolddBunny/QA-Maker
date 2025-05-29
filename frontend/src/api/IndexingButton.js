@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/flask';
 const UPDATE_URL = `${BASE_URL}/update`;
 const APPLY_URL = `${BASE_URL}/apply`;
 

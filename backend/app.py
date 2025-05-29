@@ -20,17 +20,17 @@ def create_app():
     CORS(app)  # CORS 설정
 
     # 블루프린트 등록
-    app.register_blueprint(query_bp, url_prefix='/')
-    app.register_blueprint(document_bp)
-    app.register_blueprint(page_bp)
-    app.register_blueprint(crawling_bp)
-    app.register_blueprint(url_load_bp)
-    app.register_blueprint(source_bp)
-    app.register_blueprint(url_source_bp)
-    app.register_blueprint(parquet_bp)
-    app.register_blueprint(question_bp)
-    app.register_blueprint(generate_bp)
-    app.register_blueprint(accuracy_bp)
+    app.register_blueprint(query_bp, url_prefix='/flask')
+    app.register_blueprint(document_bp, url_prefix='/flask')
+    app.register_blueprint(page_bp, url_prefix='/flask')
+    app.register_blueprint(crawling_bp, url_prefix='/flask')
+    app.register_blueprint(url_load_bp, url_prefix='/flask')
+    app.register_blueprint(source_bp, url_prefix='/flask')
+    app.register_blueprint(url_source_bp, url_prefix='/flask')
+    app.register_blueprint(parquet_bp, url_prefix='/flask')
+    app.register_blueprint(question_bp, url_prefix='/flask')
+    app.register_blueprint(generate_bp, url_prefix='/flask')
+    app.register_blueprint(accuracy_bp, url_prefix='/flask')
     return app
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
 import LoadingSpinner from '../services/LoadingSpinner';
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/flask';
 
 const AdminPage = () => {
     const navigate = useNavigate();
