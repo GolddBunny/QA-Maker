@@ -16,11 +16,11 @@ const ProgressingBar = ({
     if (currentStep === 'crawling') {
       interval = setInterval(() => {
         setProgress(prev => {
-          if (prev < 25) return Math.min(prev + 3, 25);
+          if (prev < 25) return Math.min(prev + 2, 25);
           clearInterval(interval);
           return prev;
         });
-      }, 1000);
+      }, 2000);
     } else if (currentStep === 'structuring') {
       interval = setInterval(() => {
         setProgress(prev => {
@@ -28,7 +28,7 @@ const ProgressingBar = ({
           clearInterval(interval);
           return prev;
         });
-      }, 1000);
+      }, 2000);
     } else if (currentStep === 'document') {
       interval = setInterval(() => {
         setProgress(prev => {
@@ -36,7 +36,7 @@ const ProgressingBar = ({
           clearInterval(interval);
           return prev;
         });
-      }, 1000);
+      }, 2000);
     } else if (currentStep === 'indexing') {
       interval = setInterval(() => {
         setProgress(prev => {

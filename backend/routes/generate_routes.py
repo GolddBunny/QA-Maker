@@ -136,7 +136,11 @@ def update(page_id):
         url_input_path = os.path.join(url_base_path, 'input')
         if os.path.exists(url_input_path):
             # 📌 .txt 파일이 하나라도 없으면 종료
-            txt_files = [f for f in os.listdir(url_input_path) if f.lower().endswith('.txt')]
+            txt_files = [
+                os.path.join(root, f)
+                for root, _, files in os.walk(url_input_path)
+                for f in files if f.lower().endswith('.txt')
+            ]
             if not txt_files:
                 print(f"[중단] {url_input_path} 폴더에 .txt 파일이 없습니다.")
                 return jsonify({
@@ -204,8 +208,8 @@ def update(page_id):
                     uploaded_files.append(firebase_path)
 
                     # 업로드 후 파일 삭제
-                    os.remove(file_path)
-                    print(f"Deleted local file: {file_path}")
+                    # os.remove(file_path)
+                    # print(f"Deleted local file: {file_path}")
 
         return jsonify({
             'success': True,
