@@ -1,39 +1,47 @@
-﻿id,title,occurrence weight,content,rank
-1,GraphRAG Technology and EPUB Reader Community,1.0,"# GraphRAG Technology and EPUB Reader Community
+﻿id,title,content
+15,Hansung University Community,"# Hansung University Community
 
-The community centers around GraphRAG technology, which is utilized in the development of an EPUB reader and is supported by a Raspberry Pi 5. The entities are interconnected through their reliance on GraphRAG for enhanced information retrieval and reasoning capabilities.
+The Hansung University community encompasses various entities related to academic processes, student regulations, and educational programs. Key entities include the university itself, student applicants, and various committees that govern academic standards and procedures. The relationships among these entities highlight the structured nature of academic governance and student engagement within the university.
 
-## GraphRAG as a foundational technology
+## Hansung University as the central governing body
 
-GraphRAG is a key technology in this community, providing a graph structure that represents concepts and their interrelations. This technology excels in information retrieval and reasoning tasks, making it a critical component for the EPUB reader. The effectiveness of GraphRAG in enhancing search and inference capabilities is pivotal for the overall functionality of the EPUB reader, which relies on this technology to deliver a superior user experience. [Data: Entities (5); Relationships (6)]
+Hansung University serves as the primary entity in this community, overseeing all academic processes and student regulations. The university is responsible for managing admissions, course registrations, and academic standards, which are crucial for maintaining educational quality and institutional integrity. The relationships it holds with various entities, such as the Academic Committee and student applicants, indicate its central role in shaping the academic environment. This governance structure is essential for ensuring compliance with educational standards and addressing student needs effectively. [Data: Entities (27), Relationships (25, 26, 141, 161)]
 
-## EPUB Reader's implementation of GraphRAG
+## Role of the Academic Committee
 
-The EPUB Reader is a direct application of GraphRAG technology, designed to offer advanced search and reasoning functionalities. This integration allows users to interact with digital content in a more meaningful way, enhancing their reading experience. The EPUB Reader's reliance on GraphRAG signifies its potential impact on the digital publishing industry, as it sets a new standard for e-readers by incorporating sophisticated information retrieval capabilities. [Data: Entities (6); Relationships (6)]
+The Academic Committee at Hansung University plays a vital role in reviewing and approving educational programs and curricula. This committee is responsible for ensuring that the academic offerings meet the required standards and align with the university's mission. Its relationship with the university highlights the importance of structured oversight in maintaining educational quality. The committee's decisions can significantly impact students' academic experiences and the university's reputation. [Data: Entities (179), Relationships (161)]
 
-## Introduction section outlining GraphRAG's significance
+## Student application processes and regulations
 
-The Introduction section provides essential context regarding the necessity and research background of GraphRAG technology. This foundational knowledge is crucial for understanding the advancements and applications of GraphRAG in various domains, particularly in digital reading. By explaining the rationale behind GraphRAG's development, the Introduction helps stakeholders appreciate its relevance and potential impact on future technologies. [Data: Entities (11); Relationships (7)]
+The processes governing student admissions and applications are critical components of the Hansung University community. The university has established specific criteria for admission, which are managed through a structured selection process. This ensures that only qualified candidates are admitted, thereby maintaining the institution's academic standards. The relationship between admission qualifications and the selection process underscores the importance of transparency and fairness in academic admissions. [Data: Entities (121, 122), Relationships (111, 112)]
 
-## Raspberry Pi 5 as a platform for EPUB Reader
+## Impact of academic regulations on student conduct
 
-The Raspberry Pi 5 serves as the hardware platform for the EPUB Reader, showcasing the versatility of GraphRAG technology in various computing environments. This relationship highlights the adaptability of the EPUB Reader, allowing it to function on a compact and affordable single-board computer. The use of Raspberry Pi 5 not only broadens the accessibility of the EPUB Reader but also emphasizes the potential for innovative applications of GraphRAG technology in educational and personal computing settings. [Data: Entities (7); Relationships (8)]",6.5
-0,Department of Computer Engineering and GraphRAG Community,1.0,"# Department of Computer Engineering and GraphRAG Community
+Academic regulations at Hansung University govern student conduct and performance, including policies on academic warnings and expulsion. These regulations are designed to uphold academic integrity and ensure that students meet established standards. The relationship between academic performance and the issuance of warnings or expulsion highlights the university's commitment to maintaining a high-quality educational environment. This can have significant implications for students' academic careers and the university's overall reputation. [Data: Entities (172, 165), Relationships (150, 155)]
 
-The community is centered around the Department of Computer Engineering at Hansung University, which is actively engaged in research and education utilizing GraphRAG technology. Key entities include students and faculty members who are involved in the implementation of an EPUB reader using this technology, highlighting a collaborative environment focused on innovation.
+## Public courses and community engagement
 
-## Department of Computer Engineering's focus on GraphRAG technology
+Hansung University offers public courses aimed at individuals outside the university, promoting community engagement and practical knowledge dissemination. These courses are governed by specific regulations that outline enrollment qualifications and maximum capacities. The relationship between public courses and academic regulations reflects the university's commitment to extending its educational reach and fostering community involvement. This initiative can enhance the university's reputation and strengthen its ties with the local community. [Data: Entities (228), Relationships (213, 214, 215)]"
+2,Graduation Requirements and Academic Regulations,"# Graduation Requirements and Academic Regulations
 
-The Department of Computer Engineering at Hansung University is dedicated to researching and applying GraphRAG technology, which is a significant aspect of their academic and practical endeavors. This focus on a cutting-edge technology positions the department as a key player in the field of computer engineering, potentially influencing future developments in related areas. The department's commitment to this technology is evidenced by its high degree of involvement, as indicated by the combined degree of 9 in its relationship with GraphRAG. [Data: Entities (4); Relationships (4)]
+This community encompasses key entities related to graduation requirements and academic regulations at 한성대학교, including the graduation thesis, degree conferral, and associated academic evaluations. The relationships among these entities highlight the structured process students must navigate to achieve their academic goals.
 
-## Student involvement in GraphRAG projects
+## Graduation Thesis as a pivotal requirement
 
-Students Jiyoon Ok, Chaewon Park, and Juyeon Soung are actively participating in the implementation of an EPUB reader using GraphRAG technology. Their involvement not only enhances their educational experience but also contributes to the practical application of theoretical knowledge. This hands-on experience is crucial for their development as future professionals in the field. The students' relationships with the Department of Computer Engineering reflect a strong educational framework that supports innovation and practical learning. [Data: Entities (0, 1, 2); Relationships (0, 1, 2)]
+The graduation thesis is a crucial component for students at 한성대학교, as it must be submitted and passed to receive a degree. This requirement underscores the importance of academic rigor and the necessity for students to engage deeply with their field of study. The relationship between the graduation thesis and degree conferral is direct, as failure to meet this requirement can delay or prevent graduation altogether [Data: Entities (221, 222); Relationships (206)].
 
-## Professor Kitae Hwang's role in the community
+## Significant date for academic regulations
 
-Professor Kitae Hwang plays a pivotal role in guiding the students and overseeing the research initiatives related to GraphRAG technology. His expertise and leadership are essential for the successful implementation of projects like the EPUB reader. The professor's relationship with the department indicates a collaborative environment where faculty and students work together towards common goals, fostering a culture of innovation and academic excellence. [Data: Entities (3); Relationships (3)]
+The date 2015.12.10 marks a pivotal moment in the academic regulations at 한성대학교, as it introduced new guidelines concerning graduation credit requirements and other academic policies. This date is significant for students as it reflects changes that could affect their academic journey, including the criteria for graduation and the evaluation of their performance [Data: Entities (159, 184); Relationships (166, 182)].
 
-## Collaborative research environment
+## Combined Bachelor's and Master's program implications
 
-The community exemplifies a collaborative research environment where students and faculty members work together on projects that leverage GraphRAG technology. This collaboration not only enhances the learning experience for students but also contributes to the advancement of knowledge in the field. The interconnectedness of the entities within this community suggests a robust support system that encourages innovation and practical application of research findings. [Data: Relationships (0, 1, 2, 3)]",6.5
+Students enrolled in the combined bachelor's and master's program have specific graduation criteria, including potential exemptions from submitting a graduation thesis. This flexibility can significantly impact their academic planning and timelines, allowing for a more integrated approach to their education. The relationship between these students and the graduation thesis regulations highlights the unique considerations for this group [Data: Entities (219); Relationships (202, 203)].
+
+## Role of Academic Evaluations
+
+Academic evaluations, including the grading process and examinations, are essential for assessing student performance. The relationship between evaluations and graduation requirements emphasizes the importance of maintaining academic standards. Changes to evaluation criteria can directly influence students' ability to meet graduation requirements, making this a critical area of focus for the institution [Data: Entities (181, 180); Relationships (163)].
+
+## Deferral of Degree Acquisition
+
+The option for students to defer the acquisition of their bachelor's degree is an important aspect of the graduation process. This allows students who may not meet all requirements at the time of graduation to postpone their degree conferral while still being able to complete their studies. The relationship between degree conferral and deferral options provides students with flexibility in managing their academic progress [Data: Entities (222, 223); Relationships (209)]."

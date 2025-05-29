@@ -1,9 +1,16 @@
 ﻿id,entity,description,number of relationships,in_context
-6,EPUB READER,"GraphRAG 기술을 활용하여 구현된 전자책 리더로, 검색 및 추론 기능을 제공함.",3,True
-7,RASPBERRY PI 5,"GraphRAG 기술을 활용한 EPUB 리더가 구현된 단일 보드 컴퓨터로, 다양한 기능을 지원함.",1,True
-2,JUYEON SOUNG,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-1,CHAEWON PARK,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-3,KITAE HWANG,"한성대학교 컴퓨터공학부의 교수로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-0,JIYOON OK,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-5,GRAPHRAG,"문서 내 개념과 상호관계를 나타내는 그래프 구조를 구축하는 기술로, 정보 검색 및 추론 작업에서 우수한 성능을 발휘함.",3,True
-11,INTRODUCTION,GraphRAG 기술의 필요성과 연구 배경을 설명하는 섹션.,1,True
+183,학점취득,학생이 학업을 통해 취득해야 하는 학점에 대한 규정입니다.,2,True
+191,제 34 조,졸업학점에 관한 규정을 명시한 한성대학교 학칙의 조항입니다.,1,True
+184,졸업학점,"The ""졸업학점"" refers to the minimum number of credits required for graduation from 한성대학교, which is set at 130 credits. This requirement is essential for students to complete their degree program at the university.",3,True
+221,졸업논문,A thesis that must be submitted and passed for graduation.,4,True
+220,조기졸업,The process allowing students to graduate early under certain conditions.,4,True
+28,학점교류신청자,"학점교류를 희망하는 학생들로, 소속 대학의 담당 부서에 신청해야 합니다.",3,True
+222,학위수여,The awarding of academic degrees upon meeting graduation requirements.,3,True
+190,제 33 조,학점취득에 관한 규정을 명시한 한성대학교 학칙의 조항입니다.,1,True
+134,특성화고(舊전문계고)졸 재직자 특별전형,A special admission process for graduates of specialized high schools who are currently employed.,1,True
+229,위탁생,Students who are allowed to study outside the regular quota based on recommendations from their institutions.,5,True
+219,학·석사 연계과정생,Students enrolled in a combined bachelor's and master's program with specific graduation criteria.,2,True
+232,수강자격,The qualifications required for students to enroll in public courses.,1,True
+157,자퇴,학생이 자발적으로 학업을 중단하고자 할 때 신청하는 절차입니다.,3,True
+124,입학허가의 취소,The cancellation of admission approval under certain conditions.,1,True
+245,교과이수 증서,A certificate awarded to students based on their course completion status.,1,True
