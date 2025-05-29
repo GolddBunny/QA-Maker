@@ -665,7 +665,7 @@ const DashboardPage = () => {
                 <div className="knowledge-graph-section">
                     <h1 className="section-title-with-icon">
                         <span className="icon">🕸️</span>
-                        지식 그래프
+                        지식그래프 네트워크 시각화 (Top 200 엔티티)
                     </h1>
                     <div className="knowledge-graph-container">
                         {showGraph && graphData && !graphError ? (
