@@ -1,4 +1,4 @@
-import { startUrlCrawling, crawlAndStructure, line1 } from './UrlApi';
+import { startUrlCrawling, crawlAndStructure, line1, documentDownloader } from './UrlApi';
 import { processDocuments } from './DocumentApi';
 
 const BASE_URL = 'http://localhost:5000';
@@ -91,6 +91,16 @@ export const executeFullPipeline = async (pageId) => {
     
     console.log("✅ 웹 크롤링 텍스트 line1 정리 완료:", line1Result.results);
 
+    // 2단계-3: 문서 다운로더 (document_downloader.py)
+    console.log("2️⃣-3 문서 다운로더 시작...");
+    const documentDownloaderResult = await documentDownloader(pageId);
+    
+    if (!documentDownloaderResult.success) {
+      throw new Error(`문서 다운로더 실패: ${documentDownloaderResult.error}`);
+    }
+
+    console.log("✅ 문서 다운로더 완료:", documentDownloaderResult.results);
+
     // 3단계: 문서 구조화
     console.log("3️⃣ 문서 구조화 시작...");
     const documentResult = await processDocuments(pageId);
@@ -127,6 +137,7 @@ export const executeFullPipeline = async (pageId) => {
         crawling: crawlingResult.results,
         structuring: structuringResult.results,
         line1: line1Result.results,
+        documentDownloader: documentDownloaderResult.results,
         document: documentResult.results,
         indexing: indexingResult,
         update: updateResult.results

@@ -81,9 +81,9 @@ Desktop.ini
 .output/
 .git/
 frontend/.git/
+data/input/*
 
 # 데이터 폴더 무시
-/data/
 /frontend/public/data/
 /frontend/src/json
 /backend/context_data_*.csv

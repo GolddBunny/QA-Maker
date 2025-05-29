@@ -233,3 +233,60 @@ def ensure_page_directory(page_id):
     os.makedirs(upload_path, exist_ok=True)
     
     return base_path, input_path, upload_path 
+
+@document_bp.route('/download-crawled-documents/<page_id>', methods=['POST'])
+def download_crawled_documents(page_id):
+    """크롤링된 문서 URL 목록을 다운로드하여 Firebase에 저장"""
+    try:
+        data = request.get_json()
+        if not data or 'doc_urls' not in data:
+            return jsonify({'success': False, 'message': 'doc_urls가 필요합니다'}), 400
+        
+        doc_urls = data['doc_urls']
+        if not isinstance(doc_urls, list) or not doc_urls:
+            return jsonify({'success': False, 'message': '유효한 doc_urls 목록이 필요합니다'}), 400
+        
+        # DocumentDownloader 임포트
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
+        from document_downloader import DocumentDownloader
+        
+        # 임시 다운로드 폴더 생성
+        temp_download_folder = f'../data/temp_download/{page_id}'
+        os.makedirs(temp_download_folder, exist_ok=True)
+        
+        # DocumentDownloader 인스턴스 생성
+        downloader = DocumentDownloader(
+            input_folder=temp_download_folder,
+            domain="crawled",
+            delay=1.0,
+            upload_to_firebase=True,
+            delete_local_after_upload=True,
+            page_id=page_id
+        )
+        
+        # 크롤링된 문서 URL 다운로드
+        downloader.download_from_crawled_urls(doc_urls)
+        
+        # 통계 정보 반환
+        stats = downloader.stats
+        
+        return jsonify({
+            'success': True,
+            'message': '크롤링된 문서 다운로드 완료',
+            'stats': {
+                'total': stats['total'],
+                'success': stats['success'],
+                'failed': stats['failed'],
+                'skipped': stats['skipped'],
+                'filtered_out': stats['filtered_out'],
+                'firebase_uploaded': stats['firebase_uploaded'],
+                'firebase_failed': stats['firebase_failed'],
+                'local_deleted': stats['local_deleted']
+            }
+        })
+        
+    except Exception as e:
+        print(f"크롤링된 문서 다운로드 오류: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500 

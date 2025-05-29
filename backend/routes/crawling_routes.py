@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from services.crawling_service.urlCrawling import main as crawl_urls
-from routes.urlLoad_routes import get_root_urls_from_firebase, save_crawling_url_to_firebase, get_urls_from_firebase
+from routes.urlLoad_routes import get_root_urls_from_firebase, save_crawling_url_to_firebase, get_urls_from_firebase, save_document_url_to_firebase, save_urls_batch
 from services.crawling_service.crawling_and_structuring import main as crawling_and_structuring
 from firebase_admin import firestore
 from services.crawling_service import line1
@@ -60,13 +60,16 @@ def start_url_crawling(page_id):
                     "timestamp": datetime.now().isoformat()
                 }
 
-                # page_urls에서 URL 목록을 가져와서 Firebase에 저장
-                saved_count = 0
-                for url in crawling_results.get('page_urls', []):
-                    save_crawling_url_to_firebase(page_id, url)
-                    saved_count += 1
+                # page_urls에서 URL 목록을 가져와서 Firebase에 저장 (배치 처리)
+                page_urls = crawling_results.get('page_urls', [])
+                saved_count = save_urls_batch(page_id, page_urls, "crawled")
                 
-                print(f"💾 Firebase에 {saved_count}개 URL 저장 완료")
+                # doc_urls에서 문서 URL 목록을 가져와서 Firebase에 저장 (배치 처리)
+                doc_urls = crawling_results.get('doc_urls', [])
+                doc_saved_count = save_urls_batch(page_id, doc_urls, "document")
+                
+                print(f"💾 Firebase에 {saved_count}개 페이지 URL, {doc_saved_count}개 문서 URL 저장 완료")
+                print(f"📎 발견된 문서 URL: {crawling_results.get('total_documents_discovered', 0)}개")
             
                 return jsonify({
                     "success": True,

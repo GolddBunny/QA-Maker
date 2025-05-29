@@ -17,7 +17,7 @@ The report should include the following sections:
 - DETAILED FINDINGS: A list of 5-10 key insights about the community. Each insight should have a short summary followed by multiple paragraphs of explanatory text grounded according to the grounding rules below. Be comprehensive.
 - DATE RANGE: A range of dates (YYYY-MM-DD) with the format [START, END] which corresponds to the date range of text units and intermediate reports used to build the report.
 
-IMPORTENT: RETURN OUP PUT IN **KOREAN** as a well-formed JSON-formatted string with the following format. Don't use any unnecessary escape sequences. The output should be a single JSON object that can be parsed by json.loads.
+Return output as a well-formed JSON-formatted string with the following format. Don't use any unnecessary escape sequences. The output should be a single JSON object that can be parsed by json.loads.
     {{
         "title": "<report_title>",
         "summary": "<executive_summary>",
@@ -55,29 +55,29 @@ id, text
 Output:
 
 {{
-    "title": "2000년 7월 기준 엔론 컴플라이언스 및 리스크 관리 개요",
-    "summary": "이 보고서는 엔론의 주요 부서 중 컴플라이언스와 리스크 관리에 초점을 맞추어, 이 조직들이 규제 기준을 준수하고 재무 리스크를 효과적으로 관리하기 위해 조직 구조 내에서 어떻게 상호작용하는지 설명합니다. 이 정보는 2000년 중반 무렵의 회사 운영과 관련이 있습니다.",
+    "title": "Enron Compliance and Risk Management Overview as of July 2000",
+    "summary": "This report delves into Enron's key departments focusing on compliance and risk management, illustrating how these entities interact within the organizational framework to uphold regulatory standards and manage financial risks effectively. The information is relevant to the company's operations around mid-2000.",
     "rating": 9.2,
-    "rating_explanation": "높은 중요도 평가는 리스크 관리 및 법무 컴플라이언스 부서가 엔론의 재무 및 법적 규제 준수를 보장하는 데 있어 중요한 역할을 수행하고 있음을 반영하며, 이는 회사의 청렴성과 운영 안정성 유지에 매우 중요합니다.",
+    "rating_explanation": "The high importance rating reflects the critical roles that the Risk Management and Legal Compliance Departments play in ensuring Enron's adherence to financial and legal regulations, crucial for maintaining the company's integrity and operational stability.",
     "findings": [
-        {
-            "summary": "리스크 관리 운영 범위",
-            "explanation": "엔론의 리스크 관리 부서는 재무 리스크를 식별, 평가 및 완화하는 데 중추적인 역할을 합니다. 2000년 초부터 강조된 그들의 적극적인 접근 방식은 엔론을 잠재적인 재무 함정으로부터 보호하고 변화하는 시장 규제를 지속적으로 준수하도록 돕습니다. 효과적인 리스크 관리는 재무적 이상을 방지할 뿐만 아니라 회사의 전략적 의사 결정 과정을 지원합니다.
+        {{
+            "summary": "Risk Management Operational Scope",
+            "explanation": "The Risk Management Department at Enron plays a pivotal role in identifying, assessing, and mitigating financial risks. Their proactive approach, highlighted from the beginning of 2000, helps safeguard Enron against potential financial pitfalls and ensures continuous compliance with evolving market regulations. Effective risk management not only prevents financial anomalies but also supports the company's strategic decision-making processes.
 
-[데이터: 소스 (2, 3), 날짜_범위 ((2000, 01, 01), (2000, 07, 12))]"
-        },
-        {
-            "summary": "법무 컴플라이언스 및 거버넌스",
-            "explanation": "법무 컴플라이언스 부서는 엔론의 모든 운영이 규제 기관이 설정한 법적 기준을 준수하도록 보장합니다. 2000년 2분기부터 주목된 기업 거버넌스 및 계약 관리에 대한 그들의 초점은 특히 복잡한 계약 및 기업 협약 관리에 있어 엔론의 평판과 운영 적법성을 유지하는 데 중요합니다. 그들의 노력은 높은 법적 기준과 윤리적 관행을 유지하려는 약속을 강조합니다.
+[Data: Sources (2, 3), Date_Range ((2000, 01, 01), (2000, 07, 12))]"
+        }},
+        {{
+            "summary": "Legal Compliance and Governance",
+            "explanation": "The Legal Compliance Department ensures that all Enron's operations adhere to the legal standards set by regulatory bodies. Their focus on corporate governance and contract management, noted starting Q2 2000, is crucial in maintaining Enron's reputation and operational legality, especially in managing complex contracts and corporate agreements. Their efforts underscore the commitment to upholding high legal standards and ethical practices.
 
-[데이터: 소스 (5), 날짜_범위 ((2000, 04, 01), (2000, 07, 12))]"
-        },
-        {
-            "summary": "컴플라이언스를 위한 부서 간 협력",
-            "explanation": "2000년 2분기에 설립된 리스크 관리 부서와 법무 컴플라이언스 부서 간의 협력은 리스크 완화 전략이 법적으로 건전하고 컴플라이언스 조치가 재무 리스크를 고려하도록 보장합니다. 이러한 시너지는 전체적인 거버넌스에 필수적이며 엔론에서 리스크 관리와 법무 컴플라이언스 전략을 통합하는 데 중요한 역할을 했습니다. 이 기간 동안 향상된 부서 간 협력은 회사의 전략을 규제 요구 사항과 일치시키는 데 중요한 역할을 합니다.
+[Data: Source (5), Date_Range ((2000, 04, 01), (2000, 07, 12))]"
+        }},
+        {{
+            "summary": "Interdepartmental Collaboration for Compliance",
+            "explanation": "Collaboration between the Risk Management and Legal Compliance Departments, established in Q2 2000, ensures that risk mitigation strategies are legally sound and that compliance measures consider financial risks. This synergy is vital for holistic governance and has been instrumental in integrating risk management with legal compliance strategies at Enron. Enhanced interdepartmental cooperation during this period plays a crucial role in aligning the company's strategies with regulatory requirements.
 
-[데이터: 소스 (9), 날짜_범위 ((2000, 04, 01), (2000, 07, 12))]"
-        }
+[Data: Sources (9), Date_Range ((2000, 04, 01), (2000, 07, 12))]"
+        }}
     ],
     "date_range": ["2000-01-01", "2000-07-12"]
 }}

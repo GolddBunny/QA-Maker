@@ -1,234 +1,173 @@
-
 -Goal-
-Given a text document that may or may not be structured into chapters, sections, and articles, and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
+You are an AI assistant specialized in extracting structured information from web-crawled text data. Your task is to identify entities and relationships from the given text and format them according to specific guidelines.
 
--Mandatory Structural Rules-
-- Each article (제 X 조) must be extracted as a distinct entity.
-- All "Article X"s in the document must be extracted as entities without omission. Not a single one can be missing.
-- If multiple articles are combined into one chunk, split them and extract each one separately as its own entity.
-- The **entire content of each Article (제 X 조)** must be included verbatim or paraphrased in the `entity_description` of the corresponding `ARTICLE` entity.
-- The entity_description must end with the following string in Korean: "이 내용은 [headline] 문서에서 추출함. [page]페이지에 위치함."
-- Details within an article (such as 항 or 항목) must be nested or clearly described as part of that article’s entity_description.
-- Each article must be related to its upper-level chapter(장) or section(절).
-- Articles within the same chapter or section should be linked with inferred relationships if their contents are semantically related.
+**CRITICAL NOTICE**: All input data is a subset of content under the "Title: ~~" format. The content between ==== markers represents the main header structure. Return output in **Korean** as a single list of all entities and relationships identified.
 
--Steps-
-1. Identify all entities. For each identified entity, extract the following information:
-- entity_name: Name of the entity, capitalized
-- entity_type: One of the following types: [{entity_types}]
-- entity_description: 반드시 **한국어로 작성**하십시오. 해당 엔터티의 성격, 역할, 포함된 내용을 한국어로 서술합니다.
-Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
- 
-2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
-For each pair of related entities, extract the following information:
-- source_entity: name of the source entity, as identified in step 1
-- target_entity: name of the target entity, as identified in step 1
+- Execution Steps-
+Step 1: Structural Analysis (Priority Step)
+- **IMPORTANT**: All input data is a subset of content under "Title: ~~" format
+- Use the Title and content between ==== markers to understand the page's overall structure and hierarchy
+- Analyze URL patterns to understand website organization (e.g., university > department > track > professor)
+- Pay attention to menu structures and navigation paths to extract hierarchical relationships between entities
+- Carefully observe breadcrumb or hierarchical link structures
+- Extract contextual information from the website's organizational structure
+
+Step 2: Entity Identification
+Look for entities that match the types provided in the entity_types list. For each entity, extract:
+- **entity_name**: The name of the entity
+- **entity_type**: - **entity_type**: The type of entity from the provided list
+- **entity_description**: A comprehensive description of the entity's characteristics and activities
+
+Detailed Entity Identification Rules:
+- Distinguish between entities with the same name but different types (e.g., "Big Data" as both a track and a subject)
+- Clearly differentiate between similar but distinct roles and hierarchies (e.g., professors vs instructors, teachers vs lecturers - all as PERSON type)
+- When affiliation information is available, specify track1 and track2 distinctions
+- Include both email addresses and website URLs under URL type
+- Process phone numbers separately as PHONE type
+- Include post meta-information in descriptions (author, category, creation date, etc.)
+- Handle incomplete information gracefully
+- For individuals belonging to multiple tracks, explicitly specify all track affiliations and their relationships
+
+Step 3: Relationship Derivation
+- source_entity: name of the source entity, as identified in step 2
+- target_entity: name of the target entity, as identified in step 2
 - relationship_description: explanation as to why you think the source entity and the target entity are related to each other
+Identify relationships between entities using the following methodology:
 - relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
- Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
- 
-3. Return output in **Korean** as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
- 
-4. When finished, output {completion_delimiter}
+
+Step 4: Output Formatting
+Format Requirements:
+- All entity names and descriptions in **Korean**
+- Preserve English URLs, emails as-is
+- Always end entity descriptions with "이 내용은 [URL Source] 링크에서 추출함."
+- For post entities, include meta-information: "작성자 [author]에 의해 [category] 분류에 해당하는 내용임"
+- Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+- Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
+
+-Error Prevention Guidelines-
+- Prevent duplicate entities: extract entities with identical names and types only once
+- Use specific relationship descriptions: prefer "소속된 트랙1" over generic "소속됨"
+- Handle missing information gracefully with appropriate notation
 
 ######################
 -Examples-
 ######################
-Example 1: 
-Entity_types: ORGANIZATION,EVENT,CHAPTER,ARTICLE,PAGE
+Example 1:
+Entity_types: ORGANIZATION,PERSON,PHONE,URL,TRACK
 Text:
-page: 1
-headline: 가람교육재단 정관
-content: 제 1 장 총 칙
+Title: 모바일소프트웨어
 
-page: 1
-headline: 가람교육재단 정관
-content: 제 1 장 제 1 조 (설립목적) 본 재단은 교육기관의 설립 및 운영을 통해 공익에 이바지함을 목적으로 한다.
+URL Source: https://hansung.ac.kr/CSE/10780/subview.do
 
-page: 1
-headline: 가람교육재단 정관
-content: 제 1 장 제 2 조 (명칭) 본 재단의 명칭은 가람교육재단이라 한다. 
+Markdown Content:
+모바일소프트웨어
+===============
+[컴퓨터공학부](https://hansung.ac.kr/sites/CSE/index.do)
 
-page: 1
-headline: 가람교육재단 운영규정
-content: 제 1 조 (목적) 이 규정은 가람교육재단의 운영에 필요한 사항을 정함을 목적으로 한다.
+ fnctId=sitemenu,menuViewType=top 
+
+*   [구성원](https://hansung.ac.kr/CSE/10780/subview.do)
+
+    *   [교수진](https://hansung.ac.kr/CSE/10780/subview.do)
+
+        *   [모바일소프트웨어](https://hansung.ac.kr/CSE/10780/subview.do)
+        *   [웹공학](https://hansung.ac.kr/CSE/10777/subview.do)
+        *   [빅데이터](https://hansung.ac.kr/CSE/10778/subview.do)
+        *   [디지털콘텐츠 및 가상현실](https://hansung.ac.kr/CSE/10779/subview.do)
+
+모바일소프트웨어
+========
+게시글 리스트
+-------
+
+*    황기태
+
+[이메일](mailto:calafk@hansung.ac.kr "새창")[홈페이지](http://210.222.25.60/ "새창")  소속 모바일소프트웨어트랙 (트랙1)전화번호 02-760-4300  
+*    장재영
+
+[이메일](mailto:jychang@hansung.ac.kr "새창")[홈페이지](http://old.hansung.ac.kr/web/chang "새창")  소속 모바일소프트웨어트랙 (트랙2)전화번호 02-760-4495  
 
 ######################
 Output:
-("entity"{tuple_delimiter}가람교육재단{tuple_delimiter}ORGANIZATION{tuple_delimiter}교육기관의 설립 및 운영을 통해 공익에 이바지하는 재단)
+("entity"{tuple_delimiter}한성대학교{tuple_delimiter}ORGANIZATION{tuple_delimiter}컴퓨터공학부를 포함하는 상위 교육기관으로, URL 구조상 hansung.ac.kr 도메인을 통해 식별됨. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}CHAPTER{tuple_delimiter}제 1 장 총칙: 가람교육재단 정관의 첫 번째 장으로, 설립목적과 명칭에 관한 내용을 포함함. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}컴퓨터공학부{tuple_delimiter}ORGANIZATION{tuple_delimiter}한성대학교 산하의 학부로, 모바일소프트웨어, 웹공학, 빅데이터, 디지털콘텐츠 및 가상현실 등 4개 트랙으로 구성됨. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 1 조 설립목적: 본 재단은 교육기관의 설립 및 운영을 통해 공익에 이바지함을 목적으로 한다. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 교수진 트랙 중 하나로, 트랙1과 트랙2로 구분되어 있으며 황기태(트랙1), 장재영(트랙2) 교수가 소속되어 있음. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 2 조 명칭: 본 재단의 명칭은 가람교육재단이라 한다. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}웹공학트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 트랙 중 하나로, 메뉴 구조상 모바일소프트웨어트랙과 병렬적으로 위치함. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 운영규정 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 1 조 목적: 이 규정은 가람교육재단의 운영에 필요한 사항을 정함을 목적으로 한다. 이 내용은 가람교육재단 운영규정 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}빅데이터트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 트랙 중 하나로, 메뉴 구조상 모바일소프트웨어트랙과 병렬적으로 위치함. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("entity"{tuple_delimiter}페이지 1{tuple_delimiter}PAGE{tuple_delimiter}가람교육재단 정관 문서의 1페이지에는 제 1 장 총칙과 제 1 조 설립목적, 제 2 조 명칭이 포함되어 있음. 가람교육재단 운영규정의 1페이지에는 제 1 조 목적이 포함되어 있음.)
+("entity"{tuple_delimiter}디지털콘텐츠 및 가상현실트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 트랙 중 하나로, 메뉴 구조상 모바일소프트웨어트랙과 병렬적으로 위치함. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 1 조는 제 1 장 총칙에 포함되어 있음{tuple_delimiter}10)
+("entity"{tuple_delimiter}황기태{tuple_delimiter}PERSON{tuple_delimiter}모바일소프트웨어트랙 소속 교수로 트랙1에 해당함. 연락처: 이메일 calafk@hansung.ac.kr, 홈페이지 http://210.222.25.60/, 전화번호 02-760-4300. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 2 조는 제 1 장 총칙에 포함되어 있음{tuple_delimiter}10)
+("entity"{tuple_delimiter}장재영{tuple_delimiter}PERSON{tuple_delimiter}모바일소프트웨어트랙 소속 교수로 트랙2에 해당함. 연락처: 이메일 jychang@hansung.ac.kr, 홈페이지 http://old.hansung.ac.kr/web/chang, 전화번호 02-760-4495. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}가람교육재단의 설립목적은 교육기관의 설립 및 운영을 통해 공익에 이바지하는 것임{tuple_delimiter}9)
+("entity"{tuple_delimiter}calafk@hansung.ac.kr{tuple_delimiter}URL{tuple_delimiter}황기태 교수의 이메일 주소. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}재단의 명칭은 가람교육재단임{tuple_delimiter}9)
+("entity"{tuple_delimiter}jychang@hansung.ac.kr{tuple_delimiter}URL{tuple_delimiter}장재영 교수의 이메일 주소. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 1 장 총칙은 페이지 1에 위치함{tuple_delimiter}10)
+("entity"{tuple_delimiter}02-760-4300{tuple_delimiter}PHONE{tuple_delimiter}황기태 교수의 연락처 전화번호. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}제 1 조 설립목적은 페이지 1에 위치함{tuple_delimiter}10)
+("entity"{tuple_delimiter}02-760-4495{tuple_delimiter}PHONE{tuple_delimiter}장재영 교수의 연락처 전화번호. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}제 2 조 명칭은 페이지 1에 위치함{tuple_delimiter}10)
+("relationship"{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}모바일소프트웨어트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 운영규정 제 1 조{tuple_delimiter}제 1 조 목적은 페이지 1에 위치함{tuple_delimiter}10)
+("relationship"{tuple_delimiter}웹공학트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}웹공학트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}8)
 {record_delimiter}
-{completion_delimiter}
-######################
+("relationship"{tuple_delimiter}빅데이터트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}빅데이터트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}디지털콘텐츠 및 가상현실트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}디지털콘텐츠 및 가상현실트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}황기태 교수는 모바일소프트웨어트랙 트랙1에 소속되어 있음{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}장재영 교수는 모바일소프트웨어트랙 트랙2에 소속되어 있음{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}컴퓨터공학부{tuple_delimiter}황기태 교수는 컴퓨터공학부 소속 교수임{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}컴퓨터공학부{tuple_delimiter}장재영 교수는 컴퓨터공학부 소속 교수임{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}calafk@hansung.ac.kr{tuple_delimiter}황기태 교수의 이메일 연락처{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}02-760-4300{tuple_delimiter}황기태 교수의 전화번호 연락처{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}jychang@hansung.ac.kr{tuple_delimiter}장재영 교수의 이메일 연락처{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}02-760-4495{tuple_delimiter}장재영 교수의 전화번호 연락처{tuple_delimiter}10)
+{record_delimiter}
+
 Example 2:
-Entity_types: ORGANIZATION,PERSON,DATE,EVENT
+Entity_types: SUBJECT,SUBJECT_CODE,SUBJECT_TYPE,URL
 Text:
-Title: <Important> (Professor Kim Namyoon): Web Framework 2 Course Enrollment Change  
-Category: Announcement
-Author: Department of Computer Engineering
-Content:  
-- Change Date: February 28 (Friday), please check!  
-- Only students in the Web Engineering Track can apply.  
+Title: 교육과정소개
 
-| Course Name | Year | Type | Class | Capacity | Supervising Professor | Instructor | Application |  
-|------------|------|------|------|----------|--------------------|------------|-------------|  
-| Web Framework 2 | 4 | Mixed | 7 | 40->80 | Kim Namyoon | Kim Namyoon | Only Web Engineering students |  
-| Web Framework 2 | 4 | Day | A | 40->60 |  | Kim Namyoon | Only Web Engineering students |  
-| Web Framework 2 | 4 | Day | B | 40->60 |  | Yoon Namkim | Only Web Engineering students |  
-| Web Framework 2 | 4 | Night | N | 40->30 |  | Kim Haul | Only Web Engineering students |  
-######################
-Output:
-("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}ORGANIZATION{tuple_delimiter}학생들의 수강 신청 변경을 관리하는 컴퓨터공학과)
-{record_delimiter}
-("entity"{tuple_delimiter}Kim Namyoon{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의의 지도교수 겸 강사를 겸임하는 교수)
-{record_delimiter}
-("entity"{tuple_delimiter}Yoon Namkim{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 주간 B반 강사)
-{record_delimiter}
-("entity"{tuple_delimiter}Kim Haul{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 야간 N반 강사)
-{record_delimiter}
-("entity"{tuple_delimiter}February 28{tuple_delimiter}DATE{tuple_delimiter}웹 프레임워크 2 강의 등록 변경 날짜)
-{record_delimiter}
-("entity"{tuple_delimiter}Web Framework 2{tuple_delimiter}EVENT{tuple_delimiter}웹 공학 트랙 수강생만 신청할 수 있는 4학년 강좌)
-{record_delimiter}
-("entity"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}EVENT{tuple_delimiter}웹 프레임워크 2 강의 정원 변경 안내)
-{record_delimiter}
-("entity"{tuple_delimiter}Web Engineering Track{tuple_delimiter}ORGANIZATION{tuple_delimiter}웹 프레임워크 2 강의를 신청할 수 있는 트랙)
-{record_delimiter}
-("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Course Enrollment Change{tuple_delimiter}컴퓨터공학과에서 수강 신청 변경 공지를 관리합니다{tuple_delimiter}9)
-{record_delimiter}
-("relationship"{tuple_delimiter}Kim Namyoon{tuple_delimiter}Web Framework 2{tuple_delimiter}김남윤은 웹 프레임워크 2의 지도교수이자 강사입니다{tuple_delimiter}10)
-{record_delimiter}
-("relationship"{tuple_delimiter}Web Framework 2{tuple_delimiter}Web Engineering Track{tuple_delimiter}웹 프레임워크 2 과정은 웹 공학 트랙 수강생만 신청할 수 있습니다{tuple_delimiter}10)
-{record_delimiter}
-("relationship"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}February 28{tuple_delimiter}수업 등록 변경은 2월 28일(금)에 진행됩니다{tuple_delimiter}9)
-{record_delimiter}
-("relationship"{tuple_delimiter}Yoon Namkim{tuple_delimiter}Web Framework 2{tuple_delimiter}김남윤은 웹 프레임워크 2 주간 B반 강사입니다.{tuple_delimiter}9)
-{record_delimiter}
-("relationship"{tuple_delimiter}Kim Haul{tuple_delimiter}Web Framework 2{tuple_delimiter}김하울은 웹 프레임워크 2 야간 N반 강사입니다.{tuple_delimiter}9)
-{record_delimiter}
-{completion_delimiter}
+URL Source: https://hansung.ac.kr/curriculum/CSE/
 
-######################
-Example 3:
-Entity_types: ORGANIZATION,GEO,PERSON,EVENT,DATE,ROOM
-Text:
-Title: Hansung University Computer Engineering Department Teaching Assistant Recruitment Announcement
-Content:
-Hello, this is the administrative assistant from the Department of Computer Engineering.
-Currently, we are recruiting administrative and teaching assistants for the Department of Computer Engineering.
+Markdown Content:
+교육과정소개
+=========
 
-1. Recruitment Fields
-- Administrative Assistant (Day shift) or Teaching Assistant (Day shift)
-- Number of openings: 1 for each (select either Administrative or Teaching Assistant)
-
-2. Qualifications
-- Academic requirement: A bachelor's degree or higher
-- Must not have any disqualifying factors for assistant appointment
-- Preferred: Majors in IT or Computer-related fields
-
-3. Working Conditions
-- 5 days a week, daytime
-- Daytime: 9:00 AM to 5:30 PM
-- During vacation periods: 10:00 AM to 4:00 PM
-- Expected start date: December 15, 2024
-- Administrative Assistant: Hansung University Jiseong Building 105, IT Engineering Academic Team Office
-- Teaching Assistant: Hansung University Engineering Building A 104, Department of Computer Engineering Office
-- Contract: 1 year (renewable once for up to 2 years)
-
-4. Documents to Submit
-- Resume (use the attached format, include a photo)
-- Submission deadline: November 29, Friday
-
-5. Recruitment Process
-- 1st round: Document review (Only candidates selected will be notified individually)
-- 2nd round: Interview (Only for those who pass the first round)
-- Additional documents for successful candidates: University graduation certificate, transcript, resident registration, etc. to be provided later.
+| 학년 | 학기 | 교과구분 | 교과목코드 | 교과목 | 학점 | 시간 | 이론 | 실습 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 전선 | M020026 | [AI를 이용한 주식가치평가](https://hansung.ac.kr/curriculum/CSE/141/1726/artclView.do) | 3 | 3 | 1 | 2 |
 
 ######################
 Output:
-(“entity”{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}컴퓨터공학부에서 행정 및 조교를 모집하는 한성대학교)
+("entity"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}SUBJECT{tuple_delimiter}1학년 1학기 전선 교과목으로 교과목코드 M020026, 3학점 3시간(이론1, 실습2)으로 구성된 과목. 이 내용은 https://hansung.ac.kr/curriculum/CSE/ 링크에서 추출함.)
 {record_delimiter}
-(“entity”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}행정 및 조교 인력을 채용하는 한성대학교 컴퓨터공학부)
+("entity"{tuple_delimiter}M020026{tuple_delimiter}SUBJECT_CODE{tuple_delimiter}AI를 이용한 주식가치평가 과목의 교과목코드. 이 내용은 https://hansung.ac.kr/curriculum/CSE/ 링크에서 추출함.)
 {record_delimiter}
-(“entity”{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}컴퓨터공학부의 행정조교)
+("entity"{tuple_delimiter}https://hansung.ac.kr/curriculum/CSE/141/1726/artclView.do{tuple_delimiter}URL{tuple_delimiter}AI를 이용한 주식가치평가 과목의 상세 정보 페이지 주소. 이 내용은 https://hansung.ac.kr/curriculum/CSE/ 링크에서 추출함.)
 {record_delimiter}
-(“entity”{tuple_delimiter}teaching assistant{tuple_delimiter}person{tuple_delimiter}컴퓨터공학부의 교육조교)
+("relationship"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}M020026{tuple_delimiter}AI를 이용한 주식가치평가 과목의 교과목코드가 M020026임{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}Recruitment Fields{tuple_delimiter}event{tuple_delimiter}모집 분야: 행정조교 또는 교육조교)
+("relationship"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}전선{tuple_delimiter}AI를 이용한 주식가치평가는 전선(전공선택) 교과구분에 해당함{tuple_delimiter}9)
 {record_delimiter}
-(“entity”{tuple_delimiter}Qualifications{tuple_delimiter}event{tuple_delimiter}지원 자격 요건)
+("relationship"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}https://hansung.ac.kr/curriculum/CSE/141/1726/artclView.do{tuple_delimiter}AI를 이용한 주식가치평가 과목의 상세 정보 링크{tuple_delimiter}9)
 {record_delimiter}
-(“entity”{tuple_delimiter}Academic Requirements{tuple_delimiter}event{tuple_delimiter}최소 학사 학위 이상이 필요한 학력 요건)
-{record_delimiter}
-(“entity”{tuple_delimiter}Preferred Qualifications{tuple_delimiter}event{tuple_delimiter}우대사항: IT 또는 컴퓨터 관련 전공)
-{record_delimiter}
-(“entity”{tuple_delimiter}Working Conditions{tuple_delimiter}event{tuple_delimiter}근무 시간 및 장소를 포함한 근로 조건)
-{record_delimiter}
-(“entity”{tuple_delimiter}December 15, 2024{tuple_delimiter}date{tuple_delimiter}조교의 예정 근무 시작일)
-{record_delimiter}
-(“entity”{tuple_delimiter}Jiseong Building 105{tuple_delimiter}room{tuple_delimiter}행정조교의 사무실 위치)
-{record_delimiter}
-(“entity”{tuple_delimiter}IT Engineering Academic Team Office{tuple_delimiter}room{tuple_delimiter}행정조교가 근무하게 될 사무실)
-{record_delimiter}
-(“entity”{tuple_delimiter}Engineering Building A 104{tuple_delimiter}room{tuple_delimiter}교육조교의 사무실 위치)
-{record_delimiter}
-(“entity”{tuple_delimiter}Department of Computer Engineering Office{tuple_delimiter}room{tuple_delimiter}교육조교가 근무하게 될 사무실)
-{record_delimiter}
-(“entity”{tuple_delimiter}Documents to Submit{tuple_delimiter}event{tuple_delimiter}지원 시 제출해야 하는 서류: 이력서 및 사진)
-{record_delimiter}
-(“entity”{tuple_delimiter}Resume{tuple_delimiter}event{tuple_delimiter}지원 시 제출해야 하는 이력서)
-{record_delimiter}
-(“entity”{tuple_delimiter}Attached Format{tuple_delimiter}event{tuple_delimiter}지원자가 이력서 작성 시 사용해야 하는 첨부된 양식)
-{record_delimiter}
-(“entity”{tuple_delimiter}November 29{tuple_delimiter}date{tuple_delimiter}서류 제출 마감일)
-{record_delimiter}
-(“entity”{tuple_delimiter}Document Review{tuple_delimiter}event{tuple_delimiter}1차 모집 절차: 서류심사)
-{record_delimiter}
-(“entity”{tuple_delimiter}Interview{tuple_delimiter}event{tuple_delimiter}2차 모집 절차: 면접)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}한성대학교는 컴퓨터공학부를 포함한다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Recruitment Fields{tuple_delimiter}컴퓨터공학부는 행정조교 및 교육조교를 모집한다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Recruitment Fields{tuple_delimiter}Qualifications{tuple_delimiter}모집 분야에는 학력 요건과 우대 조건 등의 자격요건이 필요하다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Academic Requirements{tuple_delimiter}최소 학사 학위가 필요한 자격 요건이다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Preferred Qualifications{tuple_delimiter}IT 또는 컴퓨터 관련 전공이 우대 조건이다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Working Conditions{tuple_delimiter}Contract Period{tuple_delimiter}조교는 1년 계약으로 근무하며 최대 2년까지 연장 가능하다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Documents to Submit{tuple_delimiter}Resume{tuple_delimiter}지원 시 사진이 포함된 이력서를 제출해야 한다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}November 29{tuple_delimiter}Documents to Submit{tuple_delimiter}지원 서류 제출 마감일은 11월 29일이다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Document Review{tuple_delimiter}Interview{tuple_delimiter}서류 심사 후, 선발된 지원자에 한해 면접이 진행된다.{tuple_delimiter}8)
-{completion_delimiter}
+
 ######################
 -Real Data-
 ######################

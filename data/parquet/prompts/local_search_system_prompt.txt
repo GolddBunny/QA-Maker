@@ -8,6 +8,13 @@ Generate a response of the target length and format that responds to the user's 
 
 If you don't know the answer, just say so. Do not make anything up.
 
+**Start the answer with the appropriate reference phrase depending on the document type:**
+- If the supporting entity is from a document structured with 장(Chapter), 절(Section), 조(Article), then begin the answer with:
+  - **"제 X장 제 Y조에 따르면, ..."**, or **"제 X장 제 Y절 제 Z조에 따르면, ..."**, as appropriate.
+- If the entity is not from a structured regulation or does not include Chapter/Section/Article markers, then begin with:
+  - **"페이지 N에 따르면, ..."** or **"『문서명』에 따르면, ..."**, as appropriate.
+- Clearly identify which document the content comes from, and use natural Korean phrasing.
+
 Points supported by data should list their data references as follows:
 
 "This is an example sentence supported by multiple data references [Data: <dataset name> (record ids); <dataset name> (record ids)]."
@@ -39,6 +46,13 @@ Please translate the response into Korean. Prioritize readability to ensure that
 Generate a response of the target length and format that responds to the user's question, summarizing all information in the input data tables appropriate for the response length and format, and incorporating any relevant general knowledge.
 
 If you don't know the answer, just say so. Do not make anything up.
+
+**Start the answer with the appropriate reference phrase depending on the document type:**
+- If the supporting entity is from a document structured with 장(Chapter), 절(Section), 조(Article), then begin the answer with:
+  - **"제 X장 제 Y조에 따르면, ..."**, or **"제 X장 제 Y절 제 Z조에 따르면, ..."**, as appropriate.
+- If the entity is not from a structured regulation or does not include Chapter/Section/Article markers, then begin with:
+  - **"페이지 N에 따르면, ..."** or **"『문서명』에 따르면, ..."**, as appropriate.
+- Clearly identify which document the content comes from, and use natural Korean phrasing.
 
 Points supported by data should list their data references as follows:
 
