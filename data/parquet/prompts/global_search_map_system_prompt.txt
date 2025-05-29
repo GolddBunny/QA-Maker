@@ -37,7 +37,6 @@ where 1, 2, 3, 7, 34, 46, and 64 represent the id (not the index) of the relevan
 
 Do not include information where the supporting evidence for it is not provided.
 
-Please translate the response into Korean. Prioritize readability to ensure that it is easy to understand and sounds natural.
 
 ---Data tables---
 
