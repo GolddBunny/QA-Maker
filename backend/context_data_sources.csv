@@ -1,0 +1,40 @@
+﻿id,text
+0,"headline: test_IJIBC_PaperFormat_2020
+content:
+
+
+Implementation Details of EPUB Reader using GraphRAG
+
+
+Jiyoon Ok*, Chaewon Park*, Juyeon Soung*, Kitae Hwang**
+
+* Student, Department of Computer Engineering, Hansung University, Korea
+** Professor, Department of Computer Engineering, Hansung University, Korea
+
+2271522@hansung.ac.kr, tjdwndus1325@gmail.com, calafk@hansung.ac.kr 
+
+Abstract
+Recently, the GraphRAG technique has been actively researched. GraphRAG constructs graph structures representing concepts and their interrelationships within documents, thereby building an interconnected knowledge network that exhibits superior performance in retrieval and inference tasks. This paper describes the detailed implementation of an EPUB reader capable of performing retrieval and inference using the GraphRAG technique. Specifically, we detail the processes of constructing a graph database from EPUB files, performing retrieval, and visualizing the constructed graphs. Furthermore, we provide detailed explanations on how the EPUB Reader was implemented to run on the Raspberry Pi 5 single-board computer. The system presented in this paper is expected to serve as a representative example of practical applications using GraphRAG technology.
+
+Keywords: GraphRAG, Knowledge Graph, LLM 
+
+1. Introduction
+Recently, large language models (LLMs) have revolutionized retrieval methods by generating context-aware responses to natural language queries. However, LLMs often suffer from hallucination issues, generating inaccurate responses when queried about recent information or domain-specific knowledge that is not included in their training data.[][] To address these issues, the Retrieval-Augmented Generation (RAG) technique has been introduced.[] RAG employs an approach wherein documents are vectorized and stored in a vector database, while user queries are similarly vectorized to identify semantically similar documents from the database, which are subsequently provided as context to LLMs. Although RAG systems perform retrieval based on semantic similarity, they exhibit limitations in complex multi-step reasoning and logical relationship analysis between documents due to the absence of explicit knowledge structuring mechanisms.
+To address these limitations of RAG, Microsoft proposed the Graph-based Retrieval-Augmented Generation (GraphRAG) technique.[] GraphRAG constructs graph structures representing concepts and their interrelationships within documents, thereby building an interconnected knowledge network. Microsoft demonstrated through experiments that GraphRAG achieves superior performance compared to naive RAG in retrieval and inference tasks, providing more comprehensive answers. Recently, some research has explored the application of GraphRAG in specific domains. For instance, Wu et al. [] proposed MedGraphRAG, a framework based on GraphRAG in the medical domain, and demonstrated improved accuracy in answering queries related to disease diagnosis and treatment. However, their study primarily focused on performance evaluations using benchmark datasets and did not provide details on actual system implementations. Xu et al. [] applied GraphRAG to Q&A systems in the e-commerce customer service domain and demonstrated improved performance in certain cases, although they provided limited details about the implementation. To date, research on GraphRAG has primarily focused on demonstrating conceptual feasibility and evaluating performance using benchmark datasets, with limited examples of practical application implementations.
+To validate the practicality of GraphRAG, our research team implemented an EPUB reader using GraphRAG in a preliminary study [] and evaluated its retrieval performance. This paper provides detailed implementation information for the EPUB reader developed in that preliminary study. The EPUB reader developed by our team not only enables retrieval and inference using GraphRAG but also includes voice-based question-answering functionality tailored specifically for digital book learning environments. Additionally, we implemented a video conferencing feature to support collaborative learning. Furthermore, the EPUB reader has been implemented to run not only in desktop environments but also on embedded systems. Specifically, we established an environment with two 7-inch touch displays attached to a Raspberry Pi 5 single-board computer, enabling touch input functionality in addition to all features available in desktop environments.
+
+2. Implementation of Graph EPUB Reader
+2.1 System Architecture and Operational Flow
+
+The proposed system is designed based on a client-server model and consists of a web-browser client and two servers, as illustrated in Figure 1. Server computer A hosts both the EPUB Viewer Server and the WebRTC Signaling Server. The EPUB Viewer Server accepts connections from web browsers, renders the e-book content onto the user’s screen, and transmits webpages with user interface functionality. The WebRTC Signaling Server facilitates real-time video conferencing among users connected via web browsers. Server computer B hosts the EPUB Management Server, which receives natural-language queries from users, analyzes the queries, and provides responses related to the corresponding e-book. Users utilize their web browsers to view EPUB files and access search, question-answering, and video conferencing functionalities.
+
+
+Figure 1. System Architecture of Graph EPUB Reader
+SAMPLE TEXT
+
+
+Headings. The recommended format and the capitalization styles of major headings are as follows: Abstract, Keywords, INTRODUCTION, THEORY, EXPERIMENTS, RESULTS AND DISCUSSION, CONCLUSION, ACKNOWLEDGMENT, REFERENCES. Headings should be capitalized (i.e., nouns, verbs, and all other words except articles, prepositions, and conjunctions should be set with an initial capital) and should, with the exception of the title, be aligned to the left. Words joined by a hyphen are subject to a special rule. If the first word can stand alone, the second word should be capitalized.
+
+Table. Table 1 explains font sizes of headings used in this paper. Please refer to the following when submitting your manuscript. Table captions should always be positioned above the tables, in 11-point Helvetica, boldfaced, centered, single-spaced, 6pt. spacing after the text. The contents of the table must be in 10-point Helvetica. Please leave a space after the table.
+
+"

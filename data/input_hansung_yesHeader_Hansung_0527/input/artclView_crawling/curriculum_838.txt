@@ -1,0 +1,1 @@
+Title: URL Source: https://hansung.ac.kr/curriculum/HmnArt/16/34/artclView.doMarkdown Content:## 교과목 소개국소배기시스템의 필요환기량 및 필요에너지를 계산하고, 공기정화장치와 송풍기를 포함한 시스템을 설계하는 이론과 실무를 공부한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || A2604076 | 국소배기시스템설계 | 3 |

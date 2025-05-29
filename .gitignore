@@ -52,6 +52,11 @@ __pycache__/
 /data/parquet/update_output/*
 !/data/parquet/output/.gitkeep
 !/data/parquet/update_output/.gitkeep
+/data/input_past/*
+!/data/input_past/.gitkeep
+/data/crawling/*
+!/data/crawling/.gitkeep
+
 
 # 임시 파일
 *.swp
@@ -60,6 +65,9 @@ __pycache__/
 .vscode/
 *.sublime-project
 *.sublime-workspace
+tempCodeRunnerFile.py
+py_localsearch.py
+py_GlobalSearch.py
 
 # 로그 파일
 *.log
@@ -73,3 +81,8 @@ Desktop.ini
 .output/
 .git/
 frontend/.git/
+
+# 데이터 폴더 무시
+/data/
+/frontend/public/data/
+/frontend/src/json

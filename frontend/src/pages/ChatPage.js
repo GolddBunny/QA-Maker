@@ -255,7 +255,7 @@ function ChatPage() {
         }
     };
 
-    // 질문 전송 함수 (병렬 요청 방식)
+    // 질문 전송 함수
     const sendQuestion = async (questionText) => {
         setIsLoading(true);
         setServerResponseReceived(false);
@@ -1168,7 +1168,7 @@ function ChatPage() {
             
             <div className={`chat-container ${showGraph || showDocument ? "shift-left" : ""} ${isSidebarOpen ? "sidebar-open" : ""}`}>
                 <div className="domain-name">
-                    <h2>{systemName + " 한성대 QA 시스템" || "한성대 QA 시스템"}</h2>
+                    <h2>{systemName + " QA 시스템" || "한성대 QA 시스템"}</h2>
                 </div>
                 <div className="chat-messages">
                     {qaList.map((qa, index) => (

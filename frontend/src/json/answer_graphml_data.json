@@ -1,90 +1,283 @@
 {
     "nodes": [
         {
-            "id": "JIYOON OK",
+            "id": "HANSUNG UNIVERSITY",
             "level": null,
             "human_readable_id": 0,
-            "source_id": "39c418e7-5a88-43c9-8cc9-ac8fd0b83e75",
-            "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \ud559\uc0dd\uc73c\ub85c, GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c EPUB \ub9ac\ub354 \uad6c\ud604\uc5d0 \ucc38\uc5ec\ud568.",
+            "source_id": "695e9269-d6ad-4e36-acfd-a0d50bcece73",
+            "description": "HANSUNG UNIVERSITY is a prominent institution located in Korea, dedicated to the education and research across various fields, including computer engineering. The university is actively involved in providing information about the summer semester for the 2025 academic year, ensuring that students are well-informed about their academic options. \n\nHANSUNG UNIVERSITY conducts thorough academic performance evaluations and manages grading policies to uphold academic standards. It has established comprehensive academic regulations and guidelines that govern the educational experience of its students. These regulations cover a wide range of areas, including the management of academic credits and degrees, as well as the admissions process, transfers, and re-registrations.\n\nFurthermore, the university has implemented rules and regulations that address various student categories, including provisions for foreign students and students with disabilities. HANSUNG UNIVERSITY also has a structured approach to handling grade appeals and corrections, ensuring that students have a fair process for addressing any discrepancies in their academic evaluations. Additionally, the university enforces a system of rewards and disciplinary actions to maintain a conducive learning environment.",
             "weight": null,
-            "cluster": 0,
+            "cluster": 10,
             "entity_type": null,
-            "degree": 1,
-            "type": "PERSON"
-        },
-        {
-            "id": "CHAEWON PARK",
-            "level": null,
-            "human_readable_id": 1,
-            "source_id": "0528395d-23e5-4864-b22c-6348186772ae",
-            "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \ud559\uc0dd\uc73c\ub85c, GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c EPUB \ub9ac\ub354 \uad6c\ud604\uc5d0 \ucc38\uc5ec\ud568.",
-            "weight": null,
-            "cluster": 0,
-            "entity_type": null,
-            "degree": 1,
-            "type": "PERSON"
-        },
-        {
-            "id": "JUYEON SOUNG",
-            "level": null,
-            "human_readable_id": 2,
-            "source_id": "219a502c-2a0c-418f-ac38-8d910033d831",
-            "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \ud559\uc0dd\uc73c\ub85c, GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c EPUB \ub9ac\ub354 \uad6c\ud604\uc5d0 \ucc38\uc5ec\ud568.",
-            "weight": null,
-            "cluster": 0,
-            "entity_type": null,
-            "degree": 1,
-            "type": "PERSON"
-        },
-        {
-            "id": "KITAE HWANG",
-            "level": null,
-            "human_readable_id": 3,
-            "source_id": "bcae184e-8ee3-4ac8-9cee-1f55946863da",
-            "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \uad50\uc218\ub85c, GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c EPUB \ub9ac\ub354 \uad6c\ud604\uc5d0 \ucc38\uc5ec\ud568.",
-            "weight": null,
-            "cluster": 0,
-            "entity_type": null,
-            "degree": 1,
-            "type": "PERSON"
-        },
-        {
-            "id": "DEPARTMENT OF COMPUTER ENGINEERING",
-            "level": null,
-            "human_readable_id": 4,
-            "source_id": "84049213-b44c-4ad2-a620-bdf2decbb5d0",
-            "description": "\ud55c\uc131\ub300\ud559\uad50\uc758 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\ub85c, GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c \uc5f0\uad6c \ubc0f \uad50\uc721\uc744 \uc218\ud589\ud568.",
-            "weight": null,
-            "cluster": 0,
-            "entity_type": null,
-            "degree": 6,
+            "degree": 18,
             "type": "ORGANIZATION"
         },
         {
-            "id": "GRAPHRAG",
+            "id": "\ud2b9\uc131\ud654\uace0(\u820a\uc804\ubb38\uacc4\uace0)\uc878 \uc7ac\uc9c1\uc790 \ud2b9\ubcc4\uc804\ud615",
             "level": null,
-            "human_readable_id": 5,
-            "source_id": "ae0b5c79-e637-4f65-9fb3-3a4321da0706",
-            "description": "\ubb38\uc11c \ub0b4 \uac1c\ub150\uacfc \uc0c1\ud638\uad00\uacc4\ub97c \ub098\ud0c0\ub0b4\ub294 \uadf8\ub798\ud504 \uad6c\uc870\ub97c \uad6c\ucd95\ud558\ub294 \uae30\uc220\ub85c, \uc815\ubcf4 \uac80\uc0c9 \ubc0f \ucd94\ub860 \uc791\uc5c5\uc5d0\uc11c \uc6b0\uc218\ud55c \uc131\ub2a5\uc744 \ubc1c\ud718\ud568.",
+            "human_readable_id": 134,
+            "source_id": "070d6939-eaed-4a2c-94fa-ca3f371acaf9",
+            "description": "A special admission process for graduates of specialized high schools who are currently employed.",
             "weight": null,
-            "cluster": 1,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\ud55c\uc131\ub300\ud559\uad50",
+            "level": null,
+            "human_readable_id": 27,
+            "source_id": "db42b170-e345-4267-816e-704451b51c69",
+            "description": "\ud55c\uc131\ub300\ud559\uad50\ub294 \ud559\uad50\ubc95\uc778 \ud55c\uc131\ud559\uc6d0\uc5d0 \uc758\ud574 \uc124\ub9bd\ub418\uace0 \uad00\ub9ac\ub418\ub294 \uace0\ub4f1 \uad50\uc721 \uae30\uad00\uc73c\ub85c, \ud559\uc0dd \uc790\uc728\uc131\uacfc \ucc3d\uc758\uc801\uc778 \ud559\ubb38 \uc5f0\uad6c\ub97c \ucd09\uc9c4\ud558\uae30 \uc704\ud574 \ud559\uc0dd\ud68c\ub97c \uad6c\uc131\ud558\uace0 \uc788\ub2e4. \uc774 \ub300\ud559\uc740 \ud559\uc0dd\ub4e4\uc744 \uc704\ud55c \ud559\uce59\uacfc \uc815\ucc45\uc744 \uc81c\uc815\ud558\uc600\uc73c\uba70, \ud559\uc0ac \ubc0f \ud589\uc815 \ubaa9\uc801\uc744 \uc704\ud55c \ub2e4\uc591\ud55c \uc704\uc6d0\ud68c\ub97c \uc124\ub9bd\ud558\uc600\ub2e4. \ub610\ud55c, \ud55c\uc131\ub300\ud559\uad50\ub294 \uc785\ud559, \ud3b8\uc785\ud559, \uc7ac\ub4f1\ub85d\uc5d0 \uad00\ud55c \uaddc\uc815\uc744 \ub9c8\ub828\ud558\uace0 \uc788\uc73c\uba70, \ud559\uc810 \uc778\uc815 \ubc0f \uc878\uc5c5 \uc694\uac74\uc5d0 \ub300\ud55c \uaddc\uc815\ub3c4 \uac16\ucd94\uace0 \uc788\ub2e4. \uc870\uae30 \uc878\uc5c5 \ubc0f \ud559\uc704 \uc218\uc5ec\uc5d0 \uad00\ud55c \uaddc\uc815\ub3c4 \uc874\uc7ac\ud558\uba70, \ud559\uc0dd\uc758 \ub4f1\ub85d \ubc0f \uc218\uac15\uc2e0\uccad\uc744 \uad00\ub9ac\ud558\ub294 \uad50\uc721 \uae30\uad00\uc73c\ub85c\uc11c \ud559\uc810 \uad50\ub958 \ubc0f \uc218\uac15\uc2e0\uccad\uc744 \uccb4\uacc4\uc801\uc73c\ub85c \uc6b4\uc601\ud558\uace0 \uc788\ub2e4.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 28,
+            "type": "ORGANIZATION"
+        },
+        {
+            "id": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790",
+            "level": null,
+            "human_readable_id": 28,
+            "source_id": "a0d467f0-f1e2-4ca3-98fe-9b658da85505",
+            "description": "\ud559\uc810\uad50\ub958\ub97c \ud76c\ub9dd\ud558\ub294 \ud559\uc0dd\ub4e4\ub85c, \uc18c\uc18d \ub300\ud559\uc758 \ub2f4\ub2f9 \ubd80\uc11c\uc5d0 \uc2e0\uccad\ud574\uc57c \ud569\ub2c8\ub2e4.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 3,
+            "type": "PERSON"
+        },
+        {
+            "id": "\uc790\ud1f4",
+            "level": null,
+            "human_readable_id": 157,
+            "source_id": "b085b47c-ee83-493c-a033-8d2432e84ce8",
+            "description": "\ud559\uc0dd\uc774 \uc790\ubc1c\uc801\uc73c\ub85c \ud559\uc5c5\uc744 \uc911\ub2e8\ud558\uace0\uc790 \ud560 \ub54c \uc2e0\uccad\ud558\ub294 \uc808\ucc28\uc785\ub2c8\ub2e4.",
+            "weight": null,
+            "cluster": 15,
             "entity_type": null,
             "degree": 3,
             "type": "EVENT"
         },
         {
-            "id": "EPUB READER",
+            "id": "\uc81c\uc801",
             "level": null,
-            "human_readable_id": 6,
-            "source_id": "1824df29-c11c-441b-85d8-2b5ff24c4762",
-            "description": "GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud558\uc5ec \uad6c\ud604\ub41c \uc804\uc790\ucc45 \ub9ac\ub354\ub85c, \uac80\uc0c9 \ubc0f \ucd94\ub860 \uae30\ub2a5\uc744 \uc81c\uacf5\ud568.",
+            "human_readable_id": 158,
+            "source_id": "29b1e8e8-38d0-4fcd-9fde-74085620fef6",
+            "description": "The term \"\uc81c\uc801\" refers to the process of expelling students from an academic institution based on specific criteria outlined in the university regulations. This procedure is implemented when a student is excluded from their studies for particular reasons.",
             "weight": null,
-            "cluster": 1,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 5,
+            "type": "EVENT"
+        },
+        {
+            "id": "2015.12.10",
+            "level": null,
+            "human_readable_id": 159,
+            "source_id": "6e41a234-2e47-40af-8a02-1d75d8a1235a",
+            "description": "The entity \"2015.12.10\" refers to a significant date associated with various academic regulations and requirements. It marks the date when new regulations concerning graduation credit requirements were established, as well as additional guidelines related to graduation theses. Furthermore, it is noted as the date when provisions regarding examinations and grading were revised. Additionally, this date is significant for the amendments made to the regulations concerning leave of absence, reinstatement, withdrawal, and expulsion from academic programs. Overall, \"2015.12.10\" serves as a pivotal point for multiple changes in academic policies.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 3,
+            "type": "DATE"
+        },
+        {
+            "id": "\uc218\uac15\uc2e0\uccad",
+            "level": null,
+            "human_readable_id": 29,
+            "source_id": "8485ed19-60d2-4bea-bc27-55c8e7ea7045",
+            "description": "The entity \"\uc218\uac15\uc2e0\uccad\" refers to the process through which students apply for classes. This process requires the completion of tuition payment for the application to be finalized. It involves students selecting the courses they wish to attend, ensuring they meet the necessary requirements for enrollment.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 4,
+            "type": "EVENT"
+        },
+        {
+            "id": "\ubcf5\ud559",
+            "level": null,
+            "human_readable_id": 156,
+            "source_id": "9f2b79fe-167f-4f90-aeba-ad7a3b294af1",
+            "description": "\ubcf5\ud559 refers to the process of returning to the university after a leave of absence. It is the procedure that students must follow when they wish to resume their studies after taking a break from their academic pursuits. This process is essential for students who have temporarily halted their education and are now seeking to continue their academic journey.",
+            "weight": null,
+            "cluster": 15,
             "entity_type": null,
             "degree": 3,
             "type": "EVENT"
         },
         {
+            "id": "2004.11.16",
+            "level": null,
+            "human_readable_id": 160,
+            "source_id": "fa42c7e5-2784-4293-8c3b-2624b31e6342",
+            "description": "On November 16, 2004, significant developments occurred regarding academic programs. This date marks the establishment of the connection between the academic and master's programs, as well as the introduction of an exemption from thesis submission for students enrolled in the combined program. Additionally, it is noted that this date also corresponds to the revision of regulations concerning credit registration for students with disabilities.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 1,
+            "type": "DATE"
+        },
+        {
+            "id": "\ud559\uce59",
+            "level": null,
+            "human_readable_id": 172,
+            "source_id": "328ddbe9-639c-483c-b19c-1e2991dd3220",
+            "description": "The set of academic rules and regulations governing student conduct and academic performance.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 7,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc218\uac15\uc2e0\uccad\ub0b4\uc5ed",
+            "level": null,
+            "human_readable_id": 47,
+            "source_id": "5e6d5ba3-3017-4f62-b5b6-5452af2c7d6d",
+            "description": "\ud559\uc0dd\ub4e4\uc774 \uc218\uac15\uc2e0\uccad \ud6c4 \ud655\uc778\ud560 \uc218 \uc788\ub294 \ub0b4\uc5ed\uc785\ub2c8\ub2e4.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "2016.2.3",
+            "level": null,
+            "human_readable_id": 177,
+            "source_id": "72f3cb10-3bd2-44b6-b228-75e546ef1246",
+            "description": "The entity \"2016.2.3\" refers to the date when the curriculum regulations were revised. This date marks the occasion when the provisions related to credit acquisition and graduation requirements were amended.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 1,
+            "type": "DATE"
+        },
+        {
+            "id": "\ud559\uc810\ucde8\ub4dd",
+            "level": null,
+            "human_readable_id": 183,
+            "source_id": "64c9ee06-f028-4bb0-9c02-7a5c38aaf224",
+            "description": "\ud559\uc0dd\uc774 \ud559\uc5c5\uc744 \ud1b5\ud574 \ucde8\ub4dd\ud574\uc57c \ud558\ub294 \ud559\uc810\uc5d0 \ub300\ud55c \uaddc\uc815\uc785\ub2c8\ub2e4.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 2,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc878\uc5c5\ud559\uc810",
+            "level": null,
+            "human_readable_id": 184,
+            "source_id": "af9ef0c3-8bb8-4565-9f37-a97fbb2d9950",
+            "description": "The \"\uc878\uc5c5\ud559\uc810\" refers to the minimum number of credits required for graduation from \ud55c\uc131\ub300\ud559\uad50, which is set at 130 credits. This requirement is essential for students to complete their degree program at the university.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 3,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc81c 33 \uc870",
+            "level": null,
+            "human_readable_id": 190,
+            "source_id": "fcb13bd2-b7d3-4727-b329-082e18a84a50",
+            "description": "\ud559\uc810\ucde8\ub4dd\uc5d0 \uad00\ud55c \uaddc\uc815\uc744 \uba85\uc2dc\ud55c \ud55c\uc131\ub300\ud559\uad50 \ud559\uce59\uc758 \uc870\ud56d\uc785\ub2c8\ub2e4.",
+            "weight": null,
+            "cluster": 17,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc81c 34 \uc870",
+            "level": null,
+            "human_readable_id": 191,
+            "source_id": "57a47a93-6d5c-4213-bc7d-f77524d95736",
+            "description": "\uc878\uc5c5\ud559\uc810\uc5d0 \uad00\ud55c \uaddc\uc815\uc744 \uba85\uc2dc\ud55c \ud55c\uc131\ub300\ud559\uad50 \ud559\uce59\uc758 \uc870\ud56d\uc785\ub2c8\ub2e4.",
+            "weight": null,
+            "cluster": 17,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc2dc\ud5d8\uacfc \uc131\uc801",
+            "level": null,
+            "human_readable_id": 192,
+            "source_id": "9e8a5941-9b81-4205-a8b9-e618958e328c",
+            "description": "",
+            "weight": null,
+            "cluster": 17,
+            "entity_type": null,
+            "degree": 6,
+            "type": ""
+        },
+        {
+            "id": "\ubbf8\ub798\ud50c\ub7ec\uc2a4\ub300\ud559",
+            "level": null,
+            "human_readable_id": 218,
+            "source_id": "678c1861-0d22-4556-84b9-ebaf1f08a6c6",
+            "description": "A college affiliated with Hansung University that has specific early graduation rules.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 1,
+            "type": "ORGANIZATION"
+        },
+        {
+            "id": "\ud559\u00b7\uc11d\uc0ac \uc5f0\uacc4\uacfc\uc815\uc0dd",
+            "level": null,
+            "human_readable_id": 219,
+            "source_id": "42033b65-918a-4a32-98b8-bf2d0d3790ca",
+            "description": "Students enrolled in a combined bachelor's and master's program with specific graduation criteria.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 2,
+            "type": "PERSON"
+        },
+        {
+            "id": "\uc870\uae30\uc878\uc5c5",
+            "level": null,
+            "human_readable_id": 220,
+            "source_id": "03295f41-9e43-4ec0-85d4-f603b9339736",
+            "description": "The process allowing students to graduate early under certain conditions.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 4,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc878\uc5c5\ub17c\ubb38",
+            "level": null,
+            "human_readable_id": 221,
+            "source_id": "0b9de102-3300-4e4a-9655-b2b458609d2d",
+            "description": "A thesis that must be submitted and passed for graduation.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 4,
+            "type": "EVENT"
+        },
+        {
+            "id": "\ud559\uc704\uc218\uc5ec",
+            "level": null,
+            "human_readable_id": 222,
+            "source_id": "4211eb28-dce5-4d38-be20-ca63103de2ea",
+            "description": "The awarding of academic degrees upon meeting graduation requirements.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 3,
+            "type": "EVENT"
+        },
+        {
+<<<<<<< HEAD
             "id": "RASPBERRY PI 5",
             "level": null,
             "human_readable_id": 7,
@@ -104,6 +297,171 @@
             "description": "GraphRAG \uae30\uc220\uc758 \ud544\uc694\uc131\uacfc \uc5f0\uad6c \ubc30\uacbd\uc744 \uc124\uba85\ud558\ub294 \uc139\uc158.",
             "weight": null,
             "cluster": 1,
+=======
+            "id": "\ud559\uc0ac\ud559\uc704\ucde8\ub4dd \uc720\uc608",
+            "level": null,
+            "human_readable_id": 223,
+            "source_id": "6825261a-46f7-4e06-8281-f16798fc4d30",
+            "description": "The option for students to defer the acquisition of their bachelor's degree.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 2,
+            "type": "EVENT"
+        },
+        {
+            "id": "2022.1.27",
+            "level": null,
+            "human_readable_id": 224,
+            "source_id": "2ce32409-8a3b-4fda-bec6-150b1366a215",
+            "description": "The date mentioned for early graduation eligibility.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 1,
+            "type": "DATE"
+        },
+        {
+            "id": "2020.5.20",
+            "level": null,
+            "human_readable_id": 225,
+            "source_id": "28d4a931-441c-4e4c-a5c0-e7a5fcffd6b2",
+            "description": "The date for submitting early graduation applications.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 1,
+            "type": "DATE"
+        },
+        {
+            "id": "2019.2.12",
+            "level": null,
+            "human_readable_id": 226,
+            "source_id": "d85c67e0-72e8-4b79-acbc-6a0af446a5b2",
+            "description": "The date for regulations regarding graduation thesis and degree conferral.\nThe date for regulations regarding the deferral of bachelor's degree acquisition.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 2,
+            "type": "DATE"
+        },
+        {
+            "id": "2015.2.27",
+            "level": null,
+            "human_readable_id": 227,
+            "source_id": "b5bf3b45-e843-4a5a-b98f-dcec28197313",
+            "description": "The date for regulations regarding the cancellation of degree conferral.",
+            "weight": null,
+            "cluster": 2,
+            "entity_type": null,
+            "degree": 1,
+            "type": "DATE"
+        },
+        {
+            "id": "\uacf5\uac1c\uac15\uc88c",
+            "level": null,
+            "human_readable_id": 228,
+            "source_id": "8e9dcd27-bba7-4157-b601-8a205c149c4f",
+            "description": "Public courses offered to individuals outside of the university for practical research knowledge.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 4,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc704\ud0c1\uc0dd",
+            "level": null,
+            "human_readable_id": 229,
+            "source_id": "d2b88fa1-93c1-4265-b93a-8888c9d685d1",
+            "description": "Students who are allowed to study outside the regular quota based on recommendations from their institutions.",
+            "weight": null,
+            "cluster": 10,
+            "entity_type": null,
+            "degree": 5,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc218\uac15\uc790\uaca9",
+            "level": null,
+            "human_readable_id": 232,
+            "source_id": "ba50cf24-0412-48a6-ba47-e4199fff8a2f",
+            "description": "The qualifications required for students to enroll in public courses.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc815\uc6d0\uc678",
+            "level": null,
+            "human_readable_id": 244,
+            "source_id": "98ca427c-6a29-40f4-9c95-944dcf7530d7",
+            "description": "A special enrollment status that allows certain students to be admitted outside the regular quota.",
+            "weight": null,
+            "cluster": 10,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uad50\uacfc\uc774\uc218 \uc99d\uc11c",
+            "level": null,
+            "human_readable_id": 245,
+            "source_id": "6278018d-6b4c-4d96-b2b0-cc5fd0696e8b",
+            "description": "A certificate awarded to students based on their course completion status.",
+            "weight": null,
+            "cluster": 10,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\ud559\ub825 \uac80\uc815",
+            "level": null,
+            "human_readable_id": 246,
+            "source_id": "1f1ba2d5-5e7b-4af1-802b-1fe1cac2e09c",
+            "description": "The process of verifying the academic qualifications of students.",
+            "weight": null,
+            "cluster": 10,
+            "entity_type": null,
+            "degree": 1,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc785\ud559\ud5c8\uac00",
+            "level": null,
+            "human_readable_id": 120,
+            "source_id": "1f4a94f9-b41e-4f85-9550-877642fd7118",
+            "description": "The approval process for student admissions at the beginning of the semester.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 3,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc785\ud559\uc120\ubc1c",
+            "level": null,
+            "human_readable_id": 122,
+            "source_id": "2bd6498a-6e41-4279-9ea0-d3abb5119d81",
+            "description": "The process of selecting students for admission.",
+            "weight": null,
+            "cluster": 15,
+            "entity_type": null,
+            "degree": 4,
+            "type": "EVENT"
+        },
+        {
+            "id": "\uc785\ud559\ud5c8\uac00\uc758 \ucde8\uc18c",
+            "level": null,
+            "human_readable_id": 124,
+            "source_id": "307f735b-bdd7-4104-9c59-3320383dca9f",
+            "description": "The cancellation of admission approval under certain conditions.",
+            "weight": null,
+            "cluster": 15,
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
             "entity_type": null,
             "degree": 1,
             "type": "EVENT"
@@ -111,94 +469,396 @@
     ],
     "edges": [
         {
+<<<<<<< HEAD
             "source": "JIYOON OK",
             "target": "DEPARTMENT OF COMPUTER ENGINEERING",
+=======
+            "source": "HANSUNG UNIVERSITY",
+            "target": "\uc704\ud0c1\uc0dd",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+            "description": "\uc704\ud0c1\uc0dd are allowed to study at Hansung University under special conditions.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\uc870\uae30\uc878\uc5c5",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+<<<<<<< HEAD
             "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \ud559\uc0dd\uc73c\ub85c, \ud574\ub2f9 \ubd80\uc11c\uc5d0\uc11c \uc5f0\uad6c \ubc0f \uad50\uc721\uc5d0 \ucc38\uc5ec\ud568.",
             "weight": 9.0
         },
         {
             "source": "CHAEWON PARK",
             "target": "DEPARTMENT OF COMPUTER ENGINEERING",
+=======
+            "description": "Hansung University has regulations that allow students to apply for early graduation.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+<<<<<<< HEAD
             "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \ud559\uc0dd\uc73c\ub85c, \ud574\ub2f9 \ubd80\uc11c\uc5d0\uc11c \uc5f0\uad6c \ubc0f \uad50\uc721\uc5d0 \ucc38\uc5ec\ud568.",
             "weight": 9.0
         },
         {
             "source": "JUYEON SOUNG",
             "target": "DEPARTMENT OF COMPUTER ENGINEERING",
+=======
+            "description": "\ud55c\uc131\ub300\ud559\uad50\ub294 \ud559\uc810\uad50\ub958\ub97c \uc2e0\uccad\ud558\ub294 \ud559\uc0dd\ub4e4\uc744 \uc704\ud55c \uc808\ucc28\ub97c \uad00\ub9ac\ud569\ub2c8\ub2e4.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\uc790\ud1f4",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+<<<<<<< HEAD
             "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \ud559\uc0dd\uc73c\ub85c, \ud574\ub2f9 \ubd80\uc11c\uc5d0\uc11c \uc5f0\uad6c \ubc0f \uad50\uc721\uc5d0 \ucc38\uc5ec\ud568.",
             "weight": 9.0
         },
         {
             "source": "KITAE HWANG",
             "target": "DEPARTMENT OF COMPUTER ENGINEERING",
+=======
+            "description": "\ud55c\uc131\ub300\ud559\uad50\uc758 \ud559\uc0dd\uc740 \uc790\ud1f4\ub97c \uc704\ud574 \ubcf4\ud638\uc790\uc758 \ub3d9\uc758\ub97c \uc5bb\uc5b4\uc57c \ud569\ub2c8\ub2e4.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\uc878\uc5c5\ud559\uc810",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+            "description": "\ud55c\uc131\ub300\ud559\uad50 requires a minimum of 130 credits for graduation.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790",
+            "target": "\uc218\uac15\uc2e0\uccad",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790\ub294 \uc218\uac15\uc2e0\uccad\uc744 \uc704\ud574 \uc18c\uc18d \ub300\ud559\uc758 \ub2f4\ub2f9\ubd80\uc11c\uc5d0 \uc2e0\uccad\ud574\uc57c \ud569\ub2c8\ub2e4.",
+            "weight": 8.0
+        },
+        {
+            "source": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790",
+            "target": "\uc218\uac15\uc2e0\uccad\ub0b4\uc5ed",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790\ub294 \uc218\uac15\uc2e0\uccad\ub0b4\uc5ed\uc744 \ud1b5\ud574 \uc790\uc2e0\uc758 \uc2e0\uccad \uc0c1\ud0dc\ub97c \ud655\uc778\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
+            "weight": 8.0
+        },
+        {
+            "source": "\uc790\ud1f4",
+            "target": "\uc81c\uc801",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+<<<<<<< HEAD
             "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc758 \uad50\uc218\ub85c, \ud574\ub2f9 \ubd80\uc11c\uc5d0\uc11c \uc5f0\uad6c \ubc0f \uad50\uc721\uc5d0 \ucc38\uc5ec\ud568.",
             "weight": 9.0
         },
         {
             "source": "DEPARTMENT OF COMPUTER ENGINEERING",
             "target": "GRAPHRAG",
+=======
+            "description": "\uc790\ud1f4\ud558\uc9c0 \uc54a\uace0 \ub4f1\ub85d\ud558\uc9c0 \uc54a\uc740 \ud559\uc0dd\uc740 \uc81c\uc801\ub420 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
+            "weight": 8.0
+        },
+        {
+            "source": "\ubcf5\ud559",
+            "target": "\uc790\ud1f4",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+            "description": "\ubcf5\ud559\uc744 \uc6d0\ud558\uc9c0 \uc54a\ub294 \ud559\uc0dd\uc740 \uc790\ud1f4\ub97c \uc2e0\uccad\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
+            "weight": 7.0
+        },
+        {
+            "source": "\ud559\uc810\ucde8\ub4dd",
+            "target": "\uc878\uc5c5\ud559\uc810",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\uc878\uc5c5\ud559\uc810\uc740 \ud559\uc0dd\uc774 \ucde8\ub4dd\ud574\uc57c \ud558\ub294 \ud559\uc810\uacfc \uad00\ub828\uc774 \uc788\uc2b5\ub2c8\ub2e4.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud559\uc810\ucde8\ub4dd",
+            "target": "2016.2.3",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\ud559\uc810\ucde8\ub4dd \uad00\ub828 \uc870\ud56d\uc774 2016\ub144 2\uc6d4 3\uc77c\uc5d0 \uac1c\uc815\ub418\uc5c8\uc2b5\ub2c8\ub2e4.",
+            "weight": 7.0
+        },
+        {
+            "source": "\uc878\uc5c5\ud559\uc810",
+            "target": "2015.12.10",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+<<<<<<< HEAD
             "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\ub294 GraphRAG \uae30\uc220\uc744 \uc5f0\uad6c\ud558\uace0 \uc801\uc6a9\ud568.",
             "weight": 9.0
         },
         {
             "source": "DEPARTMENT OF COMPUTER ENGINEERING",
             "target": "EPUB READER",
+=======
+            "description": "The date 2015.12.10 is related to the graduation credit requirements.",
+            "weight": 7.0
+        },
+        {
+            "source": "\uc81c 33 \uc870",
+            "target": "\uc2dc\ud5d8\uacfc \uc131\uc801",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+            "description": "\ud559\uc810\ucde8\ub4dd\uc740 \uc81c 33 \uc870\uc5d0 \uba85\uc2dc\ub41c \uaddc\uc815\uc5d0 \ub530\ub77c \uc774\ub8e8\uc5b4\uc9d1\ub2c8\ub2e4.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc81c 34 \uc870",
+            "target": "\uc2dc\ud5d8\uacfc \uc131\uc801",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+<<<<<<< HEAD
             "description": "\ud55c\uc131\ub300\ud559\uad50 \ucef4\ud4e8\ud130\uacf5\ud559\ubd80\uc5d0\uc11c GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c EPUB \ub9ac\ub354\ub97c \uac1c\ubc1c\ud568.",
             "weight": 9.0
         },
         {
             "source": "GRAPHRAG",
             "target": "EPUB READER",
+=======
+            "description": "\uc878\uc5c5\ud559\uc810\uc740 \uc81c 34 \uc870\uc5d0 \uba85\uc2dc\ub41c \uae30\uc900\uc744 \ub530\ub985\ub2c8\ub2e4.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ubbf8\ub798\ud50c\ub7ec\uc2a4\ub300\ud559",
+            "target": "\uc870\uae30\uc878\uc5c5",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+<<<<<<< HEAD
             "description": "GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud558\uc5ec \uad6c\ud604\ub41c EPUB \ub9ac\ub354\ub294 \uc815\ubcf4 \uac80\uc0c9 \ubc0f \ucd94\ub860 \uae30\ub2a5\uc744 \uc81c\uacf5\ud568.",
             "weight": 10.0
         },
         {
             "source": "GRAPHRAG",
             "target": "INTRODUCTION",
+=======
+            "description": "Students from \ubbf8\ub798\ud50c\ub7ec\uc2a4\ub300\ud559 have specific rules for early graduation.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud559\u00b7\uc11d\uc0ac \uc5f0\uacc4\uacfc\uc815\uc0dd",
+            "target": "\uc878\uc5c5\ub17c\ubb38",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+<<<<<<< HEAD
             "description": "\uc11c\ub860\uc5d0\uc11c\ub294 GraphRAG \uae30\uc220\uc758 \ud544\uc694\uc131\uacfc \uc5f0\uad6c \ubc30\uacbd\uc744 \uc124\uba85\ud568.",
             "weight": 8.0
         },
         {
             "source": "EPUB READER",
             "target": "RASPBERRY PI 5",
+=======
+            "description": "Students in the combined program may be exempt from submitting a graduation thesis.",
+            "weight": 8.0
+        },
+        {
+            "source": "\ud559\u00b7\uc11d\uc0ac \uc5f0\uacc4\uacfc\uc815\uc0dd",
+            "target": "2004.11.16",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
+            "description": "The date when the exemption from thesis submission for combined program students was established is November 16, 2004.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc870\uae30\uc878\uc5c5",
+            "target": "2022.1.27",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "The date mentioned for early graduation eligibility is January 27, 2022.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc870\uae30\uc878\uc5c5",
+            "target": "2020.5.20",
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+<<<<<<< HEAD
             "description": "GraphRAG \uae30\uc220\uc744 \ud65c\uc6a9\ud55c EPUB \ub9ac\ub354\ub294 Raspberry Pi 5\uc5d0\uc11c \uad6c\ud604\ub428.",
             "weight": 9.0
+=======
+            "description": "The date for submitting early graduation applications is May 20, 2020.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc878\uc5c5\ub17c\ubb38",
+            "target": "\ud559\uc704\uc218\uc5ec",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "Submitting and passing the graduation thesis is a requirement for degree conferral.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc878\uc5c5\ub17c\ubb38",
+            "target": "2015.12.10",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "The date for additional regulations regarding graduation thesis is December 10, 2015.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc878\uc5c5\ub17c\ubb38",
+            "target": "2019.2.12",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "The date for regulations regarding graduation thesis is February 12, 2019.",
+            "weight": 9.0
+        },
+        {
+            "source": "\ud559\uc704\uc218\uc5ec",
+            "target": "\ud559\uc0ac\ud559\uc704\ucde8\ub4dd \uc720\uc608",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "Students who meet all requirements can apply for a deferral of their bachelor's degree acquisition.",
+            "weight": 8.0
+        },
+        {
+            "source": "\ud559\uc704\uc218\uc5ec",
+            "target": "2015.2.27",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "The date for regulations regarding the cancellation of degree conferral is February 27, 2015.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uacf5\uac1c\uac15\uc88c",
+            "target": "\uc218\uac15\uc790\uaca9",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "The regulations specify the qualifications required for enrollment in public courses.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc704\ud0c1\uc0dd",
+            "target": "\uad50\uacfc\uc774\uc218 \uc99d\uc11c",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\uc704\ud0c1\uc0dd may receive a \uad50\uacfc\uc774\uc218 \uc99d\uc11c based on their course completion.",
+            "weight": 8.0
+        },
+        {
+            "source": "\uc704\ud0c1\uc0dd",
+            "target": "\ud559\uce59",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "The regulations include provisions for students studying outside the regular quota.",
+            "weight": 1.0
+        },
+        {
+            "source": "\uc704\ud0c1\uc0dd",
+            "target": "\uc815\uc6d0\uc678",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\uc704\ud0c1\uc0dd can be admitted under the \uc815\uc6d0\uc678 status, allowing them to enroll outside the regular quota.",
+            "weight": 8.0
+        },
+        {
+            "source": "\uc704\ud0c1\uc0dd",
+            "target": "\ud559\ub825 \uac80\uc815",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\uc704\ud0c1\uc0dd may undergo \ud559\ub825 \uac80\uc815 to verify their academic qualifications.",
+            "weight": 8.0
+        },
+        {
+            "source": "\uc785\ud559\ud5c8\uac00",
+            "target": "\uc785\ud559\ud5c8\uac00\uc758 \ucde8\uc18c",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\uc785\ud559\ud5c8\uac00\ub294 \ubd80\uc815\ud589\uc704\uac00 \ubc1c\uc0dd\ud560 \uacbd\uc6b0 \ucde8\uc18c\ub420 \uc218 \uc788\ub2e4.",
+            "weight": 9.0
+        },
+        {
+            "source": "\uc785\ud559\uc120\ubc1c",
+            "target": "\ud2b9\uc131\ud654\uace0(\u820a\uc804\ubb38\uacc4\uace0)\uc878 \uc7ac\uc9c1\uc790 \ud2b9\ubcc4\uc804\ud615",
+            "level": null,
+            "human_readable_id": null,
+            "id": null,
+            "source_id": null,
+            "description": "\ud2b9\uc131\ud654\uace0 \uc878\uc5c5\uc790\ub294 \ud2b9\ubcc4\uc804\ud615\uc744 \ud1b5\ud574 \uc785\ud559\uc120\ubc1c\uc5d0 \ucc38\uc5ec\ud560 \uc218 \uc788\ub2e4.",
+            "weight": 8.0
+>>>>>>> e2a48b47dac17bbd2f148140549790ec2489b580
         }
     ]
 }

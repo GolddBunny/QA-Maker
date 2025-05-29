@@ -1,0 +1,10 @@
+﻿id,source,target,description,weight,links,in_context
+6,GRAPHRAG,EPUB READER,GraphRAG 기술을 활용하여 구현된 EPUB 리더는 정보 검색 및 추론 기능을 제공함.,10.0,1,True
+7,GRAPHRAG,INTRODUCTION,서론에서는 GraphRAG 기술의 필요성과 연구 배경을 설명함.,8.0,1,True
+8,EPUB READER,RASPBERRY PI 5,GraphRAG 기술을 활용한 EPUB 리더는 Raspberry Pi 5에서 구현됨.,9.0,1,True
+4,DEPARTMENT OF COMPUTER ENGINEERING,GRAPHRAG,한성대학교 컴퓨터공학부는 GraphRAG 기술을 연구하고 적용함.,9.0,6,True
+5,DEPARTMENT OF COMPUTER ENGINEERING,EPUB READER,한성대학교 컴퓨터공학부에서 GraphRAG 기술을 활용한 EPUB 리더를 개발함.,9.0,6,True
+0,JIYOON OK,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 학생으로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
+1,CHAEWON PARK,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 학생으로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
+2,JUYEON SOUNG,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 학생으로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
+3,KITAE HWANG,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 교수로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True

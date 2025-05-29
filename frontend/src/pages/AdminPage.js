@@ -7,13 +7,14 @@ import { FileDropHandler } from '../api/handleFileDrop';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
-import { applyIndexing, updateIndexing } from '../api/IndexingButton';
+import { applyIndexing, updateIndexing, executeFullPipeline } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
+import { initDocUrl } from '../api/InitDocUrl';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
-import LoadingSpinner from '../services/LoadingSpinner';
-const BASE_URL = 'http://localhost:5000/flask';
+
+const BASE_URL = 'http://localhost:5000';
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -34,7 +35,7 @@ const AdminPage = () => {
 
     const { currentPageId, updatePages, updatePageSysName, updatePageName,
       systemName, setSystemName, domainName, setDomainName
-     } = usePageContext();
+    } = usePageContext();
     const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
     // Firebase QA History Context 사용 (pageId 기반, Firebase 사용)
     const { 
@@ -293,10 +294,20 @@ const AdminPage = () => {
       setIsApplyLoading(true);
 
       try {
-        const result = await applyIndexing(pageId);
-        if (result.success) {
+        const init_result = await initDocUrl(pageId);
+
+        if (init_result.success) {
+          console.log("초기화 성공:", init_result.message);
+        } else {
+          console.error("초기화 실패:", init_result.error);
+        }
+
+        // 크롤링 및 구조화
+        const final_result = await executeFullPipeline(pageId);
+        
+        if (final_result.success) {
           setIsNewPage(false);
-          setApplyExecutionTime(result.execution_time);
+          setApplyExecutionTime(final_result.execution_time);
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
@@ -305,12 +316,12 @@ const AdminPage = () => {
             checkOutputFolder(pageId)
           ]);
         } else {
-          alert(`문서 인덱싱 실패: ${result.error}`);
+          alert(`QA 시스템 구축 실패: ${final_result.error}`);
           setShowProgressing(false); // 실패 시에만 자동으로 닫기
         }
       } catch (error) {
-        console.error("문서 인덱싱 중 오류:", error);
-        alert("문서 인덱싱 중 오류가 발생했습니다.");
+        console.error("QA 시스템 구축 중 오류:", error);
+        alert("QA 시스템 구축 중 오류가 발생했습니다.");
         setShowProgressing(false); // 에러 시에만 자동으로 닫기
       }finally {
         setIsApplyLoading(false);
@@ -464,18 +475,16 @@ const AdminPage = () => {
               )}
               </div>
 
-              <table className="upload-table">
-                <thead>
-                  <tr>
-                    <th>URL</th>
-                    <th>업로드 날짜</th>
-                  </tr>
-                </thead>
-              </table>
               <div className="upload-table-wrapper">
                 <table className="upload-table">
+                  <thead>
+                    <tr>
+                      <th>URL</th>
+                      <th>업로드 날짜</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {(Array.isArray(uploadedUrls) && uploadedUrls.length > 0) ? (
+                    {uploadedUrls.length > 0 ? (
                       uploadedUrls.map((item, idx) => (
                         <tr key={idx}>
                           <td>{item.url}</td>
@@ -542,53 +551,39 @@ const AdminPage = () => {
               )}
             </div>
 
-            <table className="document-table">
-              <thead>
-                <tr>
-                  <th>문서 이름</th>
-                  <th>카테고리</th>
-                  <th>업로드 날짜</th>
-                </tr>
-              </thead>
+            <div className="document-table-scroll">
+              <table className="document-table">
+                <thead>
+                  <tr>
+                    <th>문서 이름</th>
+                    <th>카테고리</th>
+                    <th>업로드 날짜</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(uploadedDocs) && uploadedDocs.length > 0 ? (
+                    sortedDocs.map((doc, index) => (
+                      <tr key={index}>
+                        <td>{doc.original_filename}</td>
+                        <td><span className="category-pill-admin">{doc.category}</span></td>
+                        <td>{doc.date}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="no-message">
+                        업로드된 문서가 없습니다.<br />
+                        문서를 등록해주세요.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
-                <div className="document-table-scroll">
-                  <table className="document-table">
-                    <tbody>
-                      {Array.isArray(uploadedDocs) && uploadedDocs.length > 0 ? (
-                        
-                        sortedDocs.map((doc, index) => (
-                          <tr key={index}>
-                            <td>{doc.original_filename}</td>
-                            <td><span className="category-pill-admin">{doc.category}</span></td>
-                            <td>{doc.date}</td>
-                          </tr>
-                        ))
-                      ) : (
-                          <div className="no-message">
-                            업로드된 문서가 없습니다.<br />
-                            문서를 등록해주세요.
-                          </div>
-                        )}
-                    </tbody>
-                  </table>
-                </div>
-            {duplicateFileName && (
-              <div className="duplicate-warning-box">
-                <div className="duplicate-warning-message">
-                  <strong>중복된 문서</strong><br />
-                  <span>{duplicateFileName}은 이미 등록된 문서입니다. 문서명을 변경해주세요.</span>
-                </div>
-                <button
-                  className="close-warning-button"
-                  onClick={() => setDuplicateFileName(null)}
-                >
-                  ×
-                </button>
-              </div>
-            )}
-            <div className='search-firebase-sum'>총 문서 수: {docCount}</div>
+            </div>
+            <div className="search-firebase-sum">총 문서 수: {docCount}</div>
           </div>
         </div>
+
         {/* 적용 버튼 */}
         <div className="apply-btn-row">
           {showProgressing ? null : hasOutput ? (
@@ -624,7 +619,7 @@ const AdminPage = () => {
           <div className="progressing-overlay">
             <ProgressingBar 
               onClose={handleCloseProgressing}
-              onAnalyzer={handleAnalyzer}   // 기존 버튼과 같은 함수
+              onAnalyzer={handleAnalyzer}   // 기졸 버튼과 같은 함수
               isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
               conversionTime={conversionTime} //문서 전처리 시간
               indexingTime={applyExecutionTime} //인덱싱 시간

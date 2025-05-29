@@ -1,12 +1,11 @@
 from flask import Flask
 from flask_cors import CORS
 import atexit
-
 from routes.query_routes import query_bp
 from routes.document_routes import document_bp
 from routes.page_routes import page_bp
-from routes.crawling_routes import crawling_bp
 from routes.urlLoad_routes import url_load_bp
+from routes.crawling_routes import crawling_bp
 from routes.documentSource_routes import source_bp
 from routes.answerSources_routes import url_source_bp
 from routes.parquet import parquet_bp
@@ -17,7 +16,7 @@ from routes.accuracy_routes import accuracy_bp
 def create_app():
     """Flask 애플리케이션 생성 및 설정"""
     app = Flask(__name__)
-    CORS(app)  # CORS 설정
+    CORS(app)  # CORS 설정: 프론트엔드와 백엔드 간 통신 허용
 
     # 블루프린트 등록
     app.register_blueprint(query_bp, url_prefix='/flask')

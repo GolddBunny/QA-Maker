@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import time
 from flask import Blueprint, jsonify, request, make_response
@@ -58,7 +59,7 @@ def apply_documents(page_id):
 
 @generate_bp.route('/update/<page_id>', methods=['POST'])
 def update(page_id):
-    """document 업데이트"""
+    """증분 인덱싱"""
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         output_path = os.path.join(base_path, 'output')
@@ -66,6 +67,33 @@ def update(page_id):
         downloaded = download_output_files_from_firebase(page_id, output_path)
         if not downloaded:
             print("⚠ 기존 결과 파일이 Firebase에 존재하지 않습니다.")
+
+        # input 폴더와 prompts 폴더 _url에서 복사해오기
+        url_page_id = f"{page_id}_url"
+        url_base_path = f'../data/input/{url_page_id}'
+        
+        # input 폴더 복사
+        url_input_path = os.path.join(url_base_path, 'input')
+        if os.path.exists(url_input_path):
+            # 기존 input 폴더가 있으면 삭제 후 복사
+            if os.path.exists(input_path):
+                shutil.rmtree(input_path)
+            shutil.copytree(url_input_path, input_path)
+            print(f"Input 폴더 복사 완료: {url_input_path} -> {input_path}")
+        else:
+            print(f"[경고] URL input 폴더 없음: {url_input_path}")
+        
+        # prompts 폴더 복사
+        url_prompts_path = os.path.join(url_base_path, 'prompts')
+        dest_prompts_path = os.path.join(base_path, 'prompts')
+        if os.path.exists(url_prompts_path):
+            # 기존 prompts 폴더가 있으면 삭제 후 복사
+            if os.path.exists(dest_prompts_path):
+                shutil.rmtree(dest_prompts_path)
+            shutil.copytree(url_prompts_path, dest_prompts_path)
+            print(f"프롬프트 복사 완료: {url_prompts_path} -> {dest_prompts_path}")
+        else:
+            print(f"[경고] URL prompts 폴더 없음: {url_prompts_path}")
         
         start_time = time.time()
         subprocess.run(['graphrag', 'update', '--root', base_path])

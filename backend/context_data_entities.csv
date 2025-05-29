@@ -1,0 +1,9 @@
+﻿id,entity,description,number of relationships,in_context
+6,EPUB READER,"GraphRAG 기술을 활용하여 구현된 전자책 리더로, 검색 및 추론 기능을 제공함.",3,True
+7,RASPBERRY PI 5,"GraphRAG 기술을 활용한 EPUB 리더가 구현된 단일 보드 컴퓨터로, 다양한 기능을 지원함.",1,True
+2,JUYEON SOUNG,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
+1,CHAEWON PARK,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
+3,KITAE HWANG,"한성대학교 컴퓨터공학부의 교수로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
+0,JIYOON OK,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
+5,GRAPHRAG,"문서 내 개념과 상호관계를 나타내는 그래프 구조를 구축하는 기술로, 정보 검색 및 추론 작업에서 우수한 성능을 발휘함.",3,True
+11,INTRODUCTION,GraphRAG 기술의 필요성과 연구 배경을 설명하는 섹션.,1,True

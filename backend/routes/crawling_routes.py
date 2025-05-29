@@ -1,79 +1,177 @@
-import os
 from flask import Blueprint, jsonify, request
-import time
-from routes.page_routes import ensure_page_directory
-from utils.crawling import crawl_main
-from utils.url_manager import URLManager
+import os
+import sys
+import subprocess
+from pathlib import Path
+from datetime import datetime
+from services.crawling_service.urlCrawling import main as crawl_urls
+from routes.urlLoad_routes import get_root_urls_from_firebase, save_crawling_url_to_firebase, get_urls_from_firebase
+from services.crawling_service.crawling_and_structuring import main as crawling_and_structuring
+from firebase_admin import firestore
+from services.crawling_service import line1
 
 crawling_bp = Blueprint('crawling', __name__)
-url_manager = URLManager()
 
+# Firestore 클라이언트
+db = firestore.client()
 
-
-@crawling_bp.route('/crawling/<page_id>', methods=['POST'])
-def crawling(page_id):
+#url 크롤링 시작
+@crawling_bp.route('/start-crawling/<page_id>', methods=['POST'])
+def start_url_crawling(page_id):
+    """저장된 URL들을 가져와서 크롤링 시작"""
     try:
-        # 저장된 URL 조회
-        urls = url_manager.load_urls(page_id)
+        print(f"🚀 URL 크롤링 시작: {page_id}")
         
-        if not urls:
-            return jsonify({"success": False, "error": f"페이지 '{page_id}'에 저장된 URL이 없습니다."}), 400
+        # 1. Firebase에서 저장된 URL들 가져오기
+        saved_urls = get_root_urls_from_firebase(page_id)
         
-        # 크롤링 실행
-        print(f"페이지 '{page_id}'의 URL 크롤링 시작: {urls}")
-        start_time = time.time()
-        crawled_urls = []
-        crawl_results = []
+        print(f"📋 Firebase에서 가져온 root URL 개수: {len(saved_urls) if saved_urls else 0}")
+        if saved_urls:
+            for i, url_info in enumerate(saved_urls):
+                print(f"   {i+1}. {url_info.get('url', 'N/A')} (날짜: {url_info.get('date', 'N/A')})")
         
-        for url in urls:
-            try:
-                saved_files, saved_attachments = crawl_main(url)
-                crawled_urls.append(url)
-                crawl_results.append({
-                    "url": url,
-                    "status": "success",
-                    "saved_files": len(saved_files),
-                    "saved_attachments": len(saved_attachments)
-                })
-            except Exception as e:
-                crawl_results.append({
-                    "url": url,
-                    "status": "error",
-                    "error": str(e)
-                })
+        if not saved_urls:
+            return jsonify({"success": False, "error": "크롤링할 URL이 없습니다. 먼저 URL을 추가해주세요."}), 400
         
-        execution_time = time.time() - start_time
-        print(f"크롤링 완료. 총 실행 시간: {execution_time}초")
+        # 2. for문으로 saved_urls 순회하며 크롤링
+        for url in saved_urls:
+            start_url = url['url']
+            print(f"🔍 URL 크롤링 실행 중: {start_url}")
+
+            # 3. url 크롤링 실행            
+            crawling_results = crawl_urls(
+                start_url=start_url,
+            )
+            
+            # crawling_results는 직접 결과 딕셔너리입니다
+            if crawling_results and "error" not in crawling_results:
+                print(f"✅ URL 크롤링 성공: {len(crawling_results.get('page_urls', []))}개 페이지 발견")
+                
+                # 4. url 크롤링 결과를 Firebase에 저장
+                results_info = {
+                    "page_id": page_id,
+                    "start_url": start_url,
+                    "base_domain": crawling_results.get('base_domain', ''),
+                    "scope_patterns": crawling_results.get('scope_patterns', []),
+                    "total_pages": crawling_results.get('total_pages_discovered', 0),
+                    "total_documents": crawling_results.get('total_documents_discovered', 0),
+                    "results_dir": crawling_results.get('results_dir', ''),
+                    "execution_time": crawling_results.get('execution_time', 0),
+                    "timestamp": datetime.now().isoformat()
+                }
+
+                # page_urls에서 URL 목록을 가져와서 Firebase에 저장
+                saved_count = 0
+                for url in crawling_results.get('page_urls', []):
+                    save_crawling_url_to_firebase(page_id, url)
+                    saved_count += 1
+                
+                print(f"💾 Firebase에 {saved_count}개 URL 저장 완료")
+            
+                return jsonify({
+                    "success": True,
+                    "message": "URL 크롤링 완료",
+                    "results": results_info
+                }), 200
+            else:
+                print(f"❌ URL 크롤링 실패: {crawling_results.get('error', '알 수 없는 오류')}")
+                return jsonify({
+                    "success": False, 
+                    "error": f"크롤링 실패: {crawling_results.get('error', '알 수 없는 오류')}"
+                }), 500
+            
+    except Exception as e:
+        print(f"URL 크롤링 중 오류: {str(e)}")
+        return jsonify({"success": False, "error": f"크롤링 중 오류 발생: {str(e)}"}), 500
+
+@crawling_bp.route('/crawl-and-structure/<page_id>', methods=['POST'])
+def crawl_and_structure(page_id):
+    """웹 크롤링 및 구조화 시작 (crawling_and_structuring.py)"""
+    try:
+        print(f"crawling_routes.py: 🔄 웹 크롤링 및 구조화 시작: {page_id}")
         
+        # 1. Firebase에서 저장된 URL들 가져오기 (크롤링된 모든 URL)
+        saved_urls = get_urls_from_firebase(page_id)
+        
+        if not saved_urls:
+            print(f"crawling_routes.py: 🔄 크롤링할 URL이 없습니다.")
+            return jsonify({"success": False, "error": "크롤링할 URL이 없습니다. 먼저 URL 크롤링을 실행해주세요."}), 400
+        
+        print(f"crawling_routes.py: 🔄 크롤링할 URL 개수: {len(saved_urls)}")
+        
+        # 2. URL 리스트를 crawling_and_structuring 함수에 전달
+        result = crawling_and_structuring(page_id, saved_urls)
+        
+        if result and result.get('success', False):
+            return jsonify({
+                "success": True,
+                "message": "웹 크롤링 및 구조화 완료",
+                "results": result.get('results', {})
+            }), 200
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"웹 크롤링 실패: {result.get('error', '알 수 없는 오류')}"
+            }), 500
+            
+    except Exception as e:
+        print(f"웹 크롤링 중 오류: {str(e)}")
         return jsonify({
-            "success": True,
-            "message": f"페이지 '{page_id}'의 URL 크롤링 완료",
-            "urls": urls,
-            "crawled_urls": crawled_urls,
-            "crawl_results": crawl_results,
-            "execution_time": execution_time
-        }), 200
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": f"URL 크롤링 중 오류 발생: {str(e)}"}), 500
-    
-@crawling_bp.route('/crawling/content/<page_id>', methods=['GET'])
-def get_crawled_content(page_id):
-    """크롤링된 URL 내용 가져오기"""
+            "success": False, 
+            "error": f"웹 크롤링 중 오류 발생: {str(e)}"
+        }), 500
+
+
+@crawling_bp.route('/line1/<page_id>', methods=['POST'])
+def cleanup_text_files(page_id):
+    """텍스트 파일 정리 (line1.py)"""
     try:
-        base_path, input_path, _ = ensure_page_directory(page_id)
+        print(f"🧹 텍스트 정리 시작: {page_id}")
         
-        # 크롤링된 텍스트 파일들을 읽어 내용 반환
-        crawled_content = ""
+        # URL 입력 경로 계산 - document_routes.py와 동일한 방식 사용
+        # Flask가 backend에서 실행되므로 ../data/input/ 사용
+        url_base_path = Path(f"../data/input/{page_id}_url")
+        url_input_path = url_base_path / "input"
         
-        for file_name in os.listdir(input_path):
-            if file_name.endswith(".txt") and "crawled_" in file_name:
-                file_path = os.path.join(input_path, file_name)
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    crawled_content += f"--- {file_name} ---\n"
-                    crawled_content += file.read() + "\n\n"
+        # 경로 존재 확인
+        if not url_input_path.exists():
+            return jsonify({
+                "success": False,
+                "error": f"URL 입력 경로를 찾을 수 없습니다: {url_input_path.resolve()}"
+            }), 400
         
-        return crawled_content
-    
+        print(f"📁 텍스트 정리 대상 경로: {url_input_path.resolve()}")
+        
+        # line1 모듈의 main 함수 실행 (절대 경로로 변환)
+        abs_url_input_path = str(url_input_path.resolve())
+        result = line1.main(abs_url_input_path, page_id)
+        
+        if result.get("success", False):
+            return jsonify({
+                "success": True,
+                "message": "텍스트 정리 완료",
+                "results": result
+            }), 200
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"텍스트 정리 실패: {result.get('error', '알 수 없는 오류')}"
+            }), 500
+            
     except Exception as e:
-        return jsonify({"success": False, "error": f"크롤링된 내용 가져오기 실패: {str(e)}"}), 500
+        print(f"텍스트 정리 중 오류: {str(e)}")
+        return jsonify({
+            "success": False, 
+            "error": f"텍스트 정리 중 오류 발생: {str(e)}"
+        }), 500
+
+
+# @crawling_bp.route('/get-crawling-status/<page_id>', methods=['GET'])
+# def get_crawling_status(page_id):
+#     """크롤링 상태 확인"""
+#     try:
+#         # 데이터 디렉토리에서 크롤링 결과 확인
+#         url_base_path = f'../data/input/{page_id}_url'  
+#         url_input_path = os.path.join(url_base_path, 'input')
+        
+        
