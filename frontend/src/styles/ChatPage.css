@@ -75,10 +75,11 @@
   font-weight: 500;
   text-align: justify;
   box-shadow: var(--box-shadow);
-  max-width: 60%;
+  max-width: 38%;
   margin-left: auto;
   margin-right: 28%;
   margin-top: 25px;
+  line-height: 1.45;
   border: 1px solid #DBD8FF;
 }
 
@@ -172,6 +173,7 @@
 .action-button-container {
   display: flex;
   width: 100%;
+  margin-left: 30px;
 }
 
 /* 정확도, 만족도 버튼 스타일 */
@@ -186,6 +188,7 @@
   align-items: center;
   box-shadow: 0 2px 5px #d4c9e3;
   margin-bottom: 3px;
+  margin-left: 30px;
 }
 
 .action-button-left-graph {
@@ -210,11 +213,11 @@
   align-items: center;
   gap: 4px;
 }
+
 .graph-button-wrapper .action-button-left:hover {
   background-color: var(--light-purple);
   font-weight: 500;
 }
-
 
 .button-icon img {
   width: 16px;
@@ -260,6 +263,7 @@
   border: 1px solid #e8e0f3;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  margin-left: 30px;
 }
 
 .related-questions-header {
