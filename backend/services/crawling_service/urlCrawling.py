@@ -2013,6 +2013,44 @@ def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_reque
         logger.error(f"크롤링 실패: {e}")
         return {"error": str(e), "execution_time": 0}
 
+def extract_document_urls_from_results(results: Dict[str, Any]) -> List[str]:
+    """
+    크롤링 결과에서 문서 URL 목록을 추출
+    
+    Args:
+        results: discover_urls 메서드의 반환값
+        
+    Returns:
+        문서 URL 목록
+    """
+    if not results or "doc_urls" not in results:
+        return []
+    
+    doc_urls = results["doc_urls"]
+    if isinstance(doc_urls, set):
+        return list(doc_urls)
+    elif isinstance(doc_urls, list):
+        return doc_urls
+    else:
+        return []
+
+def load_document_urls_from_file(file_path: str) -> List[str]:
+    """
+    파일에서 문서 URL 목록을 로드
+    
+    Args:
+        file_path: 문서 URL이 저장된 파일 경로
+        
+    Returns:
+        문서 URL 목록
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            urls = [line.strip() for line in f if line.strip()]
+        return urls
+    except Exception as e:
+        logger.error(f"문서 URL 파일 로드 실패: {e}")
+        return []
 
 if __name__ == "__main__":
     try:

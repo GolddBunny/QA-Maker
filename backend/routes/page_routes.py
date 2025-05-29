@@ -49,17 +49,32 @@ def update_prompts(page_id, prompt_type='doc'):
     else:
         raise ValueError(f"지원하지 않는 prompt_type: {prompt_type}")
 
+    print(f"[프롬프트 복사 시도] 타입: {prompt_type}, 소스: {prompt_src}, 대상: {prompt_dest}")
+    
     if not os.path.exists(prompt_src):
         print(f"[경고] 프롬프트 소스 없음: {prompt_src}")
         return
 
-    # 폴더가 이미 존재하면 먼저 삭제
-    if os.path.exists(prompt_dest):
-        shutil.rmtree(prompt_dest)
+    try:
+        # 폴더가 이미 존재하면 먼저 삭제
+        if os.path.exists(prompt_dest):
+            shutil.rmtree(prompt_dest)
+            print(f"[프롬프트 복사] 기존 폴더 삭제: {prompt_dest}")
 
-    # 폴더 전체 복사
-    shutil.copytree(prompt_src, prompt_dest)
-    print(f"프롬프트 복사 완료: {prompt_src} -> {prompt_dest}")
+        # 폴더 전체 복사
+        shutil.copytree(prompt_src, prompt_dest)
+        print(f"프롬프트 복사 완료: {prompt_src} -> {prompt_dest}")
+        
+        # 복사 결과 검증
+        if os.path.exists(prompt_dest):
+            file_count = len(os.listdir(prompt_dest))
+            print(f"[프롬프트 복사 검증] {file_count}개 파일 복사됨")
+        else:
+            print(f"[프롬프트 복사 오류] 대상 폴더가 생성되지 않음: {prompt_dest}")
+            
+    except Exception as e:
+        print(f"[프롬프트 복사 오류] {prompt_type} 복사 실패: {e}")
+        # 오류가 발생해도 계속 진행하도록 함
 
 @page_bp.route('/init/<page_id>', methods=['POST'])
 def init_page(page_id):
@@ -143,27 +158,103 @@ def safe_copy_tree(src, dest):
 @page_bp.route('/init_doc_url/<page_id>', methods=['POST'])
 def init_doc_url(page_id):
     try:
+        print(f"[InitDocUrl 시작] page_id: {page_id}")
+        
         # 1. URL용 디렉토리 생성
         url_page_id = f"{page_id}_url"
         url_base_path = f'../data/input/{url_page_id}'
         url_input_path = os.path.join(url_base_path, 'input')
+        
+        print(f"[InitDocUrl] URL 디렉토리 생성: {url_base_path}")
         os.makedirs(url_input_path, exist_ok=True)
 
-        # 설정, 프롬프트, 환경변수 생성
-        update_settings_yaml(url_page_id)
-        create_env_file(url_page_id)
-        update_prompts(url_page_id, prompt_type='url')
+        # URL용 설정 파일들 복사
+        print(f"[InitDocUrl] URL용 설정 파일 복사 시작")
+        
+        # settings.yaml 복사
+        try:
+            settings_source = '../data/parquet/settings.yaml'
+            settings_dest = os.path.join(url_base_path, 'settings.yaml')
+            if os.path.exists(settings_source):
+                shutil.copy2(settings_source, settings_dest)
+                print(f"[InitDocUrl] settings.yaml 복사 완료: {settings_dest}")
+            else:
+                print(f"[InitDocUrl 경고] settings.yaml 소스 없음: {settings_source}")
+        except Exception as e:
+            print(f"[InitDocUrl 오류] settings.yaml 복사 실패: {e}")
+
+        # .env 파일 복사
+        try:
+            env_source = '../data/parquet/.env'
+            env_dest = os.path.join(url_base_path, '.env')
+            if os.path.exists(env_source):
+                shutil.copy2(env_source, env_dest)
+                print(f"[InitDocUrl] .env 복사 완료: {env_dest}")
+            else:
+                print(f"[InitDocUrl 경고] .env 소스 없음: {env_source}")
+        except Exception as e:
+            print(f"[InitDocUrl 오류] .env 복사 실패: {e}")
+
+        # URL 프롬프트 복사
+        try:
+            prompt_source = '../data/parquet/url_prompts'
+            prompt_dest = os.path.join(url_base_path, 'prompts')
+            if os.path.exists(prompt_source):
+                if os.path.exists(prompt_dest):
+                    shutil.rmtree(prompt_dest)
+                shutil.copytree(prompt_source, prompt_dest)
+                print(f"[InitDocUrl] URL 프롬프트 복사 완료: {prompt_dest}")
+            else:
+                print(f"[InitDocUrl 경고] URL 프롬프트 소스 없음: {prompt_source}")
+        except Exception as e:
+            print(f"[InitDocUrl 오류] URL 프롬프트 복사 실패: {e}")
 
         # 2. 문서용 디렉토리 생성
         doc_base_path = f'../data/input/{page_id}'
         doc_input_path = os.path.join(doc_base_path, 'input')
+        
+        print(f"[InitDocUrl] 문서 디렉토리 생성: {doc_base_path}")
         os.makedirs(doc_input_path, exist_ok=True)
 
-        # 설정, 프롬프트, 환경변수 생성
-        update_settings_yaml(page_id)
-        create_env_file(page_id)
-        update_prompts(page_id, prompt_type='doc')
+        # 문서용 설정 파일들 복사
+        print(f"[InitDocUrl] 문서용 설정 파일 복사 시작")
+        
+        # settings.yaml 복사
+        try:
+            settings_source = '../data/parquet/settings.yaml'
+            settings_dest = os.path.join(doc_base_path, 'settings.yaml')
+            if os.path.exists(settings_source):
+                shutil.copy2(settings_source, settings_dest)
+                print(f"[InitDocUrl] 문서 settings.yaml 복사 완료: {settings_dest}")
+        except Exception as e:
+            print(f"[InitDocUrl 오류] 문서 settings.yaml 복사 실패: {e}")
 
+        # .env 파일 복사
+        try:
+            env_source = '../data/parquet/.env'
+            env_dest = os.path.join(doc_base_path, '.env')
+            if os.path.exists(env_source):
+                shutil.copy2(env_source, env_dest)
+                print(f"[InitDocUrl] 문서 .env 복사 완료: {env_dest}")
+        except Exception as e:
+            print(f"[InitDocUrl 오류] 문서 .env 복사 실패: {e}")
+
+        # 문서 프롬프트 복사
+        try:
+            prompt_source = '../data/parquet/prompts'
+            prompt_dest = os.path.join(doc_base_path, 'prompts')
+            if os.path.exists(prompt_source):
+                if os.path.exists(prompt_dest):
+                    shutil.rmtree(prompt_dest)
+                shutil.copytree(prompt_source, prompt_dest)
+                print(f"[InitDocUrl] 문서 프롬프트 복사 완료: {prompt_dest}")
+            else:
+                print(f"[InitDocUrl 경고] 문서 프롬프트 소스 없음: {prompt_source}")
+        except Exception as e:
+            print(f"[InitDocUrl 오류] 문서 프롬프트 복사 실패: {e}")
+
+        print(f"[InitDocUrl 완료] URL: {url_page_id}, 문서: {page_id}")
+        
         return jsonify({
             'success': True,
             'message': f'초기화 완료: {url_page_id} 및 {page_id} 디렉토리 설정 완료'

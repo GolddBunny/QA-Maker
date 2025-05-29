@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPages, savePages } from '../../utils/storage';
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/flask';
 
 export function usePageHandlers(pages, updatePages, setCurrentPageId) {
   const navigate = useNavigate();

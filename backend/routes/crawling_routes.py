@@ -1,3 +1,4 @@
+import time
 from flask import Blueprint, jsonify, request
 import os
 import sys
@@ -5,7 +6,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from services.crawling_service.urlCrawling import main as crawl_urls
-from routes.urlLoad_routes import get_root_urls_from_firebase, save_crawling_url_to_firebase, get_urls_from_firebase
+from routes.urlLoad_routes import get_root_urls_from_firebase, save_crawling_url_to_firebase, get_urls_from_firebase, save_document_url_to_firebase, save_urls_batch
 from services.crawling_service.crawling_and_structuring import main as crawling_and_structuring
 from firebase_admin import firestore
 from services.crawling_service import line1
@@ -21,6 +22,7 @@ def start_url_crawling(page_id):
     """저장된 URL들을 가져와서 크롤링 시작"""
     try:
         print(f"🚀 URL 크롤링 시작: {page_id}")
+        start_time = time.time()
         
         # 1. Firebase에서 저장된 URL들 가져오기
         saved_urls = get_root_urls_from_firebase(page_id)
@@ -60,18 +62,25 @@ def start_url_crawling(page_id):
                     "timestamp": datetime.now().isoformat()
                 }
 
-                # page_urls에서 URL 목록을 가져와서 Firebase에 저장
-                saved_count = 0
-                for url in crawling_results.get('page_urls', []):
-                    save_crawling_url_to_firebase(page_id, url)
-                    saved_count += 1
+                # page_urls에서 URL 목록을 가져와서 Firebase에 저장 (배치 처리)
+                page_urls = crawling_results.get('page_urls', [])
+                saved_count = save_urls_batch(page_id, page_urls, "crawled")
                 
-                print(f"💾 Firebase에 {saved_count}개 URL 저장 완료")
+                # doc_urls에서 문서 URL 목록을 가져와서 Firebase에 저장 (배치 처리)
+                doc_urls = crawling_results.get('doc_urls', [])
+                doc_saved_count = save_urls_batch(page_id, doc_urls, "document")
+                
+                print(f"💾 Firebase에 {saved_count}개 페이지 URL, {doc_saved_count}개 문서 URL 저장 완료")
+                print(f"📎 발견된 문서 URL: {crawling_results.get('total_documents_discovered', 0)}개")
             
+                print(f"💾 Firebase에 {saved_count}개 URL 저장 완료")
+                end_time = time.time()
+                execution_time = round(end_time - start_time)
                 return jsonify({
                     "success": True,
                     "message": "URL 크롤링 완료",
-                    "results": results_info
+                    "results": results_info,
+                    'execution_time': execution_time
                 }), 200
             else:
                 print(f"❌ URL 크롤링 실패: {crawling_results.get('error', '알 수 없는 오류')}")
@@ -89,7 +98,7 @@ def crawl_and_structure(page_id):
     """웹 크롤링 및 구조화 시작 (crawling_and_structuring.py)"""
     try:
         print(f"crawling_routes.py: 🔄 웹 크롤링 및 구조화 시작: {page_id}")
-        
+        start_time = time.time()
         # 1. Firebase에서 저장된 URL들 가져오기 (크롤링된 모든 URL)
         saved_urls = get_urls_from_firebase(page_id)
         
@@ -101,12 +110,14 @@ def crawl_and_structure(page_id):
         
         # 2. URL 리스트를 crawling_and_structuring 함수에 전달
         result = crawling_and_structuring(page_id, saved_urls)
-        
+        end_time = time.time()
+        execution_time = round(end_time - start_time)
         if result and result.get('success', False):
             return jsonify({
                 "success": True,
                 "message": "웹 크롤링 및 구조화 완료",
-                "results": result.get('results', {})
+                "results": result.get('results', {}),
+                'execution_time': execution_time
             }), 200
         else:
             return jsonify({
@@ -127,7 +138,7 @@ def cleanup_text_files(page_id):
     """텍스트 파일 정리 (line1.py)"""
     try:
         print(f"🧹 텍스트 정리 시작: {page_id}")
-        
+        start_time = time.time()
         # URL 입력 경로 계산 - document_routes.py와 동일한 방식 사용
         # Flask가 backend에서 실행되므로 ../data/input/ 사용
         url_base_path = Path(f"../data/input/{page_id}_url")
@@ -145,12 +156,14 @@ def cleanup_text_files(page_id):
         # line1 모듈의 main 함수 실행 (절대 경로로 변환)
         abs_url_input_path = str(url_input_path.resolve())
         result = line1.main(abs_url_input_path, page_id)
-        
+        end_time = time.time()
+        execution_time = round(end_time - start_time)
         if result.get("success", False):
             return jsonify({
                 "success": True,
                 "message": "텍스트 정리 완료",
-                "results": result
+                "results": result,
+                'execution_time': execution_time
             }), 200
         else:
             return jsonify({

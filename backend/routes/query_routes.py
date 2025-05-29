@@ -32,6 +32,7 @@ from graphrag.query.structured_search.global_search.community_context import (
 from graphrag.query.structured_search.global_search.search import GlobalSearch
 from firebase_config import bucket
 from flask_cors import cross_origin
+import traceback
 query_bp = Blueprint('query', __name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
 
@@ -210,6 +211,11 @@ def run_local_query():
 
         # 서브 그래프 생성
         generate_and_save_graph(entities_list, relationships_list, page_id)
+        
+    #     return jsonify({'success': True, 'timestamp': int(time.time())})
+    # except Exception as e:
+    #     print(traceback.format_exc())
+    #     return jsonify({'error': str(e)}), 500 
 
         return jsonify({
             'response': result.response,

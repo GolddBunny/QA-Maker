@@ -685,31 +685,7 @@
             "type": "EVENT"
         },
         {
-            "id": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
-            "level": null,
-            "human_readable_id": 8552,
-            "source_id": "c3028b61-a5d6-4f30-929b-a1cdcbb1c883",
-            "description": "\uc81c 119 \uc870 \uc0ac\ud6c4\ud3c9\uac00: \ud559\uacfc(\uc804\uacf5) \ud3c9\uac00\ub294 \uac1c\uc124 \ud6c4 3\ub144 \ud6c4\uc5d0 \ucd5c\ucd08 \ud3c9\uac00\ub97c \uc2dc\ud589\ud558\ub294 \uac83\uc744 \uc6d0\uce59\uc73c\ub85c \ud558\uba70, \uc774\ud6c4 \uc5f0\uac04 \ud3c9\uac00\uc2dc 80\uc810 \uc774\uc0c1 \ud569\uaca9, 60\uc810 \uc774\uc0c1 80\uc810 \ubbf8\ub9cc \uc7ac\uac80\ud1a0, 60\uc810 \ubbf8\ub9cc \ubd88\ud569\uaca9\uc73c\ub85c \uad6c\ubd84\ub428. \uc774 \ub0b4\uc6a9\uc740 \ubb38\uc11c\uc5d0\uc11c \ucd94\ucd9c\ud568. 38\ud398\uc774\uc9c0\uc5d0 \uc704\uce58\ud568.",
-            "weight": null,
-            "cluster": 21,
-            "entity_type": null,
-            "degree": 9,
-            "type": "ARTICLE"
-        },
-        {
-            "id": "\ud2b9\uc131\ud654\ud559\uacfc/\uc804\uacf5 \uc11d\uc0ac",
-            "level": null,
-            "human_readable_id": 8553,
-            "source_id": "91609f65-d663-4e51-a426-185b1eda845a",
-            "description": "\ud2b9\uc131\ud654\ud559\uacfc/\uc804\uacf5 \uc11d\uc0ac \uacfc\uc815\uc758 \uc6b4\uc601\uc131\uacfc\ud3c9\uac00\uc9c0\ud45c",
-            "weight": null,
-            "cluster": 21,
-            "entity_type": null,
-            "degree": 1,
-            "type": "EVENT"
-        },
-        {
-            "id": "\ud2b9\uc131\ud654\ud559\uacfc/\uc804\uacf5 \ubc15\uc0ac",
+            "id": "\ud559\uc0ac\ud559\uc704\ucde8\ub4dd \uc720\uc608",
             "level": null,
             "human_readable_id": 8554,
             "source_id": "f87ae254-7ab4-4ec0-a49b-b20282288f41",
@@ -907,7 +883,7 @@
             "source_id": "85223298-228f-4193-8bad-b51aa7bce311",
             "description": "The entity \"2017.6.14.\" is significant as it marks the date when the principles for the restructuring of the curriculum were officially outlined. Additionally, this date is noted for the renaming of the regulations concerning class evaluations, as well as the change in the title of the committee regulations related to class evaluations.",
             "weight": null,
-            "cluster": 41,
+            "cluster": 15,
             "entity_type": null,
             "degree": 2,
             "type": "DATE"
@@ -927,8 +903,8 @@
     ],
     "edges": [
         {
-            "source": "\uc81c 3 \uc870 \ud3c9\uac00\ube44\uc728",
-            "target": "\ud398\uc774\uc9c0 2",
+            "source": "HANSUNG UNIVERSITY",
+            "target": "\uc704\ud0c1\uc0dd",
             "level": null,
             "human_readable_id": null,
             "id": null,
@@ -937,123 +913,33 @@
             "weight": 10.0
         },
         {
-            "source": "\uc81c 3 \uc870 \ud3c9\uac00\ube44\uc728",
-            "target": "3-3-4 \uc131\uc801\ud3c9\uac00\uc5d0 \uad00\ud55c \uc2dc\ud589\uc138\uce59",
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\uc870\uae30\uc878\uc5c5",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "\uc81c 3 \uc870\ub294 3-3-4 \uc131\uc801\ud3c9\uac00\uc5d0 \uad00\ud55c \uc2dc\ud589\uc138\uce59\uc758 \uc77c\ubd80\ub85c \ud3ec\ud568\ub418\uc5b4 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\ud3c9\uac00\ubc29\ubc95",
-            "target": "\ud398\uc774\uc9c0 1",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 3 \uc870 \ud3c9\uac00\ubc29\ubc95\uc740 \ud398\uc774\uc9c0 1\uc5d0 \uc704\uce58\ud568",
-            "weight": 10.0
-        },
-        {
-            "source": "\ud3c9\uac00\ubc29\ubc95",
-            "target": "3-2-24 \uc6b0\uc218\uad50\uc6d0\ud3ec\uc0c1\uaddc\uc815",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 3 \uc870\ub294 3-2-24 \uc6b0\uc218\uad50\uc6d0\ud3ec\uc0c1\uaddc\uc815\uc758 \uc77c\ubd80\ub85c \ud3ec\ud568\ub418\uc5b4 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc218\uc5c5 \ud3c9\uac00",
-            "target": "\uac15\uc88c\uc218\uac15\ud559 \ud3c9\uac00\ud56d\ubaa9",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc218\uc5c5 \ud3c9\uac00\ub294 \uac15\uc88c \uc218\uac15\ud559 \ud3c9\uac00 \ud56d\ubaa9\uc744 \ud3ec\ud568\ud558\uace0 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc81c2\uc870(\ud3c9\uac00\ubc29\ubc95)",
-            "target": "2013\ud559\ub144\ub3c4 2\ud559\uae30",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c2\uc870\uc758 \uc801\uc6a9\uc740 2013\ud559\ub144\ub3c4 2\ud559\uae30\ubd80\ud130 \uc2dc\uc791\ub428",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc81c2\uc870(\ud3c9\uac00\ubc29\ubc95)",
-            "target": "2015\ub144 3\uc6d4 1\uc77c",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c2\uc870\uc758 \ubcc0\uacbd \uc138\uce59\uc740 2015\ub144 3\uc6d4 1\uc77c\ubd80\ud130 \uc2dc\ud589\ub428",
+            "description": "Hansung University has regulations that allow students to apply for early graduation.",
             "weight": 9.0
         },
         {
-            "source": "\uc81c2\uc870(\ud3c9\uac00\ubc29\ubc95)",
-            "target": "2014\ud559\ub144\ub3c4",
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\ud559\uc810\uad50\ub958\uc2e0\uccad\uc790",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "2014\ud559\ub144\ub3c4 \uc774\uc804 \ucde8\ub4dd\ud55c \uacfc\ubaa9\uc5d0 \ub300\ud55c \uaddc\uc815\uc774 \uc81c2\uc870\uc5d0 \ud3ec\ud568\ub428",
-            "weight": 8.0
+            "description": "\ud55c\uc131\ub300\ud559\uad50\ub294 \ud559\uc810\uad50\ub958\ub97c \uc2e0\uccad\ud558\ub294 \ud559\uc0dd\ub4e4\uc744 \uc704\ud55c \uc808\ucc28\ub97c \uad00\ub9ac\ud569\ub2c8\ub2e4.",
+            "weight": 9.0
         },
         {
-            "source": "\uc7ac\ud559\uc0dd \uc911\ub3c4\ud0c8\ub77d\uc728",
-            "target": "\uac15\uc758\ud3c9\uac00",
+            "source": "\ud55c\uc131\ub300\ud559\uad50",
+            "target": "\uc790\ud1f4",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "\uc7ac\ud559\uc0dd \uc911\ub3c4\ud0c8\ub77d\uc728\uacfc \uac15\uc758\ud3c9\uac00\ub294 \ubaa8\ub450 \ud3c9\uac00 \ud56d\ubaa9\uc73c\ub85c, \uad50\uc721\uc758 \uc9c8\uc744 \ud3c9\uac00\ud558\ub294 \ub370 \uae30\uc5ec\ud568.",
-            "weight": 8.0
-        },
-        {
-            "source": "\uac15\uc758\ud3c9\uac00",
-            "target": "\ud398\uc774\uc9c0 10",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uac15\uc758\ud3c9\uac00\ub294 10\ud398\uc774\uc9c0\uc5d0 \uc704\uce58\ud568",
-            "weight": 10.0
-        },
-        {
-            "source": "\uac15\uc758\ud3c9\uac00",
-            "target": "2023.12.13.",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "The \uac15\uc758\ud3c9\uac00 (course evaluation) is conducted based on criteria established for December 13, 2023. This evaluation process adheres to the standards that are applicable on this specific date, confirming that the criteria for the \uac15\uc758\ud3c9\uac00 are set to be effective from December 13, 2023.",
-            "weight": 27.0
-        },
-        {
-            "source": "\uac15\uc758\ud3c9\uac00",
-            "target": "\uadfc\ubb34\ud3c9\uc815",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "The entities \"\uac15\uc758\ud3c9\uac00\" (course evaluation) and \"\uadfc\ubb34\ud3c9\uc815\" (performance evaluation) are both integral components of educational assessment. \uac15\uc758\ud3c9\uac00\ub294 \uadfc\ubb34\ud3c9\uc815\uc758 \uae30\uc900 \uc911 \ud558\ub098\ub85c, \ud559\uc0dd\uc758 \uc758\uacac\uc744 \ubc18\uc601\ud558\uc5ec \ud3c9\uac00\ub41c\ub2e4. This indicates that student feedback plays a crucial role in the evaluation process. Furthermore, both \uac15\uc758\ud3c9\uac00 and \uadfc\ubb34\ud3c9\uc815 serve as evaluation criteria related to education, focusing on assessing the quality of education and the performance of teachers. Together, they contribute to a comprehensive understanding of educational effectiveness and teacher accountability.",
-            "weight": 17.0
-        },
-        {
-            "source": "\ubd80\uce59(\uc2dc\ud589\uc77c)",
-            "target": "\uc81c2\uc870(\ud3c9\uac00\ubc29\ubc95)",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\ubd80\uce59\uc740 \uc81c2\uc870\uc758 \uc2dc\ud589\uc77c\uc744 \ud3ec\ud568\ud558\uace0 \uc788\uc74c",
+            "description": "\ud55c\uc131\ub300\ud559\uad50\uc758 \ud559\uc0dd\uc740 \uc790\ud1f4\ub97c \uc704\ud574 \ubcf4\ud638\uc790\uc758 \ub3d9\uc758\ub97c \uc5bb\uc5b4\uc57c \ud569\ub2c8\ub2e4.",
             "weight": 9.0
         },
         {
@@ -1087,103 +973,13 @@
             "weight": 8.0
         },
         {
-            "source": "\uc218\uc5c5\ud3c9\uac00",
-            "target": "\uad50\uc218\ud559\uc2b5\uc13c\ud130",
+            "source": "\uc790\ud1f4",
+            "target": "\uc81c\uc801",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "\uad50\uc218\ud559\uc2b5\uc13c\ud130\ub294 \uc218\uc5c5\ud3c9\uac00 \uacb0\uacfc\ub97c \ud65c\uc6a9\ud558\uc5ec \uad50\uc218\uc758 \uac15\uc758 \uac1c\uc120\uc744 \uc9c0\uc6d0\ud55c\ub2e4.",
-            "weight": 8.0
-        },
-        {
-            "source": "\uc218\uc5c5\ud3c9\uac00",
-            "target": "\uc218\uc5c5\ub9cc\uc871\ub3c4 \uc870\uc0ac",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc218\uc5c5\ud3c9\uac00\ub294 \uc218\uc5c5\ub9cc\uc871\ub3c4 \uc870\uc0ac\uc758 \uc77c\ud658\uc73c\ub85c \uc2dc\ud589\ub41c\ub2e4.",
-            "weight": 10.0
-        },
-        {
-            "source": "\uad50\uc6d0\uc5c5\uc801\ud3c9\uac00\uaddc\uc815 \uc2dc\ud589\uc138\uce59 \uc81c 4 \uc870",
-            "target": "\ud398\uc774\uc9c0 2",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 4 \uc870\ub294 \ud398\uc774\uc9c0 2\uc5d0 \uc704\uce58\ud568",
-            "weight": 10.0
-        },
-        {
-            "source": "\uad50\uc6d0\uc5c5\uc801\ud3c9\uac00\uaddc\uc815 \uc2dc\ud589\uc138\uce59 \uc81c 4 \uc870",
-            "target": "\ud45c 1-3",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 4 \uc870\ub294 \uc218\uc5c5 \ud3c9\uac00\uc640 \uad00\ub828\ub41c \ub0b4\uc6a9\uc744 \ud3ec\ud568\ud558\uace0 \uc788\uc73c\uba70, \ud45c 1-3\uc740 \uadf8 \ud3c9\uac00 \uae30\uc900\uc744 \ub098\ud0c0\ub0c4",
-            "weight": 9.0
-        },
-        {
-            "source": "\uad50\uc6d0\uc5c5\uc801\ud3c9\uac00\uaddc\uc815 \uc2dc\ud589\uc138\uce59 \uc81c 2 \uc7a5",
-            "target": "\uad50\uc6d0\uc5c5\uc801\ud3c9\uac00\uaddc\uc815 \uc2dc\ud589\uc138\uce59 \uc81c 4 \uc870",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 4 \uc870\ub294 \uc81c 2 \uc7a5\uc5d0 \ud3ec\ud568\ub418\uc5b4 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc81c 4 \uc870\uc758 4",
-            "target": "\uc218\uc5c5\ud3c9\uac00",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc218\uc5c5\ud3c9\uac00 \uacb0\uacfc\ub294 \uc218\uc5c5\uc758 \uc9c8 \uad00\ub9ac\ub97c \uc704\ud55c \ubd84\uc11d \uc790\ub8cc\ub85c \ud65c\uc6a9\ub420 \uc218 \uc788\ub2e4.",
-            "weight": 9.0
-        },
-        {
-            "source": "\uad50\uc218",
-            "target": "295",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uad50\uc218\uc758 \uc885\ud569\ud3c9\uc810\uc740 295\uc810\uc784",
-            "weight": 8.0
-        },
-        {
-            "source": "\uc218\uc5c5\ud3c9\uac00 5.0 \ubbf8\ub9cc",
-            "target": "\uad50\uc218\ud559\uc2b5\uc13c\ud130",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc218\uc5c5\ud3c9\uac00\uac00 5.0 \ubbf8\ub9cc\uc778 \uacbd\uc6b0 \uad50\uc218\ud559\uc2b5\uc13c\ud130\uc758 \ud504\ub85c\uadf8\ub7a8 \ucc38\uc5ec\uac00 \ud544\uc218\uc784",
-            "weight": 10.0
-        },
-        {
-            "source": "\ub300\ud559\uc6d0 \uc218\uc5c5 \ud3c9\uac00",
-            "target": "\uc81c 15 \uc7a5 \uc81c 71 \uc870",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 71 \uc870\ub294 \ub300\ud559\uc6d0 \uc218\uc5c5 \ud3c9\uac00\uc758 \uc2dc\uae30 \ubc0f \uacb0\uacfc \ud65c\uc6a9\uc5d0 \ub300\ud55c \ub0b4\uc6a9\uc744 \ud3ec\ud568\ud558\uace0 \uc788\ub2e4.",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc81c 15 \uc7a5 \uc81c 71 \uc870",
-            "target": "2020.10.6",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc81c 71 \uc870\uc758 \ub0b4\uc6a9\uc774 \uc5c5\ub370\uc774\ud2b8\ub41c \ub0a0\uc9dc\uc774\ub2e4.",
+            "description": "\uc790\ud1f4\ud558\uc9c0 \uc54a\uace0 \ub4f1\ub85d\ud558\uc9c0 \uc54a\uc740 \ud559\uc0dd\uc740 \uc81c\uc801\ub420 \uc218 \uc788\uc2b5\ub2c8\ub2e4.",
             "weight": 8.0
         },
         {
@@ -1287,24 +1083,14 @@
             "weight": 9.0
         },
         {
-            "source": "\uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900",
-            "target": "2016",
+            "source": "\uc878\uc5c5\ud559\uc810",
+            "target": "2015.12.10",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "2016\ub144\ub3c4 \uae30\uc900\uc774 \uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900\uc5d0 \ud3ec\ud568\ub428",
-            "weight": 9.0
-        },
-        {
-            "source": "\uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900",
-            "target": "2017",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "2017\ub144\ub3c4 \uae30\uc900\uc774 \uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900\uc5d0 \ud3ec\ud568\ub428",
-            "weight": 9.0
+            "description": "The date 2015.12.10 is related to the graduation credit requirements.",
+            "weight": 7.0
         },
         {
             "source": "\uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900",
@@ -1317,64 +1103,34 @@
             "weight": 9.0
         },
         {
-            "source": "\uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900",
-            "target": "2019",
+            "source": "\uc81c 34 \uc870",
+            "target": "\uc2dc\ud5d8\uacfc \uc131\uc801",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "2019\ub144\ub3c4 \uae30\uc900\uc774 \uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900\uc5d0 \ud3ec\ud568\ub428",
+            "description": "\uc878\uc5c5\ud559\uc810\uc740 \uc81c 34 \uc870\uc5d0 \uba85\uc2dc\ub41c \uae30\uc900\uc744 \ub530\ub985\ub2c8\ub2e4.",
             "weight": 9.0
         },
         {
-            "source": "\uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900",
-            "target": "2020",
+            "source": "\ubbf8\ub798\ud50c\ub7ec\uc2a4\ub300\ud559",
+            "target": "\uc870\uae30\uc878\uc5c5",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "2020\ub144\ub3c4 \uae30\uc900\uc774 \uc815\uad50\uc218 \uc5c5\uc801\ud3c9\uac00\uc758 \uae30\uc900\uc5d0 \ud3ec\ud568\ub428",
+            "description": "Students from \ubbf8\ub798\ud50c\ub7ec\uc2a4\ub300\ud559 have specific rules for early graduation.",
             "weight": 9.0
         },
         {
-            "source": "\ube44\uc804/\ubaa9\ud45c \ub2ec\uc131\ub3c4",
-            "target": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
+            "source": "\ud559\u00b7\uc11d\uc0ac \uc5f0\uacc4\uacfc\uc815\uc0dd",
+            "target": "\uc878\uc5c5\ub17c\ubb38",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "\uc0ac\ud6c4\ud3c9\uac00\ub294 \ube44\uc804 \ubc0f \ubaa9\ud45c \ub2ec\uc131\ub3c4\ub97c \ud3c9\uac00\ud558\ub294 \uae30\uc900\uc744 \ud3ec\ud568\ud558\uace0 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\ud2b9\uc131\ud654 \uc120\uc815 \uae30\uc900 \ub2ec\uc131\ub3c4",
-            "target": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc0ac\ud6c4\ud3c9\uac00\ub294 \ud2b9\uc131\ud654 \uc120\uc815 \uae30\uc900 \ub2ec\uc131\ub3c4\ub97c \ud3c9\uac00\ud558\ub294 \uae30\uc900\uc744 \ud3ec\ud568\ud558\uace0 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc6b4\uc601 \ud6a8\uc728\uc131",
-            "target": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc0ac\ud6c4\ud3c9\uac00\ub294 \uc6b4\uc601 \ud6a8\uc728\uc131\uc744 \ud3c9\uac00\ud558\ub294 \uae30\uc900\uc744 \ud3ec\ud568\ud558\uace0 \uc788\uc74c",
-            "weight": 10.0
-        },
-        {
-            "source": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
-            "target": "2015.10.27",
-            "level": null,
-            "human_readable_id": null,
-            "id": null,
-            "source_id": null,
-            "description": "\uc0ac\ud6c4\ud3c9\uac00\uc758 \uae30\uc900\uc774 \uc124\uc815\ub41c \ub0a0\uc9dc\ub294 \uc81c 119 \uc870\uc5d0 \uba85\uc2dc\ub428",
-            "weight": 10.0
+            "description": "Students in the combined program may be exempt from submitting a graduation thesis.",
+            "weight": 8.0
         },
         {
             "source": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
@@ -1397,13 +1153,13 @@
             "weight": 9.0
         },
         {
-            "source": "\uc81c 26 \uc7a5 \uc81c 119 \uc870",
-            "target": "\ud559\uc220\ub300\ud68c \ub17c\ubb38\ubc1c\ud45c",
+            "source": "\uc870\uae30\uc878\uc5c5",
+            "target": "2020.5.20",
             "level": null,
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "\ud559\uc220\ub300\ud68c \ub17c\ubb38\ubc1c\ud45c\uc5d0 \ub300\ud55c \uc9c0\uc6d0\uc774 \uc81c 119 \uc870\uc5d0 \ud3ec\ud568\ub428",
+            "description": "The date for submitting early graduation applications is May 20, 2020.",
             "weight": 9.0
         },
         {
@@ -1563,8 +1319,8 @@
             "human_readable_id": null,
             "id": null,
             "source_id": null,
-            "description": "\uc81c 13 \uc870\ub294 \uad50\uc720\uacfc\uc815 \ud3c9\uac00 \uc2dc\ud589 \ubc0f \uc6b4\uc601 \uaddc\uc815\uc758 \uc81c 4 \uc7a5\uc5d0 \ud3ec\ud568\ub418\uc5b4 \uc788\uc74c",
-            "weight": 10.0
+            "description": "\ud2b9\uc131\ud654\uace0 \uc878\uc5c5\uc790\ub294 \ud2b9\ubcc4\uc804\ud615\uc744 \ud1b5\ud574 \uc785\ud559\uc120\ubc1c\uc5d0 \ucc38\uc5ec\ud560 \uc218 \uc788\ub2e4.",
+            "weight": 8.0
         }
     ]
 }

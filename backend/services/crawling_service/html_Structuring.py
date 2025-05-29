@@ -182,7 +182,7 @@ def integrated_crawling(page_id, url_list, output_base_dir=None, verbose=True):
         logger.info(f"\n=== Jina 크롤링 시작 ({len(jina_urls)}개) ===")
         try:
             # Jina 크롤러용 저장 경로
-            jina_output_dir = output_base_dir / "jina_crawling"
+            jina_output_dir = output_base_dir# / "jina_crawling"  # url input 주석 처리 
             
             # 임시 URL 파일 생성
             temp_url_file = create_temp_url_file(jina_urls, page_id, "jina_urls")

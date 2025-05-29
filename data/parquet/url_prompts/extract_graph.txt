@@ -1,0 +1,177 @@
+-Goal-
+You are an AI assistant specialized in extracting structured information from web-crawled text data. Your task is to identify entities and relationships from the given text and format them according to specific guidelines.
+
+**CRITICAL NOTICE**: All input data is a subset of content under the "Title: ~~" format. The content between ==== markers represents the main header structure. Return output in **Korean** as a single list of all entities and relationships identified.
+
+- Execution Steps-
+Step 1: Structural Analysis (Priority Step)
+- **IMPORTANT**: All input data is a subset of content under "Title: ~~" format
+- Use the Title and content between ==== markers to understand the page's overall structure and hierarchy
+- Analyze URL patterns to understand website organization (e.g., university > department > track > professor)
+- Pay attention to menu structures and navigation paths to extract hierarchical relationships between entities
+- Carefully observe breadcrumb or hierarchical link structures
+- Extract contextual information from the website's organizational structure
+
+Step 2: Entity Identification
+Look for entities that match the types provided in the entity_types list. For each entity, extract:
+- **entity_name**: The name of the entity
+- **entity_type**: - **entity_type**: The type of entity from the provided list
+- **entity_description**: A comprehensive description of the entity's characteristics and activities
+
+Detailed Entity Identification Rules:
+- Distinguish between entities with the same name but different types (e.g., "Big Data" as both a track and a subject)
+- Clearly differentiate between similar but distinct roles and hierarchies (e.g., professors vs instructors, teachers vs lecturers - all as PERSON type)
+- When affiliation information is available, specify track1 and track2 distinctions
+- Include both email addresses and website URLs under URL type
+- Process phone numbers separately as PHONE type
+- Include post meta-information in descriptions (author, category, creation date, etc.)
+- Handle incomplete information gracefully
+- For individuals belonging to multiple tracks, explicitly specify all track affiliations and their relationships
+
+Step 3: Relationship Derivation
+- source_entity: name of the source entity, as identified in step 2
+- target_entity: name of the target entity, as identified in step 2
+- relationship_description: explanation as to why you think the source entity and the target entity are related to each other
+Identify relationships between entities using the following methodology:
+- relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
+
+Step 4: Output Formatting
+Format Requirements:
+- All entity names and descriptions in **Korean**
+- Preserve English URLs, emails as-is
+- Always end entity descriptions with "이 내용은 [URL Source] 링크에서 추출함."
+- For post entities, include meta-information: "작성자 [author]에 의해 [category] 분류에 해당하는 내용임"
+- Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+- Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
+
+-Error Prevention Guidelines-
+- Prevent duplicate entities: extract entities with identical names and types only once
+- Use specific relationship descriptions: prefer "소속된 트랙1" over generic "소속됨"
+- Handle missing information gracefully with appropriate notation
+
+######################
+-Examples-
+######################
+Example 1:
+Entity_types: ORGANIZATION,PERSON,PHONE,URL,TRACK
+Text:
+Title: 모바일소프트웨어
+
+URL Source: https://hansung.ac.kr/CSE/10780/subview.do
+
+Markdown Content:
+모바일소프트웨어
+===============
+[컴퓨터공학부](https://hansung.ac.kr/sites/CSE/index.do)
+
+ fnctId=sitemenu,menuViewType=top 
+
+*   [구성원](https://hansung.ac.kr/CSE/10780/subview.do)
+
+    *   [교수진](https://hansung.ac.kr/CSE/10780/subview.do)
+
+        *   [모바일소프트웨어](https://hansung.ac.kr/CSE/10780/subview.do)
+        *   [웹공학](https://hansung.ac.kr/CSE/10777/subview.do)
+        *   [빅데이터](https://hansung.ac.kr/CSE/10778/subview.do)
+        *   [디지털콘텐츠 및 가상현실](https://hansung.ac.kr/CSE/10779/subview.do)
+
+모바일소프트웨어
+========
+게시글 리스트
+-------
+
+*    황기태
+
+[이메일](mailto:calafk@hansung.ac.kr "새창")[홈페이지](http://210.222.25.60/ "새창")  소속 모바일소프트웨어트랙 (트랙1)전화번호 02-760-4300  
+*    장재영
+
+[이메일](mailto:jychang@hansung.ac.kr "새창")[홈페이지](http://old.hansung.ac.kr/web/chang "새창")  소속 모바일소프트웨어트랙 (트랙2)전화번호 02-760-4495  
+
+######################
+Output:
+("entity"{tuple_delimiter}한성대학교{tuple_delimiter}ORGANIZATION{tuple_delimiter}컴퓨터공학부를 포함하는 상위 교육기관으로, URL 구조상 hansung.ac.kr 도메인을 통해 식별됨. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}컴퓨터공학부{tuple_delimiter}ORGANIZATION{tuple_delimiter}한성대학교 산하의 학부로, 모바일소프트웨어, 웹공학, 빅데이터, 디지털콘텐츠 및 가상현실 등 4개 트랙으로 구성됨. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 교수진 트랙 중 하나로, 트랙1과 트랙2로 구분되어 있으며 황기태(트랙1), 장재영(트랙2) 교수가 소속되어 있음. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}웹공학트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 트랙 중 하나로, 메뉴 구조상 모바일소프트웨어트랙과 병렬적으로 위치함. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}빅데이터트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 트랙 중 하나로, 메뉴 구조상 모바일소프트웨어트랙과 병렬적으로 위치함. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}디지털콘텐츠 및 가상현실트랙{tuple_delimiter}TRACK{tuple_delimiter}컴퓨터공학부의 트랙 중 하나로, 메뉴 구조상 모바일소프트웨어트랙과 병렬적으로 위치함. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}황기태{tuple_delimiter}PERSON{tuple_delimiter}모바일소프트웨어트랙 소속 교수로 트랙1에 해당함. 연락처: 이메일 calafk@hansung.ac.kr, 홈페이지 http://210.222.25.60/, 전화번호 02-760-4300. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}장재영{tuple_delimiter}PERSON{tuple_delimiter}모바일소프트웨어트랙 소속 교수로 트랙2에 해당함. 연락처: 이메일 jychang@hansung.ac.kr, 홈페이지 http://old.hansung.ac.kr/web/chang, 전화번호 02-760-4495. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}calafk@hansung.ac.kr{tuple_delimiter}URL{tuple_delimiter}황기태 교수의 이메일 주소. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}jychang@hansung.ac.kr{tuple_delimiter}URL{tuple_delimiter}장재영 교수의 이메일 주소. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}02-760-4300{tuple_delimiter}PHONE{tuple_delimiter}황기태 교수의 연락처 전화번호. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}02-760-4495{tuple_delimiter}PHONE{tuple_delimiter}장재영 교수의 연락처 전화번호. 이 내용은 https://hansung.ac.kr/CSE/10780/subview.do 링크에서 추출함.)
+{record_delimiter}
+("relationship"{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}모바일소프트웨어트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}웹공학트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}웹공학트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}빅데이터트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}빅데이터트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}디지털콘텐츠 및 가상현실트랙{tuple_delimiter}컴퓨터공학부{tuple_delimiter}디지털콘텐츠 및 가상현실트랙은 컴퓨터공학부의 트랙 중 하나로 소속되어 있음{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}황기태 교수는 모바일소프트웨어트랙 트랙1에 소속되어 있음{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}모바일소프트웨어트랙{tuple_delimiter}장재영 교수는 모바일소프트웨어트랙 트랙2에 소속되어 있음{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}컴퓨터공학부{tuple_delimiter}황기태 교수는 컴퓨터공학부 소속 교수임{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}컴퓨터공학부{tuple_delimiter}장재영 교수는 컴퓨터공학부 소속 교수임{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}calafk@hansung.ac.kr{tuple_delimiter}황기태 교수의 이메일 연락처{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}02-760-4300{tuple_delimiter}황기태 교수의 전화번호 연락처{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}jychang@hansung.ac.kr{tuple_delimiter}장재영 교수의 이메일 연락처{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}장재영{tuple_delimiter}02-760-4495{tuple_delimiter}장재영 교수의 전화번호 연락처{tuple_delimiter}10)
+{record_delimiter}
+
+Example 2:
+Entity_types: SUBJECT,SUBJECT_CODE,SUBJECT_TYPE,URL
+Text:
+Title: 교육과정소개
+
+URL Source: https://hansung.ac.kr/curriculum/CSE/
+
+Markdown Content:
+교육과정소개
+=========
+
+| 학년 | 학기 | 교과구분 | 교과목코드 | 교과목 | 학점 | 시간 | 이론 | 실습 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 전선 | M020026 | [AI를 이용한 주식가치평가](https://hansung.ac.kr/curriculum/CSE/141/1726/artclView.do) | 3 | 3 | 1 | 2 |
+
+######################
+Output:
+("entity"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}SUBJECT{tuple_delimiter}1학년 1학기 전선 교과목으로 교과목코드 M020026, 3학점 3시간(이론1, 실습2)으로 구성된 과목. 이 내용은 https://hansung.ac.kr/curriculum/CSE/ 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}M020026{tuple_delimiter}SUBJECT_CODE{tuple_delimiter}AI를 이용한 주식가치평가 과목의 교과목코드. 이 내용은 https://hansung.ac.kr/curriculum/CSE/ 링크에서 추출함.)
+{record_delimiter}
+("entity"{tuple_delimiter}https://hansung.ac.kr/curriculum/CSE/141/1726/artclView.do{tuple_delimiter}URL{tuple_delimiter}AI를 이용한 주식가치평가 과목의 상세 정보 페이지 주소. 이 내용은 https://hansung.ac.kr/curriculum/CSE/ 링크에서 추출함.)
+{record_delimiter}
+("relationship"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}M020026{tuple_delimiter}AI를 이용한 주식가치평가 과목의 교과목코드가 M020026임{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}전선{tuple_delimiter}AI를 이용한 주식가치평가는 전선(전공선택) 교과구분에 해당함{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}AI를 이용한 주식가치평가{tuple_delimiter}https://hansung.ac.kr/curriculum/CSE/141/1726/artclView.do{tuple_delimiter}AI를 이용한 주식가치평가 과목의 상세 정보 링크{tuple_delimiter}9)
+{record_delimiter}
+
+######################
+-Real Data-
+######################
+Entity_types: {entity_types}
+Text: {input_text}
+######################
+Output:
