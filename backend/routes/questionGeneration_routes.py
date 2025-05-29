@@ -46,6 +46,10 @@ def read_parquet_from_firebase(bucket_path: str) -> pd.DataFrame:
     
 @question_bp.route('/generate-related-questions', methods=['POST', 'OPTIONS'])
 def generate_related_questions():
+    # OPTIONS 요청 (CORS preflight) 처리
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "CORS preflight"}), 200
+        
     data = request.get_json()
     page_id = data.get("page_id")
     question = data.get("question")
@@ -131,7 +135,7 @@ def generate_related_questions():
             "return_candidate_context": False,
             "embedding_vectorstore_key": EntityVectorStoreKey.ID,
             "max_tokens": 12000,
-            "temperature": 0.5,
+            "temperature": 0.3,
         }
 
         custom_system_prompt = """
