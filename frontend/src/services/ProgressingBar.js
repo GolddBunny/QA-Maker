@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/ProgressingBar.css';
 
 const ProgressingBar = ({ 
@@ -8,6 +8,50 @@ const ProgressingBar = ({
   stepExecutionTimes = {}, 
   currentStep = 'crawling' 
 }) => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+
+    if (currentStep === 'crawling') {
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 25) return Math.min(prev + 3, 25);
+          clearInterval(interval);
+          return prev;
+        });
+      }, 1000);
+    } else if (currentStep === 'structuring') {
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 50) return Math.min(prev + Math.floor(Math.random() * 4) + 2, 50);
+          clearInterval(interval);
+          return prev;
+        });
+      }, 1000);
+    } else if (currentStep === 'document') {
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 75) return Math.min(prev + Math.floor(Math.random() * 4) + 2, 75);
+          clearInterval(interval);
+          return prev;
+        });
+      }, 1000);
+    } else if (currentStep === 'indexing') {
+      interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 100) return Math.min(prev + Math.floor(Math.random() * 4) + 1, 100);
+          clearInterval(interval);
+          return prev;
+        });
+      }, 3000); // 3초 간격
+    }
+
+    return () => clearInterval(interval);
+  }, [currentStep]);
+
+  const displayProgress = `${Math.min(progress, 100)}%`;
+
   // 단계별 상태를 결정하는 함수
   const getStepStatus = (stepName) => {
     const stepOrder = ['crawling', 'structuring', 'document', 'indexing'];
@@ -105,15 +149,12 @@ const ProgressingBar = ({
       <div className="progress-cards">
         <div className="progress-card">
           <div className="card-title">예상 완료 시간</div>
-          <div className="card-value">약 45분</div>
+          <div className="card-value">약 27분</div>
         </div>
         <div className="progress-card">
           <div className="card-title">현재 진행률</div>
           <div className="card-value">
-            {currentStep === 'crawling' ? '25%' : 
-             currentStep === 'structuring' ? '50%' : 
-             currentStep === 'document' ? '75%' : 
-             currentStep === 'indexing' ? '90%' : '100%'}
+            {displayProgress}
           </div>
         </div>
       </div>

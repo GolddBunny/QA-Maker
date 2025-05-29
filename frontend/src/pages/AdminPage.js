@@ -280,28 +280,22 @@ const AdminPage = () => {
     const [stepExecutionTimes, setStepExecutionTimes] = useState({
       crawling: null,
       structuring: null,
-      line1: null,
       document: null,
-      indexing: null,
-      update: null
+      indexing: null
     });
     const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
 
     // 각 단계 완료 시 호출되는 콜백 함수
-    const handleStepComplete = (stepName, executionTime) => {
-      console.log(`✅ ${stepName} 단계 완료: ${executionTime}초`);
-      
-      // 해당 단계의 실행시간 업데이트
+    const handleStepComplete = (stepName, durationInSeconds) => {
       setStepExecutionTimes(prev => ({
         ...prev,
-        [stepName]: executionTime
+        [stepName]: durationInSeconds,
       }));
-      
-      // 다음 단계로 이동
-      const stepOrder = ['crawling', 'structuring', 'line1', 'document', 'indexing', 'update'];
-      const currentIndex = stepOrder.indexOf(stepName);
-      if (currentIndex < stepOrder.length - 1) {
-        setCurrentStep(stepOrder[currentIndex + 1]);
+
+      const stepOrder = ['crawling', 'structuring', 'document', 'indexing'];
+      const nextIndex = stepOrder.indexOf(stepName) + 1;
+      if (nextIndex < stepOrder.length) {
+        setCurrentStep(stepOrder[nextIndex]);
       }
     };
 
@@ -327,10 +321,8 @@ const AdminPage = () => {
         setStepExecutionTimes({
           crawling: null,
           structuring: null,
-          line1: null,
           document: null,
-          indexing: null,
-          update: null
+          indexing: null
         });
 
         const init_result = await initDocUrl(pageId);
@@ -377,12 +369,21 @@ const AdminPage = () => {
 
       if (isAnyProcessing) return;
       setIsApplyLoading(true);
+      const startTime = Date.now();
+
       try {
         const result = await updateIndexing(pageId);
+        const endTime = Date.now();
+
         if (result.success) {
+          const durationInSeconds = Math.round((endTime - startTime) / 1000);
+          setStepExecutionTimes(prev => ({
+            ...prev,
+            update: durationInSeconds
+          }));
+
           alert("업데이트 완료");
 
-          // 업데이트 완료 후 데이터 다시 로드
           await Promise.all([
             fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),

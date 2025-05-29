@@ -1,13 +1,18 @@
 /* ProgressningBar.css */
 .progress-wrapper {
-    position: relative;
+  position: fixed; /* or absolute if inside a relative container */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
   max-width: 1000px;
-  margin: 0 auto;
-  padding: 40px 40px;
+  padding: 40px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f8f5ff;
-  margin-bottom: 160px;
   border-radius: 10px;
+
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
 }
 
 .progress-title {
@@ -94,7 +99,7 @@
 }
 
 .circle.completed {
-  background: linear-gradient(135deg, #7a5bcd, #7a5bcd);
+  background: linear-gradient(135deg, #c6a2ec, #c6a2ec);
   box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
 }
 
@@ -118,6 +123,9 @@
 
 .step:first-child .circle {
   background: linear-gradient(135deg, #dcbefa, #c8a8f7);
+}
+.step:first-child .circle.circle.completed {
+  background: linear-gradient(135deg, #c6a2ec, #c6a2ec);
 }
 
 .step-desc {

@@ -1,4 +1,4 @@
-import { startUrlCrawling, crawlAndStructure, line1, documentDownloader } from './UrlApi';
+import { startUrlCrawling, crawlAndStructure, line1 } from './UrlApi';
 import { processDocuments } from './DocumentApi';
 
 const BASE_URL = 'http://localhost:5000';
@@ -15,10 +15,8 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     const executionTimes = {
       crawling: null,
       structuring: null,
-      line1: null,
       document: null,
       indexing: null,
-      update: null,
       total: null
     };
     const pipelineStartTime = Date.now();
@@ -56,12 +54,12 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
         if (!indexingResult.success) {
           throw new Error(`인덱싱 실패: ${indexingResult.error}`);
         }
-        executionTimes.indexing = indexingResult.execution_time || null;
+        // executionTimes.indexing = indexingResult.execution_time || null;
         
-        // 실시간 업데이트 콜백 호출
-        if (onStepComplete) {
-          onStepComplete('indexing', executionTimes.indexing);
-        }
+        // // 실시간 업데이트 콜백 호출
+        // if (onStepComplete) {
+        //   onStepComplete('indexing', executionTimes.indexing);
+        // }
 
         console.log("✅ 문서 인덱싱 완료!");
 
@@ -74,7 +72,7 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
         }
 
         console.log("✅ 웹 증분 인덱싱 완료!");
-        executionTimes.update = updateResult.execution_time || null;
+        executionTimes.update = indexingResult.execution_time + updateResult.execution_time || null;
         
         // 실시간 업데이트 콜백 호출
         if (onStepComplete) {
@@ -91,10 +89,8 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
           results: {
             crawling: null,
             structuring: null,
-            line1: null,
             document: documentResult.results,
-            indexing: indexingResult,
-            update: updateResult.results,
+            indexing: indexingResult
           },
         };
       }
@@ -120,12 +116,6 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     }
     
     console.log("✅ 웹 크롤링 및 구조화 완료:", structuringResult.results);
-    executionTimes.structuring = structuringResult.execution_time || null;
-    
-    // 실시간 업데이트 콜백 호출
-    if (onStepComplete) {
-      onStepComplete('structuring', executionTimes.structuring);
-    }
     
     // 2단계-2: 텍스트 정리 (line1.py)
     console.log("2️⃣-2 웹 크롤링 텍스트 line1 정리 시작...");
@@ -136,22 +126,12 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     }
     
     console.log("✅ 웹 크롤링 텍스트 line1 정리 완료:", line1Result.results);
-    executionTimes.line1 = line1Result.execution_time || null;
+    executionTimes.structuring = structuringResult.execution_time + line1Result.execution_time || null;
     
     // 실시간 업데이트 콜백 호출
     if (onStepComplete) {
-      onStepComplete('line1', executionTimes.line1);
+      onStepComplete('structuring', executionTimes.structuring);
     }
-
-    // 2단계-3: 문서 다운로더 (document_downloader.py)
-    console.log("2️⃣-3 문서 다운로더 시작...");
-    const documentDownloaderResult = await documentDownloader(pageId);
-    
-    if (!documentDownloaderResult.success) {
-      throw new Error(`문서 다운로더 실패: ${documentDownloaderResult.error}`);
-    }
-
-    console.log("✅ 문서 다운로더 완료:", documentDownloaderResult.results);
 
     // 3단계: 문서 구조화
     console.log("3️⃣ 문서 구조화 시작...");
@@ -162,7 +142,7 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     }
 
     console.log("✅ 문서 구조화 완료:", documentResult.results);
-    executionTimes.document = documentResult.execution_time || null;
+    executionTimes.document = documentResult.executionTime || null;
     
     // 실시간 업데이트 콜백 호출
     if (onStepComplete) {
@@ -178,12 +158,7 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     }
     
     console.log("✅ 문서 인덱싱 완료!");
-    executionTimes.indexing = indexingResult.execution_time || null;
     
-    // 실시간 업데이트 콜백 호출
-    if (onStepComplete) {
-      onStepComplete('indexing', executionTimes.indexing);
-    }
 
     // 5단계: 웹 증분 인덱싱
     console.log("5️⃣ 웹 증분 인덱싱 시작...");
@@ -192,11 +167,11 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     if (!updateResult.success) {
       throw new Error(`웹 증분 인덱싱 실패: ${updateResult.error}`);
     }
-    executionTimes.update = updateResult.execution_time || null;
+    executionTimes.indexing = indexingResult.execution_time + updateResult.execution_time || null;
     
     // 실시간 업데이트 콜백 호출
     if (onStepComplete) {
-      onStepComplete('update', executionTimes.update);
+      onStepComplete('indexing', executionTimes.indexing);
     }
 
     console.log("✅ 웹 증분 인덱싱 완료!");
@@ -209,11 +184,8 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
       results: {
         crawling: crawlingResult.results,
         structuring: structuringResult.results,
-        line1: line1Result.results,
-        documentDownloader: documentDownloaderResult.results,
         document: documentResult.results,
         indexing: indexingResult,
-        update: updateResult.results
       }
     };
     
@@ -235,7 +207,7 @@ export const applyIndexing = async (pageId) => {
       console.error("❌ JSON이 아닌 응답을 받았습니다:", text.slice(0, 300));
       return { success: false, error: "서버에서 JSON이 아닌 응답을 반환했습니다." };
     }
-    const data = await response.json();
+  const data = await response.json();
     return data.success
       ? { success: true, execution_time: data.execution_time }
       : { success: false, error: data.error };
