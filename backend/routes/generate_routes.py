@@ -3,17 +3,17 @@ import shutil
 import subprocess
 import time
 import sys
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 from services.document_service.convert2txt import convert2txt
 from firebase_config import bucket
-from firebase_admin import firestore
-from datetime import datetime
 
 generate_bp = Blueprint('generate', __name__)
 
 @generate_bp.route('/apply/<page_id>', methods=['POST'])
 def apply_documents(page_id):
-    """문서 인덱싱"""
+    """GraphRAG 인덱싱 처리"""
+    print(f"[서버 로그] 요청 메서드: {request.method}, 경로: /apply/{page_id}")
+
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         
@@ -35,6 +35,16 @@ def apply_documents(page_id):
             }), 500
 
         output_path = os.path.join(base_path, 'output')
+
+        #여기서 base_path/input 폴더에 txt 파일이 하나라도 없으면 밑에 명령어 실행하지 않고 그냥 리턴
+        txt_files = [f for f in os.listdir(input_path) if f.endswith('.txt')]
+        if not txt_files:
+            print(f"[{page_id}] input 폴더에 .txt 파일이 없습니다. 문서 인덱싱 건너뜀.")
+            return jsonify({
+                'success': True,
+                'execution_time': 0
+            })
+
 
         # graphrag index 명령어 실행
         start_time = time.time()
@@ -73,9 +83,6 @@ def apply_documents(page_id):
                 'error': error_msg
             }), 500
 
-        # 날짜 포맷 지정
-        today_str = datetime.now().strftime('%Y-%m-%d')
-
         # output 폴더 내부 파일 Firebase로 업로드
         uploaded_files = []
         if os.path.exists(output_path):
@@ -87,14 +94,6 @@ def apply_documents(page_id):
                     firebase_path = f'pages/{page_id}/results/{filename}'
 
                     blob = bucket.blob(firebase_path)
-
-                    # 메타데이터에 인덱싱 날짜 저장
-                    blob.metadata = {
-                        "process_type": "index",
-                        "date": today_str,
-                        "execution_time": str(execution_time)
-                    }
-
                     blob.upload_from_filename(file_path)
                     blob.make_public()
 
@@ -135,6 +134,16 @@ def update(page_id):
         # input 폴더 복사
         url_input_path = os.path.join(url_base_path, 'input')
         if os.path.exists(url_input_path):
+            # 📌 .txt 파일이 하나라도 없으면 종료
+            txt_files = [f for f in os.listdir(url_input_path) if f.lower().endswith('.txt')]
+            if not txt_files:
+                print(f"[중단] {url_input_path} 폴더에 .txt 파일이 없습니다.")
+                return jsonify({
+                    'success': True,
+                    'execution_time': 0
+                })
+            
+        if os.path.exists(url_input_path):
             # 기존 input 폴더가 있으면 삭제 후 복사
             if os.path.exists(input_path):
                 shutil.rmtree(input_path)
@@ -156,28 +165,13 @@ def update(page_id):
             print(f"[경고] URL prompts 폴더 없음: {url_prompts_path}")
         
         start_time = time.time()
-        print(f"GraphRAG 업데이트 시작: {base_path}")
-        
-        # 실시간 로그 출력을 위해 Popen 사용
-        process = subprocess.Popen(
-            ['graphrag', 'update', '--root', base_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
-        
-        # 실시간 로그 출력
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                print(output.strip())
-                sys.stdout.flush()
-        
-        process.wait()
+        if not downloaded:
+            print("🔄 'graphrag index' 명령어 실행 중...")
+            subprocess.run(['graphrag', 'index', '--root', base_path])
+        else:
+            print("🔁 'graphrag update' 명령어 실행 중...")
+            subprocess.run(['graphrag', 'update', '--root', base_path])
+            
         end_time = time.time()
         execution_time = end_time - start_time
         print(f'GraphRAG 업데이트 실행 시간: {execution_time}초')
@@ -205,14 +199,6 @@ def update(page_id):
                     firebase_path = f'pages/{page_id}/results/{filename}'
 
                     blob = bucket.blob(firebase_path)
-
-                    # 메타데이터에 업데이트 날짜 저장
-                    blob.metadata = {
-                        "process_type": "update",
-                        "date": today_str,
-                        "execution_time": str(execution_time)
-                    }
-
                     blob.upload_from_filename(file_path)
                     blob.make_public()
 
@@ -223,7 +209,10 @@ def update(page_id):
                     os.remove(file_path)
                     print(f"Deleted local file: {file_path}")
 
-        return jsonify({'success': True})
+        return jsonify({
+            'success': True,
+            'execution_time': execution_time
+        })
     
     except Exception as e:
         print("Flask update 오류: ", str(e))

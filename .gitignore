@@ -82,3 +82,12 @@ Desktop.ini
 .git/
 frontend/.git/
 data/input/*
+
+# 데이터 폴더 무시
+/frontend/public/data/
+/frontend/src/json
+/backend/context_data_*.csv
+/frontend/src/json/answer_graphml_data.json
+
+# firebase
+/backend/services/firebase/qamaker-e32d7-firebase-adminsdk-fbsvc-0408d84c8c.json

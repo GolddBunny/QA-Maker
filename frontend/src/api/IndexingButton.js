@@ -16,6 +16,56 @@ export const executeFullPipeline = async (pageId) => {
     const crawlingResult = await startUrlCrawling(pageId);
     
     if (!crawlingResult.success) {
+      if (
+        crawlingResult.error &&
+        crawlingResult.error.includes("크롤링할 URL이 없습니다")
+      ) {
+        console.log("⚠️ URL이 없으므로 웹 크롤링 생략, 문서 구조화부터 시작합니다.");
+
+        // 3단계: 문서 구조화
+        console.log("3️⃣ 문서 구조화 시작...");
+        const documentResult = await processDocuments(pageId);
+
+        if (!documentResult.success) {
+          throw new Error(`문서 구조화 실패: ${documentResult.error}`);
+        }
+
+        console.log("✅ 문서 구조화 완료:", documentResult.results);
+
+        // 4단계: 최종 인덱싱
+        console.log("4️⃣ 문서 인덱싱 시작...");
+        const indexingResult = await applyIndexing(pageId);
+
+        if (!indexingResult.success) {
+          throw new Error(`인덱싱 실패: ${indexingResult.error}`);
+        }
+
+        console.log("✅ 문서 인덱싱 완료!");
+
+        // 5단계: 웹 증분 인덱싱
+        console.log("5️⃣ 웹 증분 인덱싱 시작...");
+        const updateResult = await updateIndexing(pageId);
+
+        if (!updateResult.success) {
+          throw new Error(`웹 증분 인덱싱 실패: ${updateResult.error}`);
+        }
+
+        console.log("✅ 웹 증분 인덱싱 완료!");
+
+        return {
+          success: true,
+          results: {
+            crawling: null,
+            structuring: null,
+            line1: null,
+            document: documentResult.results,
+            indexing: indexingResult,
+            update: updateResult.results,
+          },
+        };
+      }
+
+      // 그 외의 경우는 예외 처리
       throw new Error(`URL 크롤링 실패: ${crawlingResult.error}`);
     }
     

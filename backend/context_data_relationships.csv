@@ -1,0 +1,32 @@
+﻿id,source,target,description,weight,links,in_context
+206,졸업논문,학위수여,Submitting and passing the graduation thesis is a requirement for degree conferral.,9.0,1,True
+202,학·석사 연계과정생,졸업논문,Students in the combined program may be exempt from submitting a graduation thesis.,8.0,1,True
+231,위탁생,교과이수 증서,위탁생 may receive a 교과이수 증서 based on their course completion.,8.0,1,True
+167,학점취득,졸업학점,졸업학점은 학생이 취득해야 하는 학점과 관련이 있습니다.,9.0,1,True
+200,한성대학교,조기졸업,Hansung University has regulations that allow students to apply for early graduation.,9.0,4,True
+25,한성대학교,학점교류신청자,한성대학교는 학점교류를 신청하는 학생들을 위한 절차를 관리합니다.,9.0,4,True
+139,한성대학교,자퇴,한성대학교의 학생은 자퇴를 위해 보호자의 동의를 얻어야 합니다.,9.0,4,True
+175,한성대학교,졸업학점,한성대학교 requires a minimum of 130 credits for graduation.,9.0,4,True
+172,제 33 조,시험과 성적,학점취득은 제 33 조에 명시된 규정에 따라 이루어집니다.,9.0,2,True
+173,제 34 조,시험과 성적,졸업학점은 제 34 조에 명시된 기준을 따릅니다.,9.0,2,True
+208,졸업논문,2015.12.10,"The date for additional regulations regarding graduation thesis is December 10, 2015.",9.0,2,True
+182,졸업학점,2015.12.10,The date 2015.12.10 is related to the graduation credit requirements.,7.0,2,True
+223,HANSUNG UNIVERSITY,위탁생,위탁생 are allowed to study at Hansung University under special conditions.,9.0,1,True
+217,위탁생,학칙,The regulations include provisions for students studying outside the regular quota.,1.0,1,True
+149,자퇴,제적,자퇴하지 않고 등록하지 않은 학생은 제적될 수 있습니다.,8.0,1,True
+27,학점교류신청자,수강신청,학점교류신청자는 수강신청을 위해 소속 대학의 담당부서에 신청해야 합니다.,8.0,1,True
+207,졸업논문,2019.2.12,"The date for regulations regarding graduation thesis is February 12, 2019.",9.0,1,True
+230,위탁생,정원외,"위탁생 can be admitted under the 정원외 status, allowing them to enroll outside the regular quota.",8.0,1,True
+232,위탁생,학력 검정,위탁생 may undergo 학력 검정 to verify their academic qualifications.,8.0,1,True
+148,복학,자퇴,복학을 원하지 않는 학생은 자퇴를 신청할 수 있습니다.,7.0,1,True
+204,조기졸업,2022.1.27,"The date mentioned for early graduation eligibility is January 27, 2022.",9.0,1,True
+205,조기졸업,2020.5.20,"The date for submitting early graduation applications is May 20, 2020.",9.0,1,True
+209,학위수여,학사학위취득 유예,Students who meet all requirements can apply for a deferral of their bachelor's degree acquisition.,8.0,1,True
+113,입학선발,특성화고(舊전문계고)졸 재직자 특별전형,특성화고 졸업자는 특별전형을 통해 입학선발에 참여할 수 있다.,8.0,1,True
+201,미래플러스대학,조기졸업,Students from 미래플러스대학 have specific rules for early graduation.,9.0,1,True
+216,공개강좌,수강자격,The regulations specify the qualifications required for enrollment in public courses.,9.0,1,True
+28,학점교류신청자,수강신청내역,학점교류신청자는 수강신청내역을 통해 자신의 신청 상태를 확인할 수 있습니다.,8.0,1,True
+210,학위수여,2015.2.27,"The date for regulations regarding the cancellation of degree conferral is February 27, 2015.",9.0,1,True
+110,입학허가,입학허가의 취소,입학허가는 부정행위가 발생할 경우 취소될 수 있다.,9.0,1,True
+168,학점취득,2016.2.3,학점취득 관련 조항이 2016년 2월 3일에 개정되었습니다.,7.0,1,True
+203,학·석사 연계과정생,2004.11.16,"The date when the exemption from thesis submission for combined program students was established is November 16, 2004.",9.0,1,True

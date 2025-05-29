@@ -16,7 +16,7 @@ Given a text document that may or may not be structured into chapters, sections,
 1. Identify all entities. For each identified entity, extract the following information:
 - entity_name: Name of the entity, capitalized
 - entity_type: One of the following types: [{entity_types}]
-- entity_description: Comprehensive description of the entity's attributes and activities
+- entity_description: 반드시 **한국어로 작성**하십시오. 해당 엔터티의 성격, 역할, 포함된 내용을 한국어로 서술합니다.
 Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
  
 2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
