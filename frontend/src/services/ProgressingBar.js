@@ -1,12 +1,102 @@
-// ProgressingBar.js
 import React from 'react';
 import '../styles/ProgressingBar.css';
 
-const ProgressingBar = ({ onClose, onAnalyzer, isCompleted, conversionTime }) => {
+const ProgressingBar = ({ 
+  onClose, 
+  onAnalyzer, 
+  isCompleted, 
+  stepExecutionTimes = {}, 
+  currentStep = 'crawling' 
+}) => {
+  // 단계별 상태를 결정하는 함수
+  const getStepStatus = (stepName) => {
+    const stepOrder = ['crawling', 'structuring', 'document', 'indexing'];
+    const currentIndex = stepOrder.indexOf(currentStep);
+    const stepIndex = stepOrder.indexOf(stepName);
+    
+    let executionTime = null;
+    if (stepName === 'structuring') {
+      const structuringTime = stepExecutionTimes.structuring || 0;
+      const line1Time = stepExecutionTimes.line1 || 0;
+      executionTime = structuringTime + line1Time;
+      if (executionTime > 0) executionTime = Math.round(executionTime);
+    }
+    // indexing과 update 시간을 합쳐서 처리
+    else if (stepName === 'indexing') {
+      const indexingTime = stepExecutionTimes.indexing || 0;
+      const updateTime = stepExecutionTimes.update || 0;
+      executionTime = indexingTime + updateTime;
+      if (executionTime > 0) executionTime = Math.round(executionTime);
+    }
+    // 다른 단계들은 기존 로직 유지
+    else {
+      executionTime = stepExecutionTimes[stepName];
+    }
+    
+    if (executionTime !== null && executionTime > 0) {
+      return 'completed';
+    } else if (stepIndex === currentIndex) {
+      return 'active';
+    } else if (stepIndex < currentIndex) {
+      return 'completed';
+    } else {
+      return 'waiting';
+    }
+  };
+
+  // 단계별 표시 텍스트를 생성하는 함수
+  const getStepText = (stepName, displayName) => {
+    const status = getStepStatus(stepName);
+    let executionTime = null;
+    
+    // structuring과 line1 시간을 합쳐서 처리
+    if (stepName === 'structuring') {
+      const structuringTime = stepExecutionTimes.structuring || 0;
+      const line1Time = stepExecutionTimes.line1 || 0;
+      executionTime = structuringTime + line1Time;
+      if (executionTime > 0) executionTime = Math.round(executionTime);
+    }
+    // indexing과 update 시간을 합쳐서 처리
+    else if (stepName === 'indexing') {
+      const indexingTime = stepExecutionTimes.indexing || 0;
+      const updateTime = stepExecutionTimes.update || 0;
+      executionTime = indexingTime + updateTime;
+      if (executionTime > 0) executionTime = Math.round(executionTime);
+    }
+    // 다른 단계들은 기존 로직 유지
+    else {
+      executionTime = stepExecutionTimes[stepName];
+    }
+    
+    switch (status) {
+      case 'completed':
+        return `${displayName}<br /><span class="status-progress">완료 </span>`;
+      case 'active':
+        return `${displayName}<br /><span class="status-progress">진행 중 </span>`;
+      case 'waiting':
+      default:
+        return `${displayName}<br /><span class="status-progress">대기중 </span>`;
+    }
+  };
+
+  // 단계별 circle 클래스를 결정하는 함수
+  const getCircleClass = (stepName) => {
+    const status = getStepStatus(stepName);
+    switch (status) {
+      case 'completed':
+        return 'circle completed';
+      case 'active':
+        return 'circle active';
+      case 'waiting':
+      default:
+        return 'circle';
+    }
+  };
+
   return (
     <div className="progress-wrapper">
-        <button className="progress-close-button" onClick={onClose}>×</button>
-        
+      <button className="progress-close-button" onClick={onClose}>×</button>
+      
       <h2 className="progress-title">한성대 Q&A 시스템 구축 중 ...</h2>
       <p className="progress-desc">
         크롤링은 사이트 크기를 사전에 알 수 없기 때문에 시간이 오래 걸릴 수 있습니다.
@@ -19,33 +109,58 @@ const ProgressingBar = ({ onClose, onAnalyzer, isCompleted, conversionTime }) =>
         </div>
         <div className="progress-card">
           <div className="card-title">현재 진행률</div>
-          <div className="card-value">37%</div>
+          <div className="card-value">
+            {currentStep === 'crawling' ? '25%' : 
+             currentStep === 'structuring' ? '50%' : 
+             currentStep === 'document' ? '75%' : 
+             currentStep === 'indexing' ? '90%' : '100%'}
+          </div>
         </div>
       </div>
 
       <div className="progress-steps">
         <div className="step">
-          <div className="circle">1</div>
-          <div className="step-desc">crawling<br /><span className="status">완료 (12분)</span></div>
+          <div className={getCircleClass('crawling')}>1</div>
+          <div 
+            className="step-desc"
+            dangerouslySetInnerHTML={{
+              __html: getStepText('crawling', 'URL Crawling')
+            }}
+          />
         </div>
         <div className="step">
-          <div className="circle active">2</div>
-          <div className="step-desc">web structuring<br /><span className="status">진행 중 (약 5분 남음)</span></div>
+          <div className={getCircleClass('structuring')}>2</div>
+          <div 
+            className="step-desc"
+            dangerouslySetInnerHTML={{
+              __html: getStepText('structuring', 'Web Structuring')
+            }}
+          />
         </div>
         <div className="step">
-          <div className="circle">3</div>
-          <div className="step-desc">document structuring<br /><span className="status">{conversionTime ? `완료 (${conversionTime}s)` : '대기중 (~30분)'}</span></div>
+          <div className={getCircleClass('document')}>3</div>
+          <div 
+            className="step-desc"
+            dangerouslySetInnerHTML={{
+              __html: getStepText('document', 'Document Structuring')
+            }}
+          />
         </div>
         <div className="step">
-          <div className="circle">4</div>
-          <div className="step-desc">indexing<br /><span className="status">대기중 (~30분)</span></div>
+          <div className={getCircleClass('indexing')}>4</div>
+          <div 
+            className="step-desc"
+            dangerouslySetInnerHTML={{
+              __html: getStepText('indexing', 'Indexing')
+            }}
+          />
         </div>
       </div>
 
-      <div className="progress-stats">
+      {/* <div className="progress-stats">
         <span>수집된 웹 페이지 수: ---</span>
         <span>수집된 문서 수: ---</span>
-      </div>
+      </div> */}
 
       {isCompleted && (
         <div className="apply-btn-row" style={{ marginTop: '40px' }}>

@@ -91,7 +91,7 @@ export const startUrlCrawling = async (pageId) => {
 
     const data = await response.json();
     if (data.success) {
-      return { success: true, results: data.results };
+      return { success: true, results: data.results, execution_time: data.execution_time };
     } else {
       return { success: false, error: data.error };
     }
@@ -114,7 +114,7 @@ export const crawlAndStructure = async (pageId) => {
 
     const data = await response.json();
     if (data.success) {
-      return { success: true, results: data.results };
+      return { success: true, results: data.results, execution_time: data.execution_time };
     } else {
       return { success: false, error: data.error };
     }
@@ -137,7 +137,7 @@ export const line1 = async (pageId) => {
 
     const data = await response.json();
     if (data.success) {
-      return { success: true, results: data.results };
+      return { success: true, results: data.results, execution_time: data.execution_time };
     } else {
       return { success: false, error: data.error };
     }

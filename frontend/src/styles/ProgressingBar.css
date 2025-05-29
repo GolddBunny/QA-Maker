@@ -1,4 +1,4 @@
-/* ProgressingBar.css */
+/* ProgressningBar.css */
 .progress-wrapper {
     position: relative;
   max-width: 1000px;
@@ -93,12 +93,31 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
+.circle.completed {
+  background: linear-gradient(135deg, #7a5bcd, #7a5bcd);
+  box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+}
+
 .circle.active {
-  background-color: #dcbefa;
+  background: linear-gradient(135deg, #ceaef0, #ceaef0);
+  box-shadow: 0 4px 20px rgba(255, 152, 0, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .step:first-child .circle {
-  background-color: #dcbefa;
+  background: linear-gradient(135deg, #dcbefa, #c8a8f7);
 }
 
 .step-desc {
@@ -109,12 +128,36 @@
   margin-bottom: 8px;
 }
 
-.status {
+.status-progress {
   display: block;
   font-size: 14px;
-  color: #666;
-  font-weight: 400;
+  font-weight: 500;
   margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.step-desc .status-progress {
+  color: #5b6a6b;
+}
+
+.step-desc .status-progress:contains("완료") {
+  color: #654881;
+  background-color: #d5f4e6;
+  border: 1px solid #a8e6cf;
+}
+
+.step-desc .status-progress:contains("진행 중") {
+  color: #654881;
+  background-color: #fdf2e9;
+  border: 1px solid #f9ca9b;
+}
+
+.status-progress:contains("대기 중") {
+  color: #654881;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
 }
 
 .progress-stats {

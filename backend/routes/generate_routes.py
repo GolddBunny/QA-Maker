@@ -9,7 +9,7 @@ from firebase_config import bucket
 
 generate_bp = Blueprint('generate', __name__)
 
-@generate_bp.route('/apply/<page_id>', methods=['POST'])
+@generate_bp.route('/apply/<page_id>', methods=['POST', 'OPTIONS'])
 def apply_documents(page_id):
     """GraphRAG 인덱싱 처리"""
     print(f"[서버 로그] 요청 메서드: {request.method}, 경로: /apply/{page_id}")
