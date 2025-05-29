@@ -155,7 +155,23 @@ export const documentDownloader = async (pageId) => {
     // 먼저 저장된 문서 URL 목록을 직접 가져오기
     const savedDocumentUrls = await fetchSavedDocumentUrls(pageId);
     if (!savedDocumentUrls || savedDocumentUrls.length === 0) {
-      return { success: false, error: "저장된 문서 URL이 없습니다" };
+      return { 
+        success: true, 
+        results: {
+          message: "저장된 문서 URL이 없습니다. 다음 단계로 진행합니다.",
+          stats: {
+            total: 0,
+            success: 0,
+            failed: 0,
+            skipped: 0,
+            filtered_out: 0,
+            firebase_uploaded: 0,
+            firebase_failed: 0,
+            local_deleted: 0
+          },
+          total_doc_urls: 0
+        }
+      };
     }
     
     console.log("저장된 문서 URL 데이터:", savedDocumentUrls.slice(0, 3)); // 처음 3개 요소 확인
@@ -168,7 +184,23 @@ export const documentDownloader = async (pageId) => {
     console.log(`문서 URL ${docUrls.length}개 발견:`, docUrls);
     
     if (docUrls.length === 0) {
-      return { success: false, error: "다운로드할 문서 URL이 없습니다" };
+      return { 
+        success: true, 
+        results: {
+          message: "다운로드할 문서 URL이 없습니다. 다음 단계로 진행하세요.",
+          stats: {
+            total: 0,
+            success: 0,
+            failed: 0,
+            skipped: 0,
+            filtered_out: 0,
+            firebase_uploaded: 0,
+            firebase_failed: 0,
+            local_deleted: 0
+          },
+          total_doc_urls: 0
+        }
+      };
     }
     
     // 크롤링된 문서 다운로드 API 호출

@@ -81,7 +81,7 @@ Desktop.ini
 .output/
 .git/
 frontend/.git/
-data/input/*
+data/input/*/input
 
 # 데이터 폴더 무시
 /frontend/public/data/

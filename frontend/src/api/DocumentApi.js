@@ -17,7 +17,7 @@ export const processDocuments = async (pageId) => {
         }
       };
     } else {
-      return { success: false, error: data.error };
+      return { success: false, error: data.error,executionTime: data.execution_time };
     }
   } catch (error) {
     console.error("문서 처리 API 오류:", error);
