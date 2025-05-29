@@ -4,15 +4,13 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import "../styles/DashBoardPage.css";
 import NetworkChart from "../components/charts/NetworkChart";
 import { usePageContext } from '../utils/PageContext';
-import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { fetchEntities, fetchRelationships } from '../api/AllParquetView';
 import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
 import { fetchSavedUrls as fetchSavedUrlsApi } from '../api/UrlApi';
-
+import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
+import { loadStepExecutionTimes } from '../services/LoadStepExecutionTimes';
 import { 
-    loadDocumentsInfo, 
-    fetchGraphBuildStats, 
     fetchKnowledgeGraphStats 
 } from '../components/dashboard/dashboardDataLoaders';
 
@@ -21,19 +19,18 @@ import {
     getKnowledgeGraphDateStats, 
     getGraphBuildDateStats 
 } from '../components/dashboard/dashboardStats';
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 
 const DashboardPage = () => {
     const navigate = useNavigate();
     const { pageId } = useParams();
     const { currentPageId, domainName, setDomainName, systemName, setSystemName } = usePageContext();
-    const { qaHistory, loading: qaLoading, error: qaError } = useQAHistoryContext(currentPageId);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("entity");
     const [showGraph, setShowGraph] = useState(true);
     const [loading, setLoading] = useState(true);
     const [entitySearchTerm, setEntitySearchTerm] = useState("");
     const [relationshipSearchTerm, setRelationshipSearchTerm] = useState("");
-    const [isSearchHovered, setIsSearchHovered] = useState(false);
     const [entities, setEntities] = useState([]);
     const [relationships, setRelationships] = useState([]);
     const [graphData, setGraphData] = useState(null);
@@ -49,10 +46,24 @@ const DashboardPage = () => {
     const loadedRef = useRef(false); // 중복 로딩 방지
     const location = useLocation();
     const { getCurrentPageSysName } = usePageContext();
-    const urlCount = uploadedUrls?.length || 0;
-    const docCount = uploadedDocs?.length || 0;
+    const [urlCount, setUrlCount] = useState(0);
+    const [docCount, setDocCount] = useState(0);
 
-    const DashboardHeader = ({ isSidebarOpen, toggleSidebar, pageId }) => {
+    const [stepExecutionTimes, setStepExecutionTimes] = useState({
+        crawling: null,
+        structuring: null,
+        document: null,
+        indexing: null,
+    });
+  
+    const formatSecondsToMinutes = (seconds) => {
+        if (seconds == null) return "정보 없음";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}분 ${secs}초`;
+    };
+
+    const DashboardHeader = ({ isSidebarOpen, toggleSidebar }) => {
         return (
             <header className="dashboard-header">
                 <div className="dashboard-header-content">
@@ -99,7 +110,7 @@ const DashboardPage = () => {
         if (!id) return;
         
         try {
-            console.log("🔗 관계 데이터 로드 중...");
+            console.log("관계 데이터 로드 중...");
             const relationshipsData = await fetchRelationships(id, setDataFetchError);
             
             if (relationshipsData) {
@@ -131,15 +142,40 @@ const DashboardPage = () => {
     }, []);
 
     const fetchSavedUrls = useCallback(async (pageId) => {
+      const urls = await fetchSavedUrlsApi(pageId);
+      const urlArray = Array.isArray(urls) ? urls : [];
+      setUploadedUrls(urlArray); // undefined 방지
+      setUrlCount(urlArray.length);
+    } , []);
+
+    const fetchDocuments = useCallback(async (pageId) => {
+        if (!pageId) return;
+        
         try {
-            const urls = await fetchSavedUrlsApi(pageId);
-            setUploadedUrls(urls);
+            console.log("문서 목록 로드 중...");
+            const { docs: documentsData, count: documentCount } = await loadUploadedDocsFromFirestore(pageId);
+            
+            // 문서 목록과 개수 모두 설정
+            setUploadedDocs(documentsData || []);
+            setDocCount(documentCount || 0);
+            
+            console.log("문서 목록 로드 완료:", {
+                count: documentCount,
+                docs: documentsData?.length || 0
+            });
         } catch (error) {
-            console.error('URL 목록 로드 중 오류:', error);
+            console.error("문서 목록 가져오기 중 오류:", error);
+            setUploadedDocs([]);
+            setDocCount(0);
         }
     }, []);
 
-    const dateStats = useMemo(() => getDateStats(uploadedUrls, uploadedDocs), [uploadedUrls, uploadedDocs]);
+    const dateStats = useMemo(() => {
+        // uploadedDocs 배열을 사용하는 대신, docCount를 활용하여 통계 계산
+        // 기존 getDateStats 함수가 배열을 요구한다면, 빈 배열이나 더미 데이터를 전달할 수 있습니다
+        return getDateStats(uploadedUrls, uploadedDocs);
+    }, [uploadedUrls, uploadedDocs]); // docCount가 변경되어도 uploadedDocs 배열은 여전히 필요할 수 있음
+
     const knowledgeGraphDateStats = useMemo(() => getKnowledgeGraphDateStats(knowledgeGraphStats), [knowledgeGraphStats]);
     const graphDateStats = useMemo(() => getGraphBuildDateStats(graphBuildStats), [graphBuildStats]);
 
@@ -150,7 +186,6 @@ const DashboardPage = () => {
     );
     const maxGraphValue = Math.max(...graphDateStats.map(item => Math.max(item.entity, item.relationship)), 1);
 
-    // === Filtered Data ===
     const filteredEntities = useMemo(() => {
         if (!entities.length) return [];
         
@@ -164,10 +199,10 @@ const DashboardPage = () => {
             })
             .sort((a, b) => a.id - b.id);
             
-        // console.log("엔티티 필터링 완료:", {
-        //     filteredCount: filtered.length,
-        //     removedCount: entities.length - filtered.length,
-        // });
+        console.log("엔티티 필터링 완료:", {
+            filteredCount: filtered.length,
+            removedCount: entities.length - filtered.length,
+        });
         
         return filtered;
     }, [entities, entitySearchTerm]);
@@ -185,18 +220,33 @@ const DashboardPage = () => {
             })
             .sort((a, b) => a.id - b.id);
             
-        // console.log("관계 필터링 완료:", {
-        //     filteredCount: filtered.length,
-        //     removedCount: relationships.length - filtered.length,
-        // });
+        console.log("관계 필터링 완료:", {
+            filteredCount: filtered.length,
+            removedCount: relationships.length - filtered.length,
+        });
         
         return filtered;
     }, [relationships, relationshipSearchTerm]);
 
     const loadPageInfo = useCallback(() => {
         const pages = JSON.parse(localStorage.getItem('pages')) || [];
-        const currentPage = pages.find(page => page.id === pageId);
-        console.log("📄 현재 페이지 정보:", currentPage);
+        
+        // 디버깅용 로그
+        console.log("📄 찾는 pageId:", pageId, typeof pageId);
+        console.log("📄 저장된 페이지들:", pages.map(p => ({ id: p.id, type: typeof p.id, name: p.name })));
+        
+        // 먼저 정확히 일치하는지 확인
+        let currentPage = pages.find(page => page.id === pageId);
+        
+        // 타입 불일치로 못 찾았다면 문자열/숫자 변환해서 재시도
+        if (!currentPage) {
+            currentPage = pages.find(page => 
+                String(page.id) === String(pageId)
+            );
+            console.log("📄 타입 변환 후 찾은 페이지:", currentPage);
+        }
+        
+        console.log("📄 최종 현재 페이지 정보:", currentPage);
         
         if (currentPage) {
             setDomainName(currentPage.name || "");
@@ -208,18 +258,16 @@ const DashboardPage = () => {
                     const year = date.getFullYear();
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const day = String(date.getDate()).padStart(2, '0');
-                    console.log('날짜 파싱 성공:', currentPage.createdAt);
                     setCreatedDate(`${year}.${month}.${day}`);
                 } catch (error) {
-                    console.log('날짜 파싱 실패:', currentPage.createdAt);
+                    console.log('날짜 파싱 실패:', error);
                     setCreatedDate("2025.05.27");
                 }
             } else {
-                console.log("createdAt 필드가 없으므로 기본 설정 날짜로 대신합니다.");
                 setCreatedDate("2025.05.27");
             }
         } else {
-            console.warn("현재 페이지를 찾을 수 없으므로 기본 설정 날짜로 대신합니다.");
+            console.warn("페이지를 찾을 수 없습니다:", pageId);
             setCreatedDate("2025.05.27");
         }
     }, [pageId, setDomainName, setSystemName]);
@@ -248,37 +296,46 @@ const DashboardPage = () => {
             return;
         }
         
+        const init = async () => {
         console.log("Dashboard 초기화 시작:", { pageId });
         setLoading(true);
         loadedRef.current = true;
 
-        const loadAllData = async () => {
-            try {
-                await Promise.all([
-                    loadEntities(pageId),
-                    loadRelationships(pageId),
-                    loadGraphData(pageId),
-                    fetchSavedUrls(pageId),
-                    loadDocumentsInfo(pageId, setUploadedDocs),
-                    fetchGraphBuildStats(pageId, setGraphBuildStats),
-                    fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
-                ]);
-                console.log("모든 데이터 로드 완료");
-            } catch (error) {
-                console.error("데이터 로드 중 오류:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        try {
+        console.log("pageid: ", pageId);
+        const times = await loadStepExecutionTimes(pageId);
+        console.log("📥 Firebase로부터 stepExecutionTimes 로딩:", times);
+        setStepExecutionTimes(times); // 🟢 상태에 저장
+        } catch (e) {
+        console.error("stepExecutionTimes 불러오기 실패:", e);
+        }
 
-        loadAllData();
+        try {
+        await Promise.all([
+            loadEntities(pageId),
+            loadRelationships(pageId),
+            loadGraphData(pageId),
+            fetchSavedUrls(pageId),
+            fetchDocuments(pageId),
+            fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
+        ]);
+        console.log("모든 데이터 로드 완료");
+        } catch (error) {
+        console.error("데이터 로드 중 오류:", error);
+        } finally {
+        setLoading(false);
+        }
+
         loadPageInfo();
+    };
+
+    init();
 
         // Cleanup function
         return () => {
             loadedRef.current = false;
         };
-    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, fetchSavedUrls, loadPageInfo, location.state]);
+    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, fetchSavedUrls, fetchDocuments, loadPageInfo, location.state]);
 
     return (
         <div className={`dashboard-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -343,7 +400,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">🕷️</span>
                             <span className="stat-change positive">방금</span>
                         </div>
-                        <div className="stat-number">2시간</div>
+                        <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.crawling)}</div>
                         <div className="stat-label">크롤링에 걸린 시간</div>
                     </div>
 
@@ -352,7 +409,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">🧾</span>
                             <span className="stat-change positive">방금</span>
                         </div>
-                        <div className="stat-number">3시간</div>
+                        <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.structuring)}</div>
                         <div className="stat-label">url 전처리에 걸린 시간</div>
                     </div>
 
@@ -361,7 +418,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">📑</span>
                             <span className="stat-change positive">방금</span>
                         </div>
-                        <div className="stat-number">{conversionTime || '1시간'}</div>
+                        <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.document)}</div>
                         <div className="stat-label">문서 전처리에 걸린 시간</div>
                     </div>
 
@@ -370,7 +427,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">📍</span>
                             <span className="stat-change positive">방금</span>
                         </div>
-                        <div className="stat-number">2시간</div>
+                        <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.indexing)}</div>
                         <div className="stat-label">인덱싱에 걸린 시간</div>
                     </div>
                 </div>
@@ -633,7 +690,7 @@ const DashboardPage = () => {
                 <div className="knowledge-graph-section">
                     <h1 className="section-title-with-icon">
                         <span className="icon">🕸️</span>
-                        지식 그래프
+                        지식그래프 네트워크 시각화 (Top 200 엔티티)
                     </h1>
                     <div className="knowledge-graph-container">
                         {showGraph && graphData && !graphError ? (
