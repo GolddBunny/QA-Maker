@@ -14,7 +14,7 @@ import ProgressingBar from '../services/ProgressingBar';
 import { initDocUrl } from '../api/InitDocUrl';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/flask';
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -277,6 +277,28 @@ const AdminPage = () => {
       }
     };
 
+    const [stepExecutionTimes, setStepExecutionTimes] = useState({
+      crawling: null,
+      structuring: null,
+      document: null,
+      indexing: null
+    });
+    const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
+
+    // 각 단계 완료 시 호출되는 콜백 함수
+    const handleStepComplete = (stepName, durationInSeconds) => {
+      setStepExecutionTimes(prev => ({
+        ...prev,
+        [stepName]: durationInSeconds,
+      }));
+
+      const stepOrder = ['crawling', 'structuring', 'document', 'indexing'];
+      const nextIndex = stepOrder.indexOf(stepName) + 1;
+      if (nextIndex < stepOrder.length) {
+        setCurrentStep(stepOrder[nextIndex]);
+      }
+    };
+
     // 인덱싱 버튼
     const handleApply = async () => {
       if (!pageId) {
@@ -294,6 +316,15 @@ const AdminPage = () => {
       setIsApplyLoading(true);
 
       try {
+         // 초기 상태 설정
+        setCurrentStep('crawling');
+        setStepExecutionTimes({
+          crawling: null,
+          structuring: null,
+          document: null,
+          indexing: null
+        });
+
         const init_result = await initDocUrl(pageId);
 
         if (init_result.success) {
@@ -303,11 +334,13 @@ const AdminPage = () => {
         }
 
         // 크롤링 및 구조화
-        const final_result = await executeFullPipeline(pageId);
+        const final_result = await executeFullPipeline(pageId, handleStepComplete);
         
         if (final_result.success) {
           setIsNewPage(false);
-          setApplyExecutionTime(final_result.execution_time);
+
+          console.log("=== 최종 실행시간 요약 ===");
+          console.log("전체 실행시간:", final_result.execution_times.total, "초");
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
@@ -336,12 +369,21 @@ const AdminPage = () => {
 
       if (isAnyProcessing) return;
       setIsApplyLoading(true);
+      const startTime = Date.now();
+
       try {
         const result = await updateIndexing(pageId);
+        const endTime = Date.now();
+
         if (result.success) {
+          const durationInSeconds = Math.round((endTime - startTime) / 1000);
+          setStepExecutionTimes(prev => ({
+            ...prev,
+            update: durationInSeconds
+          }));
+
           alert("업데이트 완료");
 
-          // 업데이트 완료 후 데이터 다시 로드
           await Promise.all([
             fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
@@ -616,15 +658,16 @@ const AdminPage = () => {
 
         {/* ProgressingBar는 중앙에 고정 */}
         {showProgressing && (
-          <div className="progressing-overlay">
-            <ProgressingBar 
-              onClose={handleCloseProgressing}
-              onAnalyzer={handleAnalyzer}   // 기졸 버튼과 같은 함수
-              isCompleted={hasOutput}       // output이 있을 때만 Analyzer 버튼 보여주기
-              conversionTime={conversionTime} //문서 전처리 시간
-              indexingTime={applyExecutionTime} //인덱싱 시간
-            />
-          </div>
+          <ProgressingBar
+            onClose={() => {
+              setShowProgressing(false);
+              localStorage.removeItem(`showProgressing_${pageId}`);
+            }}
+            onAnalyzer={() => navigate('/analyzer')}
+            isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
+            stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
+            currentStep={currentStep} // 현재 진행 중인 단계
+          />
         )}
 
         </div>
