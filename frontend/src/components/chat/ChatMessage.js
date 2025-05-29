@@ -105,7 +105,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         return currentAnswer === "답변을 불러오는 중...";
     };
 
-    // 답변 HTML로 렌더링하는 함수
+    // 답변 HTML로 렌더링하는 함수     
     const renderAnswer = () => {
         const answer = getCurrentAnswer();
         
@@ -115,16 +115,21 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         }
         
         let cleanAnswer = answer;
-
-    // [Data: ...] 제거
+        
+        // [Data: ...] 제거
         cleanAnswer = cleanAnswer.replace(/\[Data:[^\]]*\]/g, "");
-
+        
         // INFO: ~ Response: 구간 제거 (줄바꿈 포함)
         cleanAnswer = cleanAnswer.replace(/INFO:([\s\S]*?)Response:/g, "");
-
+        
+        // 마크다운 헤딩 한단계씩 줄임
+        cleanAnswer = cleanAnswer.replace(/^### /gm, "#### ");
+        cleanAnswer = cleanAnswer.replace(/^## /gm, "### ");
+        cleanAnswer = cleanAnswer.replace(/^# /gm, "## ");
+        
         // Markdown → HTML 변환
         const htmlAnswer = marked.parse(cleanAnswer);
-
+        
         return { __html: htmlAnswer };
     };
 

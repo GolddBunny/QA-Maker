@@ -60,11 +60,17 @@ def generate_related_questions():
 
         firebase_prefix = f"pages/{page_id}/results"
 
-        entity_df = read_parquet_from_firebase(f"{firebase_prefix}/entities.parquet")
-        community_df = read_parquet_from_firebase(f"{firebase_prefix}/communities.parquet")
-        relationship_df = read_parquet_from_firebase(f"{firebase_prefix}/relationships.parquet")
-        report_df = read_parquet_from_firebase(f"{firebase_prefix}/community_reports.parquet")
-        text_unit_df = read_parquet_from_firebase(f"{firebase_prefix}/text_units.parquet")
+        # entity_df = read_parquet_from_firebase(f"{firebase_prefix}/entities.parquet")
+        # community_df = read_parquet_from_firebase(f"{firebase_prefix}/communities.parquet")
+        # relationship_df = read_parquet_from_firebase(f"{firebase_prefix}/relationships.parquet")
+        # report_df = read_parquet_from_firebase(f"{firebase_prefix}/community_reports.parquet")
+        # text_unit_df = read_parquet_from_firebase(f"{firebase_prefix}/text_units.parquet")
+
+        entity_df = pd.read_parquet(f"{input_dir}/entities.parquet")
+        community_df = pd.read_parquet(f"{input_dir}/communities.parquet")
+        relationship_df = pd.read_parquet(f"{input_dir}/relationships.parquet")
+        report_df = pd.read_parquet(f"{input_dir}/community_reports.parquet")
+        text_unit_df = pd.read_parquet(f"{input_dir}/text_units.parquet")
 
         # Preprocess
         entities = read_indexer_entities(entity_df, community_df, 0)

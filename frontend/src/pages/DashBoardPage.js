@@ -9,7 +9,9 @@ import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
 import { fetchSavedUrls as fetchSavedUrlsApi } from '../api/UrlApi';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
+
 import { loadStepExecutionTimes } from '../services/LoadStepExecutionTimes';
+
 import { 
     fetchKnowledgeGraphStats 
 } from '../components/dashboard/dashboardDataLoaders';
@@ -300,6 +302,7 @@ const DashboardPage = () => {
         console.log("Dashboard 초기화 시작:", { pageId });
         setLoading(true);
         loadedRef.current = true;
+
 
         try {
         console.log("pageid: ", pageId);
