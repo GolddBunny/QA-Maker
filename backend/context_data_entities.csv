@@ -1,9 +1,20 @@
 ﻿id,entity,description,number of relationships,in_context
-6,EPUB READER,"GraphRAG 기술을 활용하여 구현된 전자책 리더로, 검색 및 추론 기능을 제공함.",3,True
-7,RASPBERRY PI 5,"GraphRAG 기술을 활용한 EPUB 리더가 구현된 단일 보드 컴퓨터로, 다양한 기능을 지원함.",1,True
-2,JUYEON SOUNG,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-1,CHAEWON PARK,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-3,KITAE HWANG,"한성대학교 컴퓨터공학부의 교수로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-0,JIYOON OK,"한성대학교 컴퓨터공학부의 학생으로, GraphRAG 기술을 활용한 EPUB 리더 구현에 참여함.",1,True
-5,GRAPHRAG,"문서 내 개념과 상호관계를 나타내는 그래프 구조를 구축하는 기술로, 정보 검색 및 추론 작업에서 우수한 성능을 발휘함.",3,True
-11,INTRODUCTION,GraphRAG 기술의 필요성과 연구 배경을 설명하는 섹션.,1,True
+6682,평가방법,"제 3 조 (평가방법): 수업평가는 수업만족도 조사 문항의 평가점수만 계산하며, 매학기 전체 학부 교수과목의 수업평가 결과를 활용한다. 이 내용은 3-2-24 우수교원포상규정 문서에서 추출함. 1페이지에 위치함.",2,True
+8450,제 15 장 제 71 조,"제 71 조 평가시기 및 결과활용: 수업평가는 매학기 말에 실시함을 원칙으로 하며, 수업평가의 평점은 각 항목 5점 만점이며, 소수점 셋째자리에서 반올림 한다. 수업평가 결과는 다음 학기 교강사의 강의배정에 활용할 수 있으며, 결과가 2.5점 미만일 경우 교강사에게 수업개선을 요구할 수 있다. 이 내용은 2-2-2 대학원학칙 문서에서 추출함. 29페이지에 위치함.",2,True
+9013,수업평가규정,수업평가에 관한 세부사항을 정하는 규정,6,True
+9014,3-3-39 수업평가규정,수업평가에 관한 규정을 포함하는 문서,2,True
+1225,수업평가,"The entity ""수업평가"" refers to the evaluation of teaching quality, which encompasses assessments of instructors' classes. It includes both quantitative evaluation scores and qualitative subjective responses, which are utilized for managing and improving the quality of instruction. Additionally, ""수업평가"" involves the implementation of mid-term and final surveys aimed at assessing the quality of the courses offered.",3,True
+7535,기말고사,"The ""기말고사"" (final exam) is an essential component of academic assessment, serving as one of the elements for evaluating student performance. It is conducted either through written or practical evaluations. The final exam accounts for 30% of the overall grade, highlighting its significance in the grading process. This assessment is designed to measure learning outcomes and is integral to the overall evaluation of students' academic achievements.",2,True
+8552,제 26 장 제 119 조,"제 119 조 사후평가: 학과(전공) 평가는 개설 후 3년 후에 최초 평가를 시행하는 것을 원칙으로 하며, 이후 연간 평가시 80점 이상 합격, 60점 이상 80점 미만 재검토, 60점 미만 불합격으로 구분됨. 이 내용은 문서에서 추출함. 38페이지에 위치함.",9,True
+4315,수업평가 5.0 미만,"수업평가가 5.0 미만인 경우, 교수학습센터에서 운영하는 수업컨설팅 참여가 필수임. 이 내용은 3-3-14 교원업적평가 기준 문서에서 추출함. 3페이지에 위치함.",1,True
+9223,제 3 조 평가비율,"제 3 조 성적은 다음 각 호의 비율에 의하여 종합성적으로 평가한다. 1. 시험(중간고사 및 기말고사, 실습교과의 경우 해당작품) : 50 ~ 80% 2. 수시평가(과제물 및 발표, 수업태도 등) : 0 ~ 40% 3. 출석 : 10 ~ 20% 4. 중간고사는 학사진행상 기말고사에 통합될 수 있음. 담당 교원은 성적평가항목 및 반영비율 등 세부평가 방법을 수업계획서에 포함하여 학생들에게 안내한다. 이 내용은 3-3-4 성적평가에 관한 시행세칙 문서에서 추출함. 2페이지에 위치함.",2,True
+3173,강의평가,"""강의평가"" refers to the evaluation process of courses, which is based on the average score of all classes taught during the evaluation period. This scoring system is detailed in the document referenced as 5-0-27, specifically found on page 8. Additionally, ""강의평가"" involves the collection and analysis of student feedback after the conclusion of the semester, and it must meet certain criteria to be recognized. This information is extracted from the same document, located on page 11.",4,True
+3504,수업 평가 시행 및 결과의 활용 제 13 조,"제 13 조 수업 평가 시행 및 결과의 활용: 수업의 질 개선을 위해 매 학기마다 중간 및 기말 수업 평가를 실시해야 하며, 수업 평가 설문 문항은 교육혁신원 교수학습센터에서 설계하여 수업평가위원회의 심의를 통해 정한다. 교육혁신원 교육혁신지원센터는 수업평가 결과를 분석하여 수업의 질 개선 방안을 제시하고, 교무처장은 수업평가 결과를 교원업적 평가 자료에 활용하며, 우수한 평가를 받은 수업을 ‘학사공지'에 게시한다. 이 내용은 교유과정 평가 시행 및 운영 규정 문서에서 추출함. 3페이지에 위치함.",3,True
+7538,평가요소,"The entity ""평가요소"" refers to the components used in academic grading. These elements include 중간고사 (midterm exams), 기말고사 (final exams), 수시시험 (periodic tests), 과제물 (assignments), and 출석 (attendance). These factors collectively serve to assess students' learning outcomes and performance in their studies.",9,True
+3255,교육업적평가,"교육 기여도, 수업 평가, 학생 면담 지도, 외국어 강의 등을 평가하는 과정",3,True
+4298,교원업적평가규정 시행세칙 제 4 조,제 4 조 수업 평가: 수업평가는 수업평가규정에 의한 평가결과를 활용한 다. 이 내용은 3-3-14 교원업적평가규정 시행세칙 문서에서 추출함. 2페이지에 위치함.,3,True
+4129,수업 평가,수업평가는 학기 종료 후 수강 학생의 의견을 조사하고 분석한 것을 의미함. 이 내용은 문서에서 추출함. 6페이지에 위치함.,1,True
+7539,평가방식,"The entity ""평가방식"" refers to the methods used for assessment, which include both written and practical evaluations as part of the evaluation criteria. It encompasses the various evaluation methods employed for grading purposes, specifically designed to assess learning outcomes. Additionally, ""평가방식"" incorporates the proportions assigned to each evaluation element, highlighting the structured approach to measuring academic performance.",2,True
+3414,정교수 업적평가의 기준,정교수의 업적평가 기준에 대한 설명,7,True
+9282,제2조(평가방법),"제2조는 평가방법의 적용에 대한 내용을 포함하며, 2013학년도 2학기부터 시행됨을 명시하고 있음. 이 내용은 3-3-4 성적평가에 관한 시행세칙 문서에서 추출함. 7페이지에 위치함.",4,True
+3294,295,"교수의 종합평점으로, 평가기준에 따른 점수.",1,True

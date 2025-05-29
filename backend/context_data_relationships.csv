@@ -1,10 +1,65 @@
 ﻿id,source,target,description,weight,links,in_context
-6,GRAPHRAG,EPUB READER,GraphRAG 기술을 활용하여 구현된 EPUB 리더는 정보 검색 및 추론 기능을 제공함.,10.0,1,True
-7,GRAPHRAG,INTRODUCTION,서론에서는 GraphRAG 기술의 필요성과 연구 배경을 설명함.,8.0,1,True
-8,EPUB READER,RASPBERRY PI 5,GraphRAG 기술을 활용한 EPUB 리더는 Raspberry Pi 5에서 구현됨.,9.0,1,True
-4,DEPARTMENT OF COMPUTER ENGINEERING,GRAPHRAG,한성대학교 컴퓨터공학부는 GraphRAG 기술을 연구하고 적용함.,9.0,6,True
-5,DEPARTMENT OF COMPUTER ENGINEERING,EPUB READER,한성대학교 컴퓨터공학부에서 GraphRAG 기술을 활용한 EPUB 리더를 개발함.,9.0,6,True
-0,JIYOON OK,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 학생으로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
-1,CHAEWON PARK,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 학생으로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
-2,JUYEON SOUNG,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 학생으로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
-3,KITAE HWANG,DEPARTMENT OF COMPUTER ENGINEERING,"한성대학교 컴퓨터공학부의 교수로, 해당 부서에서 연구 및 교육에 참여함.",9.0,6,True
+12310,평가요소,평가방식,"The entities ""평가요소"" (evaluation elements) and ""평가방식"" (evaluation methods) are interconnected in the context of assessing learning outcomes. Each evaluation element is assessed according to a specific evaluation method, indicating that the evaluation methods are integral to the evaluation elements. Furthermore, the evaluation methods are included as part of the elements used to evaluate learning performance, highlighting their role in the overall assessment process.",18.0,1,True
+12313,평가요소,기말고사,"The entity ""기말고사"" is recognized as an important component within the broader category of ""평가요소."" Specifically, 기말고사는 a significant element of academic assessment, serving as one of the key factors in determining students' overall grades. It is explicitly included among the various evaluation criteria used to assess student performance.",19.0,1,True
+12307,성적평가 제 18 조,평가요소,평가요소는 성적평가 항목을 정의함,9.0,3,True
+12304,성적평가 제 18 조,기말고사,기말고사는 성적평가 항목 중 하나로 포함됨,10.0,3,True
+12308,성적평가 제 18 조,평가방식,평가방식은 성적평가에 사용되는 방법을 정의함,9.0,3,True
+6111,교원업적평가규정 시행세칙 제 4 조,페이지 2,제 4 조는 페이지 2에 위치함,10.0,2,True
+15338,제 3 조 평가비율,페이지 2,제 3 조는 페이지 2에 위치함,10.0,2,True
+6122,수업평가,교수학습센터,교수학습센터는 수업평가 결과를 활용하여 교수의 강의 개선을 지원한다.,8.0,2,True
+6127,수업평가 5.0 미만,교수학습센터,수업평가가 5.0 미만인 경우 교수학습센터의 프로그램 참여가 필수임,10.0,2,True
+10597,평가방법,페이지 1,제 3 조 평가방법은 페이지 1에 위치함,10.0,1,True
+4887,수업 평가 시행 및 결과의 활용 제 13 조,페이지 3,제 13 조는 페이지 3에 위치함,10.0,1,True
+14984,수업평가규정,제 2 조,제 2 조는 수업평가규정의 일부로 포함되어 있음,10.0,1,True
+14989,3-3-39 수업평가규정,제 4 조,제 4 조는 3-3-39 수업평가규정의 일부로 포함되어 있음,10.0,1,True
+14985,수업평가규정,제 3 조,제 3 조는 수업평가규정의 일부로 포함되어 있음,10.0,1,True
+14990,3-3-39 수업평가규정,제 5 조,제 5 조는 3-3-39 수업평가규정의 일부로 포함되어 있음,10.0,1,True
+15413,부칙(시행일),제2조(평가방법),부칙은 제2조의 시행일을 포함하고 있음,9.0,1,True
+14983,수업평가규정,제 1 조,제 1 조는 수업평가규정의 일부로 포함되어 있음,10.0,1,True
+14986,수업평가규정,1페이지,수업평가규정 문서의 1페이지에 위치함,10.0,1,True
+14987,수업평가규정,2025. 5. 7.,수업평가규정의 작성일자,9.0,1,True
+14149,제 26 장 제 119 조,2015.10.27,사후평가의 기준이 설정된 날짜는 제 119 조에 명시됨,10.0,1,True
+4299,강의평가,페이지 10,강의평가는 10페이지에 위치함,10.0,1,True
+4287,강의평가,2023.12.13.,"The 강의평가 (course evaluation) is conducted based on criteria established for December 13, 2023. This evaluation process adheres to the standards that are applicable on this specific date, confirming that the criteria for the 강의평가 are set to be effective from December 13, 2023.",27.0,1,True
+4417,교육업적평가,2015.10.27.,교육업적평가는 2015년 10월 27일에 기준이 설정되었다.,8.0,1,True
+15337,제 3 조 평가비율,3-3-4 성적평가에 관한 시행세칙,제 3 조는 3-3-4 성적평가에 관한 시행세칙의 일부로 포함되어 있음,10.0,1,True
+4679,정교수 업적평가의 기준,2015,2015년도 기준이 정교수 업적평가의 기준에 포함됨,9.0,1,True
+4680,정교수 업적평가의 기준,2016,2016년도 기준이 정교수 업적평가의 기준에 포함됨,9.0,1,True
+4681,정교수 업적평가의 기준,2017,2017년도 기준이 정교수 업적평가의 기준에 포함됨,9.0,1,True
+4888,수업 평가 시행 및 결과의 활용 제 13 조,2021년 10월 21일,수업 평가 시행 및 결과의 활용과 관련된 날짜,9.0,1,True
+4478,교수,295,교수의 종합평점은 295점임,8.0,1,True
+4678,제 4 장 제21조,정교수 업적평가의 기준,제 4 장 제21조는 정교수의 업적평가 기준을 설명하고 있음,10.0,1,True
+4682,정교수 업적평가의 기준,2018,2018년도 기준이 정교수 업적평가의 기준에 포함됨,9.0,1,True
+4683,정교수 업적평가의 기준,2019,2019년도 기준이 정교수 업적평가의 기준에 포함됨,9.0,1,True
+4684,정교수 업적평가의 기준,2020,2020년도 기준이 정교수 업적평가의 기준에 포함됨,9.0,1,True
+10596,평가방법,3-2-24 우수교원포상규정,제 3 조는 3-2-24 우수교원포상규정의 일부로 포함되어 있음,10.0,1,True
+12311,평가요소,평가비율,"The entities ""평가요소"" (evaluation elements) and ""평가비율"" (evaluation ratios) are interconnected in the assessment process. Each evaluation element is reflected in the overall score according to a specific ratio. Furthermore, the ratios assigned to each evaluation element are included as part of the evaluation ratios, indicating how each element contributes to the final assessment.",18.0,1,True
+12321,평가요소,수시시험,평가요소 중 하나로 수시시험이 포함됨,9.0,1,True
+14143,운영 효율성,제 26 장 제 119 조,사후평가는 운영 효율성을 평가하는 기준을 포함하고 있음,10.0,1,True
+12312,평가요소,중간고사,"The entity ""중간고사"" is recognized as a component of the evaluation criteria, specifically included as one of the elements in the assessment of academic performance. It serves as a significant factor in the overall grading system.",19.0,1,True
+12315,평가요소,과제물,"The entity ""과제물"" is recognized as a component of the grading evaluation process. It is included as one of the evaluation elements, indicating its significance in assessing student performance. Thus, ""과제물"" serves as an essential factor in the overall evaluation criteria.",19.0,1,True
+12316,평가요소,출석,"The entity ""출석"" (attendance) is recognized as a component of the grading evaluation system. It is explicitly stated that attendance is included as one of the evaluation elements in the assessment process.",19.0,1,True
+12314,평가요소,수업기여도,수업기여도는 성적 평가의 한 요소로 포함됨.,10.0,1,True
+14144,제 26 장 제 119 조,특성화학과/전공 석사,특성화학과/전공 석사 과정의 운영성과평가가 제 119 조에 포함됨,9.0,1,True
+14145,제 26 장 제 119 조,특성화학과/전공 박사,특성화학과/전공 박사 과정의 운영성과평가가 제 119 조에 포함됨,9.0,1,True
+14146,제 26 장 제 119 조,학술대회 논문발표,학술대회 논문발표에 대한 지원이 제 119 조에 포함됨,9.0,1,True
+14147,제 26 장 제 119 조,학진 등재후보지 이상 논문 발표,학진 등재후보지 이상의 논문 발표에 대한 지원이 제 119 조에 포함됨,9.0,1,True
+14148,제 26 장 제 119 조,교원업적평가시행세칙,교원업적평가에 대한 시행 세칙이 제 119 조에 포함됨,9.0,1,True
+14141,비전/목표 달성도,제 26 장 제 119 조,사후평가는 비전 및 목표 달성도를 평가하는 기준을 포함하고 있음,10.0,1,True
+14142,특성화 선정 기준 달성도,제 26 장 제 119 조,사후평가는 특성화 선정 기준 달성도를 평가하는 기준을 포함하고 있음,10.0,1,True
+4412,업적평가,교육업적평가,교육업적평가는 교원의 업적을 평가하는 과정의 일환이다.,9.0,1,True
+4418,교육업적평가,2019.5.16.,교육업적평가는 2019년 5월 16일에 기준이 수정되었다.,8.0,1,True
+14988,수업평가규정,2017.6.14.,수업평가규정의 명칭 변경일자,9.0,1,True
+15414,제2조(평가방법),2013학년도 2학기,제2조의 적용은 2013학년도 2학기부터 시작됨,10.0,1,True
+4286,강의평가,근무평정,"The entities ""강의평가"" (course evaluation) and ""근무평정"" (performance evaluation) are both integral components of educational assessment. 강의평가는 근무평정의 기준 중 하나로, 학생의 의견을 반영하여 평가된다. This indicates that student feedback plays a crucial role in the evaluation process. Furthermore, both 강의평가 and 근무평정 serve as evaluation criteria related to education, focusing on assessing the quality of education and the performance of teachers. Together, they contribute to a comprehensive understanding of educational effectiveness and teacher accountability.",17.0,1,True
+4886,수업 평가 시행 및 결과의 활용 제 13 조,교유과정 평가 시행 및 운영 규정,제 13 조는 교유과정 평가 시행 및 운영 규정의 제 4 장에 포함되어 있음,10.0,1,True
+15415,제2조(평가방법),2015년 3월 1일,제2조의 변경 세칙은 2015년 3월 1일부터 시행됨,9.0,1,True
+4284,재학생 중도탈락율,강의평가,"재학생 중도탈락율과 강의평가는 모두 평가 항목으로, 교육의 질을 평가하는 데 기여함.",8.0,1,True
+6107,교원업적평가규정 시행세칙 제 2 장,교원업적평가규정 시행세칙 제 4 조,제 4 조는 제 2 장에 포함되어 있음,10.0,1,True
+1741,수업평가,수업만족도 조사,수업평가는 수업만족도 조사의 일환으로 시행된다.,10.0,1,True
+6110,교원업적평가규정 시행세칙 제 4 조,표 1-3,"제 4 조는 수업 평가와 관련된 내용을 포함하고 있으며, 표 1-3은 그 평가 기준을 나타냄",9.0,1,True
+15416,제2조(평가방법),2014학년도,2014학년도 이전 취득한 과목에 대한 규정이 제2조에 포함됨,8.0,1,True
+6119,제 4 조의 4,수업평가,수업평가 결과는 수업의 질 관리를 위한 분석 자료로 활용될 수 있다.,9.0,1,True
+14013,대학원 수업 평가,제 15 장 제 71 조,제 71 조는 대학원 수업 평가의 시기 및 결과 활용에 대한 내용을 포함하고 있다.,10.0,1,True
+14016,제 15 장 제 71 조,2020.10.6,제 71 조의 내용이 업데이트된 날짜이다.,8.0,1,True
+5871,수업 평가,강좌수강학 평가항목,수업 평가는 강좌 수강학 평가 항목을 포함하고 있음,10.0,1,True
