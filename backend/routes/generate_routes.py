@@ -102,8 +102,8 @@ def apply_documents(page_id):
                     uploaded_files.append(firebase_path)
 
                     # 업로드 후 파일 삭제
-                    os.remove(file_path)
-                    print(f"Deleted local file: {file_path}")
+                    # os.remove(file_path)
+                    # print(f"Deleted local file: {file_path}")
 
         return jsonify({
             'success': True,

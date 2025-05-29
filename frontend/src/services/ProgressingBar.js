@@ -149,7 +149,7 @@ const ProgressingBar = ({
       <div className="progress-cards">
         <div className="progress-card">
           <div className="card-title">예상 완료 시간</div>
-          <div className="card-value">약 27분</div>
+          <div className="card-value">약 10분</div>
         </div>
         <div className="progress-card">
           <div className="card-title">현재 진행률</div>
@@ -192,7 +192,7 @@ const ProgressingBar = ({
           <div 
             className="step-desc"
             dangerouslySetInnerHTML={{
-              __html: getStepText('indexing', 'Indexing')
+              __html: getStepText('indexing', 'build KonwledgeGraph')
             }}
           />
         </div>

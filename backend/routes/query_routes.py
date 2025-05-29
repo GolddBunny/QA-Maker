@@ -1,4 +1,5 @@
 import os
+import subprocess
 import pandas as pd
 import tiktoken
 import asyncio
@@ -55,8 +56,7 @@ def run_async(coro):
     finally:
         loop.close()
 
-@query_bp.route('/run-local-query', methods=['POST', 'OPTIONS'])
-@cross_origin()
+@query_bp.route('/run-local-query', methods=['POST'])
 def run_local_query():
     # 외부에서 질문을 받음
     page_id = request.json.get('page_id', '')
@@ -77,20 +77,11 @@ def run_local_query():
     COVARIATE_TABLE = "covariates"
     TEXT_UNIT_TABLE = "text_units"
     COMMUNITY_LEVEL = 2
-    prefix = f'pages/{page_id}/results/'
 
-    blobs = list(bucket.list_blobs(prefix=prefix))
-
-    blob_dict = {}
-    for blob in blobs:
-        filename = blob.name.replace(prefix, '')
-        if filename:
-            blob_dict[filename] = blob.download_as_bytes()
-
-    entity_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
-    community_df = pd.read_parquet(io.BytesIO(blob_dict["communities.parquet"]))
+    # Read nodes table to get community and degree data
+    entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
+    community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
     entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
-
 
     # Load description embeddings to an in-memory lancedb vectorstore
     # To connect to a remote db, specify url and port values
@@ -99,13 +90,16 @@ def run_local_query():
     )
     description_embedding_store.connect(db_uri=LANCEDB_URI)
 
-    relationship_df = pd.read_parquet(io.BytesIO(blob_dict["relationships.parquet"]))
+    # Load relationship data
+    relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
     relationships = read_indexer_relationships(relationship_df)
 
-    report_df = pd.read_parquet(io.BytesIO(blob_dict["community_reports.parquet"]))
+    # Load report data
+    report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
     reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
 
-    text_unit_df = pd.read_parquet(io.BytesIO(blob_dict["text_units.parquet"]))
+    # Load text unit data
+    text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
     text_units = read_indexer_text_units(text_unit_df)
 
     # Configure the language model
@@ -158,8 +152,8 @@ def run_local_query():
         "community_prop": 0.1,
         "conversation_history_max_turns": 0,
         "conversation_history_user_turns_only": True,
-        "top_k_mapped_entities": 10,
-        "top_k_relationships": 10,
+        "top_k_mapped_entities": 15,
+        "top_k_relationships": 15,
         "include_entity_rank": True,
         "include_relationship_weight": True,
         "include_community_rank": False,
@@ -182,40 +176,39 @@ def run_local_query():
         context_builder_params=local_context_params,
         response_type="Multi-Page Report",
     )
-    
+
     try:
         # Run the async search in a separate thread with a dedicated event loop
         result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
-        
+
         # 결과 저장
         context_files = {}
         for key, df in result.context_data.items():
             if isinstance(df, pd.DataFrame):
                 output_file = f"context_data_{key}.csv"
                 df.to_csv(output_file, index=False, encoding='utf-8-sig')
-                print(f"{key} 데이터가 {output_file}에 저장되었습니다.")
+                print(f"👀{key} 데이터가 {output_file}에 저장되었습니다.")
                 context_files[key] = output_file
-        
+
+        print("context_data keys:", list(result.context_data.keys()))
+        for key, df in result.context_data.items():
+            print(f"{key}: type={type(df)}, empty={df.empty if isinstance(df, pd.DataFrame) else 'N/A'}")
+
         entities_df = pd.read_csv('context_data_entities.csv')
         relationships_df = pd.read_csv('context_data_relationships.csv')
 
         # 엔티티 ID 리스트 추출
         entities_list = entities_df['id'].astype(int).tolist()
-        
+
         # 관계 ID 리스트 추출 
         # 관계 데이터프레임의 구조에 따라 필드명 조정 필요
         relationships_list = relationships_df['id'].astype(int).tolist()
-        
+
         print("entities_list: ", entities_list, 
               "relationships_list: ", relationships_list)
 
         # 서브 그래프 생성
         generate_and_save_graph(entities_list, relationships_list, page_id)
-        
-    #     return jsonify({'success': True, 'timestamp': int(time.time())})
-    # except Exception as e:
-    #     print(traceback.format_exc())
-    #     return jsonify({'error': str(e)}), 500 
 
         return jsonify({
             'response': result.response,
@@ -226,122 +219,153 @@ def run_local_query():
         return jsonify({'error': str(e)}), 500
 
 
-@query_bp.route('/run-global-query', methods=['POST', 'OPTIONS'])
-@cross_origin()
+@query_bp.route('/run-global-query', methods=['POST'])
 def run_global_query():
+#     page_id = request.json.get('page_id', '')
+
+#     query_text = request.json.get('query', '')
+#     if not query_text:
+#         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
+
+#     api_key = GRAPHRAG_API_KEY
+#     llm_model = GRAPHRAG_LLM_MODEL
+
+#     config = LanguageModelConfig(
+#         api_key=api_key,
+#         type=ModelType.OpenAIChat,
+#         model=llm_model,
+#         max_retries=20,
+#     )
+
+#     model = ModelManager().get_or_create_chat_model(
+#         name="global_search",
+#         model_type=ModelType.OpenAIChat,
+#         config=config,
+#     )
+
+#     token_encoder = tiktoken.encoding_for_model(llm_model)
+
+#     # 경로
+#     INPUT_DIR = f"../data/input/{page_id}/output"
+#     COMMUNITY_TABLE = "communities"
+#     COMMUNITY_REPORT_TABLE = "community_reports"
+#     ENTITY_TABLE = "entities"
+#     COMMUNITY_LEVEL = 2
+
+#     community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
+#     entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
+#     report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
+
+#     communities = read_indexer_communities(community_df, report_df)
+#     reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
+#     entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
+
+#     context_builder = GlobalCommunityContext(
+#         community_reports=reports,
+#         communities=communities,
+#         entities=entities,
+#         token_encoder=token_encoder,
+#     )
+
+#     context_builder_params = {
+#         "use_community_summary": False,
+#         "shuffle_data": True,
+#         "include_community_rank": True,
+#         "min_community_rank": 0,
+#         "community_rank_name": "rank",
+#         "include_community_weight": True,
+#         "community_weight_name": "occurrence weight",
+#         "normalize_community_weight": True,
+#         "max_tokens": 12_000,
+#         "context_name": "Reports",
+#     }
+
+#     map_llm_params = {
+#         "max_tokens": 1000,
+#         "temperature": 0.0,
+#         "response_format": {"type": "json_object"},
+#     }
+
+#     reduce_llm_params = {
+#         "max_tokens": 2000,
+#         "temperature": 0.0,
+#     }
+
+#     search_engine = GlobalSearch(
+#         model=model,
+#         context_builder=context_builder,
+#         token_encoder=token_encoder,
+#         max_data_tokens=12_000,
+#         map_llm_params=map_llm_params,
+#         reduce_llm_params=reduce_llm_params,
+#         allow_general_knowledge=False,
+#         json_mode=True,
+#         context_builder_params=context_builder_params,
+#         concurrent_coroutines=32,
+#         response_type="Multi-Page Report",
+#     )
+
+#     try:
+#         # Run the async search in a separate thread with a dedicated event loop
+#         result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
+
+#         # 결과 저장
+#         context_files = {}
+#         for key, df in result.context_data.items():
+#             if isinstance(df, pd.DataFrame):
+#                 output_file = f"context_data_{key}.csv"
+#                 df.to_csv(output_file, index=False, encoding='utf-8-sig')
+#                 print(f"{key} 데이터가 {output_file}에 저장되었습니다.")
+#                 context_files[key] = output_file
+
+#         return jsonify({
+#             'response': result.response
+#         })
+#     except Exception as e:
+#         print(f"Error in run_global_query: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
     page_id = request.json.get('page_id', '')
+    if not page_id:
+        return jsonify({'error': 'page_id가 제공되지 않았습니다.'}), 400
 
     query_text = request.json.get('query', '')
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
 
-    api_key = GRAPHRAG_API_KEY
-    llm_model = GRAPHRAG_LLM_MODEL
-
-    config = LanguageModelConfig(
-        api_key=api_key,
-        type=ModelType.OpenAIChat,
-        model=llm_model,
-        max_retries=20,
-    )
-
-    model = ModelManager().get_or_create_chat_model(
-        name="global_search",
-        model_type=ModelType.OpenAIChat,
-        config=config,
-    )
-
-    token_encoder = tiktoken.encoding_for_model(llm_model)
-
-    # 경로
-    INPUT_DIR = f"../data/input/{page_id}/output"
-    COMMUNITY_TABLE = "communities"
-    COMMUNITY_REPORT_TABLE = "community_reports"
-    ENTITY_TABLE = "entities"
-    COMMUNITY_LEVEL = 2
-
-    prefix = f'pages/{page_id}/results/'
-    blobs = list(bucket.list_blobs(prefix=prefix))
-
-    blob_dict = {}
-    for blob in blobs:
-        filename = blob.name.replace(prefix, '')
-        if filename:
-            blob_dict[filename] = blob.download_as_bytes()
-
-    entity_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
-    community_df = pd.read_parquet(io.BytesIO(blob_dict["communities.parquet"]))
-    report_df = pd.read_parquet(io.BytesIO(blob_dict["community_reports.parquet"]))
-
-    communities = read_indexer_communities(community_df, report_df)
-    reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
-    entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
-
-    context_builder = GlobalCommunityContext(
-        community_reports=reports,
-        communities=communities,
-        entities=entities,
-        token_encoder=token_encoder,
-    )
-
-    context_builder_params = {
-        "use_community_summary": False,
-        "shuffle_data": True,
-        "include_community_rank": True,
-        "min_community_rank": 0,
-        "community_rank_name": "rank",
-        "include_community_weight": True,
-        "community_weight_name": "occurrence weight",
-        "normalize_community_weight": True,
-        "max_tokens": 12_000,
-        "context_name": "Reports",
-    }
-
-    map_llm_params = {
-        "max_tokens": 1000,
-        "temperature": 0.0,
-        "response_format": {"type": "json_object"},
-    }
-
-    reduce_llm_params = {
-        "max_tokens": 2000,
-        "temperature": 0.0,
-    }
-
-    search_engine = GlobalSearch(
-        model=model,
-        context_builder=context_builder,
-        token_encoder=token_encoder,
-        max_data_tokens=12_000,
-        map_llm_params=map_llm_params,
-        reduce_llm_params=reduce_llm_params,
-        allow_general_knowledge=False,
-        json_mode=True,
-        context_builder_params=context_builder_params,
-        concurrent_coroutines=32,
-        response_type="Multi-Page Report",
-    )
-    
     try:
-        # Run the async search in a separate thread with a dedicated event loop
-        result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
-        
-        # 결과 저장
-        context_files = {}
-        for key, df in result.context_data.items():
-            if isinstance(df, pd.DataFrame):
-                output_file = f"context_data_{key}.csv"
-                df.to_csv(output_file, index=False, encoding='utf-8-sig')
-                print(f"{key} 데이터가 {output_file}에 저장되었습니다.")
-                context_files[key] = output_file
-        
+        # graphrag 실행을 별도 쓰레드에서 처리
+        result = thread_pool.submit(run_graphrag_query, page_id, query_text).result()
+
         return jsonify({
-            'response': result.response,
-            'context_files': context_files
+            'response': result
         })
     except Exception as e:
-        print(f"Error in run_global_query: {str(e)}")
+        print(f"Error in run_local_query: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
+def run_graphrag_query(page_id, message):
+    try:
+        INPUT_DIR = f"../data/input/{page_id}"
+        command = [
+            'graphrag',
+            'query',
+            '--root', INPUT_DIR,
+            '--response-type', "Multi-Page Report",
+            '--method', 'basic',
+            '--query', message
+        ]
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        if result.returncode != 0:
+            print(f"graphrag 오류 발생: {result.stderr}")
+            raise Exception(f"graphrag 실행 오류: {result.stderr.strip()}")
+
+        return result.stdout.strip()
+    except Exception as e:
+        raise RuntimeError(f"run_graphrag_query 실패: {str(e)}")
+
+
 
 @query_bp.route('/generate-graph', methods=['POST'])
 def generate_graph():    
@@ -376,13 +400,13 @@ def all_graph():
             if filename:
                 blob_dict[filename] = blob.download_as_bytes()
         # 파이어베이스의 파케이 읽어서 가져오게 
-        entities_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
-        relationships_df = pd.read_parquet(io.BytesIO(blob_dict["relationships.parquet"]))
-        # entities_parquet = os.path.join(base_path, "entities.parquet")
-        # relationships_parquet = os.path.join(base_path, "relationships.parquet")
+        # entities_df = pd.read_parquet(io.BytesIO(blob_dict["entities.parquet"]))
+        # relationships_df = pd.read_parquet(io.BytesIO(blob_dict["relationships.parquet"]))
+        entities_parquet = os.path.join(base_path, "entities.parquet")
+        relationships_parquet = os.path.join(base_path, "relationships.parquet")
 
-        # entities_df = pd.read_parquet(entities_parquet)
-        # relationships_df = pd.read_parquet(relationships_parquet)
+        entities_df = pd.read_parquet(entities_parquet)
+        relationships_df = pd.read_parquet(relationships_parquet)
 
         # entities: degree 기준 상위 100개
         top_entities = (
