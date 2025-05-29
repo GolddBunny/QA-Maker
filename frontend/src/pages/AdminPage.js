@@ -13,6 +13,8 @@ import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
 import { initDocUrl } from '../api/InitDocUrl';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase/sdk";
 
 const BASE_URL = 'http://localhost:5000/flask';
 
@@ -57,6 +59,15 @@ const AdminPage = () => {
     const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
     const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
 
+    const [stepExecutionTimes, setStepExecutionTimes] = useState({
+      crawling: null,
+      structuring: null,
+      document: null,
+      indexing: null
+    });
+    const stepTimesRef = useRef(stepExecutionTimes);
+    const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
+
     const { handleFileDrop } = useMemo(() => FileDropHandler({  //문서 수 firebase 실시간 연동
       uploadedDocs,
       setUploadedDocs,
@@ -68,15 +79,26 @@ const AdminPage = () => {
       setDocCount
     }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
 
+    // handleCloseProgressing 수정
     const handleCloseProgressing = async () => {
-      setShowProgressing(false);
-      localStorage.removeItem(`showProgressing_${pageId}`);
-
-      if (!pageId) return;
-
       try {
-        await checkOutputFolder(pageId);
+        // 서버 작업 상태 확인
+        const serverStatus = await checkServerProcessingStatus(pageId);
+        
+        if (serverStatus.isProcessing) {
+          const confirmClose = window.confirm(
+            "서버에서 작업이 진행 중입니다. 정말로 진행 창을 닫으시겠습니까?\n" +
+            "창을 닫아도 서버 작업은 계속됩니다."
+          );
+          if (!confirmClose) return;
+        }
+        
+        setShowProgressing(false);
+        localStorage.removeItem(`showProgressing_${pageId}`);
 
+        if (!pageId) return;
+
+        await checkOutputFolder(pageId);
         await Promise.all([
           fetchSavedUrls(pageId),
           loadDocumentsInfo(pageId)
@@ -85,6 +107,21 @@ const AdminPage = () => {
         console.error('ProgressingBar 닫을 때 상태 갱신 오류:', error);
       }
     };
+
+    // 서버 작업 상태 확인 함수 추가
+    const checkServerProcessingStatus = useCallback(async (pageId) => {
+      if (!pageId) return { isProcessing: false };
+      
+      try {
+        const response = await fetch(`${BASE_URL}/processing-status/${pageId}`);
+        const data = await response.json();
+        return data; // { isProcessing: true/false, currentStep: 'crawling'/'structuring'/etc, progress: 0.5 }
+      } catch (error) {
+        console.error("서버 작업 상태 확인 실패:", error);
+        return { isProcessing: false };
+      }
+    }, []);
+
 
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
@@ -142,49 +179,69 @@ const AdminPage = () => {
       setIsLoadingPage(true);
       
       console.log("현재 admin pageId:", pageId);
+      stepTimesRef.current = stepExecutionTimes;
 
-      // 페이지가 변경될 때마다 상태 초기화
-      // setEntities([]);
-      // setRelationships([]);
-      // setGraphData(null);
-      // setUploadedUrls([]);
-      // setUploadedDocs([]);
-      // setHasDocuments(false);
-      // setHasOutput(null);
-      
-      const savedShow = localStorage.getItem(`showProgressing_${pageId}`);
-      if (savedShow === 'true') {
-        setShowProgressing(true);
-      } else {
-        setShowProgressing(false);
-      }
-      
-      if (pageId) {
-        Promise.all([
-          loadUploadedDocsFromFirestore(pageId)
-            .then(({ docs, count }) => {
-              const docsArray = Array.isArray(docs) ? docs : []; // 배열인지 확인
-              setUploadedDocs(docsArray);
-              setDocCount(count); // 문서 개수
-            })
-            .catch(error => {
-              console.error("문서 목록 로드 중 오류:", error);
-              setUploadedDocs([]);
-              setDocCount(0);
-            }),
-          fetchSavedUrls(pageId),
-          checkOutputFolder(pageId)
-        ]).catch(error => console.error("데이터 로드 중 오류:", error))
-          .finally(() => setIsLoadingPage(false)); // 로딩 종료
-        
-        const pages = JSON.parse(localStorage.getItem('pages')) || [];
-        const currentPage = pages.find(page => page.id === pageId);
-        if (currentPage) {
-          setDomainName(currentPage.name || "");
-          setSystemName(currentPage.sysname || "");
+      const initializePage = async () => {
+        try {
+          // 1. 서버 작업 상태 먼저 확인
+          const serverStatus = await checkServerProcessingStatus(pageId);
+          
+          // 2. localStorage 상태 확인
+          const savedShow = localStorage.getItem(`showProgressing_${pageId}`);
+          
+          // 3. 서버에서 실제 작업 중이 아니면 localStorage 정리
+          if (savedShow === 'true' && !serverStatus.isProcessing) {
+            console.log("서버 작업이 중단됨. localStorage 정리");
+            setShowProgressing(false);
+            localStorage.removeItem(`showProgressing_${pageId}`);
+          } else if (serverStatus.isProcessing) {
+            // 4. 서버에서 작업 중이면 상태 복원
+            console.log("서버 작업 진행 중. 상태 복원");
+            setShowProgressing(true);
+            setCurrentStep(serverStatus.currentStep || 'crawling');
+            
+            // 진행 상태에 따라 stepExecutionTimes 복원
+            if (serverStatus.stepTimes) {
+              setStepExecutionTimes(serverStatus.stepTimes);
+            }
+          } else {
+            setShowProgressing(false);
+          }
+
+          // 5. 기존 데이터 로드
+          await Promise.all([
+            loadUploadedDocsFromFirestore(pageId)
+              .then(({ docs, count }) => {
+                const docsArray = Array.isArray(docs) ? docs : [];
+                setUploadedDocs(docsArray);
+                setDocCount(count);
+              })
+              .catch(error => {
+                console.error("문서 목록 로드 중 오류:", error);
+                setUploadedDocs([]);
+                setDocCount(0);
+              }),
+            fetchSavedUrls(pageId),
+            checkOutputFolder(pageId)
+          ]);
+
+          // 6. 페이지 정보 설정
+          const pages = JSON.parse(localStorage.getItem('pages')) || [];
+          const currentPage = pages.find(page => page.id === pageId);
+          if (currentPage) {
+            setDomainName(currentPage.name || "");
+            setSystemName(currentPage.sysname || "");
+          }
+          
+        } catch (error) {
+          console.error("페이지 초기화 중 오류:", error);
+        } finally {
+          setIsLoadingPage(false);
         }
-      }
-    }, [pageId, navigate]);
+      };
+
+      initializePage();
+    }, [pageId, navigate, checkServerProcessingStatus, fetchSavedUrls, checkOutputFolder]);
 
     const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
@@ -277,25 +334,45 @@ const AdminPage = () => {
       }
     };
 
-    const [stepExecutionTimes, setStepExecutionTimes] = useState({
-      crawling: null,
-      structuring: null,
-      document: null,
-      indexing: null
-    });
-    const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
+    
 
     // 각 단계 완료 시 호출되는 콜백 함수
-    const handleStepComplete = (stepName, durationInSeconds) => {
-      setStepExecutionTimes(prev => ({
-        ...prev,
-        [stepName]: durationInSeconds,
-      }));
+    const handleStepComplete = async (stepName, durationInSeconds) => {
+      setStepExecutionTimes(prev => {
+        const updated = { ...prev, [stepName]: durationInSeconds };
+        stepTimesRef.current = updated; 
+        console.log("📊 Updated stepExecutionTimes:", updated);
+        return updated;
+      });
 
       const stepOrder = ['crawling', 'structuring', 'document', 'indexing'];
       const nextIndex = stepOrder.indexOf(stepName) + 1;
       if (nextIndex < stepOrder.length) {
         setCurrentStep(stepOrder[nextIndex]);
+      }
+
+      if (!pageId) {
+        console.warn("❗ pageId가 없어 Firestore에 저장하지 못함");
+        return;
+      }
+
+      try {
+        const pageDocRef = doc(db, "dashboard", pageId);
+        const docSnap = await getDoc(pageDocRef);
+
+        if (docSnap.exists()) {
+          await updateDoc(pageDocRef, {
+            stepExecutionTimes: stepTimesRef.current,
+          });
+          console.log(`✅ Firestore에 stepExecutionTimes 업데이트 완료: ${stepName}`);
+        } else {
+          await setDoc(pageDocRef, {
+            stepExecutionTimes: stepTimesRef.current,
+          });
+          console.log(`✅ Firestore에 stepExecutionTimes 새로 저장 완료: ${stepName}`);
+        }
+      } catch (error) {
+        console.error("❌ Firestore 저장 실패:", error);
       }
     };
 
@@ -311,6 +388,7 @@ const AdminPage = () => {
       }
 
       if (isAnyProcessing) return;
+      
       setShowProgressing(true);
       localStorage.setItem(`showProgressing_${pageId}`, 'true');
       setIsApplyLoading(true);
@@ -410,22 +488,13 @@ const AdminPage = () => {
     });
 
     
-    const handleAnalyzer = async () => {
-      if (!pageId) {
-        alert("먼저 페이지를 생성해주세요.");
-        return;
-      }
+    const handleAnalyzer = () => {
+      const allDone = Object.values(stepExecutionTimes).every(v => v !== null);
 
-      if (isAnyProcessing) return;
-
-      try {
-        console.log("Analyzer 실행");
-
-        navigate(`/dashboard/${pageId}`, { state: { conversionTime } });  //conversionTime : 문서 전처리 실행 시간
-      } catch (error) {
-        console.error("Analyzer 실행 중 오류:", error);
-        alert("Analyzer 실행 중 오류가 발생했습니다.");
-      }
+      console.log("✅ 최종 stepExecutionTimes로 navigate:", stepExecutionTimes);
+      navigate(`/dashboard/${pageId}`, {
+        state: { stepExecutionTimes: stepExecutionTimes } // state 직접 사용
+      });
     };
 
     return (
@@ -499,7 +568,7 @@ const AdminPage = () => {
                 type="text"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder={isAnyProcessing ? '' : 'https://example.com'}
+                placeholder={isAnyProcessing ? '처리 중 ...' : 'https://example.com'}
                 className="url-input-field"
                 disabled={isAnyProcessing}
                 style={{ color: isAnyProcessing ? 'transparent' : 'inherit' }}
@@ -568,8 +637,10 @@ const AdminPage = () => {
                   disabled={isAnyProcessing}
                 />
                 
-                {/* 기존 텍스트는 isAnyProcessing이 false일 때만 보이도록 */}
-                {!isAnyProcessing && (
+                {/* 처리 중이면 전용 메시지 보여주기 */}
+                {isAnyProcessing ? (
+                  <p>처리 중...</p>
+                ) : (
                   <>
                     <p>
                       {isFileLoading
@@ -663,7 +734,9 @@ const AdminPage = () => {
               setShowProgressing(false);
               localStorage.removeItem(`showProgressing_${pageId}`);
             }}
-            onAnalyzer={() => navigate('/analyzer')}
+            onAnalyzer={() => navigate(`/dashboard/${pageId}`, {
+              state: { stepExecutionTimes: stepTimesRef.current }
+            })}
             isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계
