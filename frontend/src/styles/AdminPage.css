@@ -702,6 +702,7 @@ background-color: #e2dbf0;
   color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.30);
   transform: scale(0.97);
+  height: 20px;
 }
 
 .result-table {
