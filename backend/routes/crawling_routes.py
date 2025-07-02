@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from services.crawling_service.urlCrawling import main as crawl_urls
-from routes.urlLoad_routes import get_root_urls_from_firebase, save_crawling_url_to_firebase, get_urls_from_firebase, save_document_url_to_firebase, save_urls_batch
+from routes.urlLoad_routes import get_general_urls_from_firebase, get_urls_from_firebase, save_url_to_firebase, save_urls_batch
 from services.crawling_service.crawling_and_structuring import main as crawling_and_structuring
 from firebase_admin import firestore
 from services.crawling_service import line1
@@ -25,9 +25,9 @@ def start_url_crawling(page_id):
         start_time = time.time()
         
         # 1. Firebase에서 저장된 URL들 가져오기
-        saved_urls = get_root_urls_from_firebase(page_id)
+        saved_urls = get_general_urls_from_firebase(page_id)
         
-        print(f"📋 Firebase에서 가져온 root URL 개수: {len(saved_urls) if saved_urls else 0}")
+        print(f"📋 Firebase에서 가져온 일반 URL 개수: {len(saved_urls) if saved_urls else 0}")
         if saved_urls:
             for i, url_info in enumerate(saved_urls):
                 print(f"   {i+1}. {url_info.get('url', 'N/A')} (날짜: {url_info.get('date', 'N/A')})")
@@ -177,14 +177,3 @@ def cleanup_text_files(page_id):
             "success": False, 
             "error": f"텍스트 정리 중 오류 발생: {str(e)}"
         }), 500
-
-
-# @crawling_bp.route('/get-crawling-status/<page_id>', methods=['GET'])
-# def get_crawling_status(page_id):
-#     """크롤링 상태 확인"""
-#     try:
-#         # 데이터 디렉토리에서 크롤링 결과 확인
-#         url_base_path = f'../data/input/{page_id}_url'  
-#         url_input_path = os.path.join(url_base_path, 'input')
-        
-        

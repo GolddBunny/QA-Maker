@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-한성대학교 문서 다운로더
+문서 다운로더
 Document URLs에서 파일들을 다운로드하여 input 폴더에 저장
 특정 확장자의 문서 파일만 저장
 Firebase Storage에 업로드 후 로컬 파일 삭제 기능 추가
@@ -102,13 +100,13 @@ class DocumentDownloader:
 
     def load_urls_from_file(self, file_path: str) -> List[str]:
         """
-        파일에서 URL 목록을 로드
+        파일에서 문서 URL 목록을 로드
         
         Args:
-            file_path: URL 목록이 있는 파일 경로
+            file_path: 문서 URL 목록이 있는 파일 경로
             
         Returns:
-            URL 목록
+            문서 URL 목록
         """
         try:
             with open(file_path, 'r', encoding='utf-8') as f:

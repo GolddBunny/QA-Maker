@@ -1,51 +1,35 @@
-import json
-from pathlib import Path
-import time
 from flask import Blueprint, jsonify, request
-from firebase_config import bucket
 from datetime import datetime
-from firebase_admin import storage
-from datetime import datetime
-import uuid
+from firebase_admin import firestore
 
 url_load_bp = Blueprint('url_load', __name__)
 
-# URL 중복 검사 함수
-def check_url_exists(page_id, url_to_check, url_type="general"):
-    """Firebase Storage에서 URL 중복 검사"""
-    prefix = f"pages/{page_id}/urls/"
-    blobs = bucket.list_blobs(prefix=prefix)
-    
-    for blob in blobs:
-        blob.reload()
-        metadata = blob.metadata or {}
-        existing_url = metadata.get('url')
-        existing_type = metadata.get('type', 'general')
-        
-        # URL과 타입이 모두 일치하면 중복
-        if existing_url == url_to_check and existing_type == url_type:
-            return True
-    return False
+# Firestore 클라이언트
+db = firestore.client()
 
-# 배치 중복 검사 함수 (성능 최적화)
+# URL 중복 검사 함수 (Firestore 버전)
+def check_url_exists(page_id, url_to_check, url_type="general"):
+    """Firestore에서 URL 중복 검사"""
+    urls_ref = db.collection('urls')
+    query = urls_ref.where('page_id', '==', page_id).where('url', '==', url_to_check).where('type', '==', url_type)
+    docs = query.get()
+    return len(docs) > 0
+
+# 배치 중복 검사 함수 (Firestore 버전)
 def get_existing_urls(page_id, url_type="general"):
     """페이지의 기존 URL 목록을 한 번에 가져와서 성능 최적화"""
-    prefix = f"pages/{page_id}/urls/"
-    blobs = bucket.list_blobs(prefix=prefix)
-    existing_urls = set()
+    urls_ref = db.collection('urls')
+    query = urls_ref.where('page_id', '==', page_id).where('type', '==', url_type)
+    docs = query.get()
     
-    for blob in blobs:
-        blob.reload()
-        metadata = blob.metadata or {}
-        existing_url = metadata.get('url')
-        existing_type = metadata.get('type', 'general')
-        
-        if existing_url and existing_type == url_type:
-            existing_urls.add(existing_url)
+    existing_urls = set()
+    for doc in docs:
+        data = doc.to_dict()
+        existing_urls.add(data.get('url'))
     
     return existing_urls
 
-# 배치 URL 저장 함수
+# 배치 URL 저장 함수 (Firestore 버전)
 def save_urls_batch(page_id, urls, url_type="crawled"):
     """여러 URL을 배치로 저장 (중복 검사 포함)"""
     if not urls:
@@ -55,174 +39,101 @@ def save_urls_batch(page_id, urls, url_type="crawled"):
     existing_urls = get_existing_urls(page_id, url_type)
     saved_count = 0
     
-    bucket_storage = storage.bucket()
     today_str = datetime.now().strftime('%Y-%m-%d')
     
-    for url in urls:
-        # 중복 검사
-        if url in existing_urls:
-            print(f"URL 중복으로 저장 생략: {url}")
-            continue
+    # Firestore 배치 처리 (최대 500개씩)
+    batch_size = 500
+    for i in range(0, len(urls), batch_size):
+        batch = db.batch()
+        batch_urls = urls[i:i + batch_size]
         
-        # 새 URL 저장
-        uuid_name = f"{uuid.uuid4().hex}.txt"
-        upload_path = f"pages/{page_id}/urls/{uuid_name}"
+        for url in batch_urls:
+            # 중복 검사
+            if url in existing_urls:
+                print(f"URL 중복으로 저장 생략: {url}")
+                continue
+            
+            # 새 URL 저장
+            doc_ref = db.collection('urls').document()
+            batch.set(doc_ref, {
+                "url": url,
+                "page_id": page_id,
+                "date": today_str,
+                "type": url_type,
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
+            
+            # 메모리 상 기존 URL 목록에도 추가 (같은 배치 내 중복 방지)
+            existing_urls.add(url)
+            saved_count += 1
         
-        blob = bucket_storage.blob(upload_path)
-        blob.metadata = {
-            "url": url,
-            "date": today_str,
-            "root": "false",
-            "type": url_type
-        }
-        blob.upload_from_string(url, content_type='text/plain')
-        blob.make_public()
-        
-        # 메모리 상 기존 URL 목록에도 추가 (같은 배치 내 중복 방지)
-        existing_urls.add(url)
-        saved_count += 1
-        
-        if saved_count % 10 == 0:  # 10개마다 로그 출력
-            print(f"배치 저장 진행: {saved_count}개 완료")
+        # 배치 커밋
+        if saved_count > 0:
+            batch.commit()
+            print(f"배치 저장 진행: {i + len(batch_urls)}개 처리 완료")
     
     print(f"배치 URL 저장 완료: {saved_count}개 저장, {len(urls) - saved_count}개 중복 생략")
     return saved_count
 
-# root url 저장
-def save_url_to_firebase(page_id, url):
-    """Firebase Storage에 URL을 텍스트 파일로 저장 (중복 검사 포함)"""
+# 단일 URL 저장 함수 (Firestore 버전)
+def save_url_to_firebase(page_id, url, url_type="general"):
+    """Firestore에 단일 URL을 저장 (중복 검사 포함)"""
     # 중복 검사
-    if check_url_exists(page_id, url, "general"):
-        print(f"URL 중복으로 저장 생략: {url}")
+    if check_url_exists(page_id, url, url_type):
+        print(f"URL 중복으로 저장 생략: {url} (타입: {url_type})")
         return False
     
-    bucket = storage.bucket()
     today_str = datetime.now().strftime('%Y-%m-%d')
-    uuid_name = f"{uuid.uuid4().hex}.txt"
-    upload_path = f"pages/{page_id}/urls/{uuid_name}"
-
-    blob = bucket.blob(upload_path)
-    blob.metadata = {
+    
+    doc_ref = db.collection('urls').document()
+    doc_ref.set({
         "url": url,
+        "page_id": page_id,
         "date": today_str,
-        "root": "true",
-        "type": "general"  # 타입 추가
-    }
-    blob.upload_from_string(url, content_type='text/plain')
-    blob.make_public()
-    print(f"URL 저장 완료: {url} → {upload_path}")
+        "type": url_type,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    })
+    
+    print(f"URL 저장 완료: {url} (타입: {url_type})")
     return True
 
-# 크롤링해온 문서 url 저장 (문서 URL 구분)
-def save_document_url_to_firebase(page_id, url):
-    """Firebase Storage에 문서 URL을 텍스트 파일로 저장 (중복 검사 포함)"""
-    # 중복 검사
-    if check_url_exists(page_id, url, "document"):
-        print(f"문서 URL 중복으로 저장 생략: {url}")
-        return False
-        
-    bucket = storage.bucket()
-    today_str = datetime.now().strftime('%Y-%m-%d')
-    uuid_name = f"{uuid.uuid4().hex}.txt"
-    upload_path = f"pages/{page_id}/urls/{uuid_name}"
+# 범용 URL 가져오기 함수 (타입별 필터링)
+def get_urls_by_type(page_id, url_type=None):
+    """타입별로 URL 가져오기"""
+    urls_ref = db.collection('urls')
+    query = urls_ref.where('page_id', '==', page_id)
+    
+    if url_type:
+        query = query.where('type', '==', url_type)
+    
+    query = query.order_by('timestamp', direction=firestore.Query.DESCENDING)
+    docs = query.get()
+    
+    urls = []
+    for doc in docs:
+        data = doc.to_dict()
+        urls.append({
+            'url': data.get('url'),
+            'date': data.get('date'),
+            'type': data.get('type')
+        })
+    
+    return urls
 
-    blob = bucket.blob(upload_path)
-    blob.metadata = {
-        "url": url,
-        "date": today_str,
-        "root": "false",
-        "type": "document"  # 문서 URL임을 표시
-    }
-    blob.upload_from_string(url, content_type='text/plain')
-    blob.make_public()
-    print(f"크롤링 해온 문서 URL 저장 완료: {url} → {upload_path}")
-    return True
-
-# 크롤링해온 url 저장
-def save_crawling_url_to_firebase(page_id, url):
-    """Firebase Storage에 URL을 텍스트 파일로 저장 (중복 검사 포함)"""
-    # 중복 검사
-    if check_url_exists(page_id, url, "crawled"):
-        print(f"크롤링 URL 중복으로 저장 생략: {url}")
-        return False
-        
-    bucket = storage.bucket()
-    today_str = datetime.now().strftime('%Y-%m-%d')
-    uuid_name = f"{uuid.uuid4().hex}.txt"
-    upload_path = f"pages/{page_id}/urls/{uuid_name}"
-
-    blob = bucket.blob(upload_path)
-    blob.metadata = {
-        "url": url,
-        "date": today_str,
-        "root": "false",
-        "type": "crawled"  # 타입 추가
-    }
-    blob.upload_from_string(url, content_type='text/plain')
-    blob.make_public()
-    print(f"크롤링 해온 URL 저장 완료: {url} → {upload_path}")
-    return True
-
-#url 모든 목록 가져오기
+# 크롤링된 URL 목록 가져오기 (Firestore 버전) - crawled 타입만
 def get_urls_from_firebase(page_id):
-    prefix = f"pages/{page_id}/urls/"
-    blobs = bucket.list_blobs(prefix=prefix)
-    urls = []
+    """크롤링된 URL만 가져오기 (type='crawled')"""
+    return get_urls_by_type(page_id, 'crawled')
 
-    for blob in blobs:
-        blob.reload()  # 메타데이터 최신화
-        metadata = blob.metadata or {}
-        url = metadata.get('url')
-        date = metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
+# general 타입 URL 목록 가져오기
+def get_general_urls_from_firebase(page_id):
+    """일반 URL만 가져오기 (type='general')"""
+    return get_urls_by_type(page_id, 'general')
 
-        if url:
-            urls.append({
-                'url': url,
-                'date': date
-            })
-    urls.sort(key=lambda x: x['date'], reverse=True)
-    return urls
-
-# 문서 url 목록 가져오기
+# 문서 url 목록 가져오기 (Firestore 버전)
 def get_document_urls_from_firebase(page_id):
-    prefix = f"pages/{page_id}/urls/"
-    blobs = bucket.list_blobs(prefix=prefix)
-    urls = []
-
-    for blob in blobs:
-        blob.reload()
-        metadata = blob.metadata or {}
-        url = metadata.get('url')
-        date = metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
-        url_type = metadata.get('type', '')
-        
-        # 문서 URL만 필터링
-        if url and url_type == 'document':
-            urls.append({
-                'url': url,
-                'date': date
-            })
-    urls.sort(key=lambda x: x['date'], reverse=True)
-    return urls
-
-# root url 목록 가져오기
-def get_root_urls_from_firebase(page_id):
-    prefix = f"pages/{page_id}/urls/"
-    blobs = bucket.list_blobs(prefix=prefix)
-    urls = []
-
-    for blob in blobs:
-        blob.reload()
-        metadata = blob.metadata or {}
-        url = metadata.get('url')
-        date = metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
-        if metadata.get('root') == 'true':
-            urls.append({
-                'url': url,
-                'date': date
-            })
-    urls.sort(key=lambda x: x['date'], reverse=True)
-    return urls
+    """문서 URL만 가져오기 (type='document')"""
+    return get_urls_by_type(page_id, 'document')
 
 #url 추가
 @url_load_bp.route('/add-url/<page_id>', methods=['POST'])
@@ -237,8 +148,8 @@ def add_url(page_id):
         # 1. URL 저장 (중복 검사 포함)
         is_saved = save_url_to_firebase(page_id, url)
 
-        # 2. 저장된 URL 목록 조회
-        saved_urls = get_urls_from_firebase(page_id)
+        # 2. 저장된 URL 목록 조회 (사용자가 추가한 일반 URL)
+        saved_urls = get_general_urls_from_firebase(page_id)
 
         if is_saved:
             message = "URL 저장 완료"
@@ -255,22 +166,34 @@ def add_url(page_id):
     except Exception as e:
         return jsonify({"success": False, "error": f"URL 저장 중 오류 발생: {str(e)}"}), 500
 
-#url 목록 불러오기
+# 일반 URL 목록 불러오기 (사용자가 직접 추가한 URL)
 @url_load_bp.route('/get-urls/<page_id>', methods=['GET'])
 def get_saved_urls(page_id):
-    urls = get_urls_from_firebase(page_id)
-    if urls:
-        print(f"Firebase에서 가져온 URL 목록 ({page_id}): {urls}")
-        return jsonify({"success": True, "urls": urls}), 200
-    else:
-        return jsonify({"success": False, "error": "URL 조회 중 오류 발생"}), 500
+    """사용자가 직접 추가한 URL 목록 (general 타입)"""
+    urls = get_general_urls_from_firebase(page_id)
+    print(f"Firestore에서 가져온 일반 URL 목록 ({page_id}): {len(urls)}개")
+    return jsonify({"success": True, "urls": urls}), 200
 
-#문서 url 목록 불러오기
+# 크롤링된 URL 목록 불러오기
+@url_load_bp.route('/get-crawled-urls/<page_id>', methods=['GET'])
+def get_saved_crawled_urls(page_id):
+    """크롤링된 URL 목록 (crawled 타입)"""
+    urls = get_urls_from_firebase(page_id)
+    print(f"Firestore에서 가져온 크롤링 URL 목록 ({page_id}): {len(urls)}개")
+    return jsonify({"success": True, "urls": urls}), 200
+
+# 문서 URL 목록 불러오기
 @url_load_bp.route('/get-document-urls/<page_id>', methods=['GET'])
 def get_saved_document_urls(page_id):
+    """문서 URL 목록 (document 타입)"""
     urls = get_document_urls_from_firebase(page_id)
-    if urls:
-        print(f"Firebase에서 가져온 문서 URL 목록 ({page_id}): {urls}")
-        return jsonify({"success": True, "urls": urls}), 200
-    else:
-        return jsonify({"success": True, "urls": []}), 200  # 빈 목록도 성공으로 처리
+    print(f"Firestore에서 가져온 문서 URL 목록 ({page_id}): {len(urls)}개")
+    return jsonify({"success": True, "urls": urls}), 200
+
+# 모든 타입 URL 목록 불러오기
+@url_load_bp.route('/get-all-urls/<page_id>', methods=['GET'])
+def get_all_saved_urls(page_id):
+    """모든 타입의 URL 목록"""
+    urls = get_urls_by_type(page_id)  # 타입 필터 없이 모든 URL
+    print(f"Firestore에서 가져온 전체 URL 목록 ({page_id}): {len(urls)}개")
+    return jsonify({"success": True, "urls": urls}), 200

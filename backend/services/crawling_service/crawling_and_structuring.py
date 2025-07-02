@@ -1,9 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-통합 크롤링 시스템 테스트 스크립트
-html_Structuring.py를 사용하여 Jina와 artclView 크롤러를 통합 실행
-"""
+# url list를 받아서 크롤링 시작 -> html_Structuring.py 호출 ( -> Jina, artclView 크롤링 시작 - > 크롤링 결과 저장) -> 크롤링 결과 반환
 
 import os
 import sys

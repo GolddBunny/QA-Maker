@@ -236,6 +236,7 @@ def ensure_page_directory(page_id):
     
     return base_path, input_path, upload_path 
 
+# 크롤링된 문서 URL 다운로드
 @document_bp.route('/download-crawled-documents/<page_id>', methods=['POST'])
 def download_crawled_documents(page_id):
     """크롤링된 문서 URL 목록을 다운로드하여 Firebase에 저장"""

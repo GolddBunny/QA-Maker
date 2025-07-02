@@ -1,3 +1,5 @@
+# url을 필터링하여 artclView와 jina 크롤링을 수행하는 파일
+
 import os
 import time
 from pathlib import Path
