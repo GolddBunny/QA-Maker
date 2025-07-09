@@ -47,7 +47,7 @@
 ![image](https://github.com/user-attachments/assets/ad4701de-88a5-41b8-8750-a4e3ab78f04d)
 
 ### 5. 생성된 Q&A 시스템의 홈 화면
-![image](https://github.com/user-attachments/assets/d07b0e2c-20d7-4a38-ba99-7143a529aeb6)
+![image](https://github.com/user-attachments/assets/a5417fd9-70a2-4345-94fd-be202f14790f)
 
 ### 6. Q&A 시스템의 질의응답 채팅화면
 ![image](https://github.com/user-attachments/assets/11220155-9a0f-49a5-9c36-102c366952f2)
