@@ -28,7 +28,7 @@ def main(output_dir, page_id):
                         with open(file_path, "r", encoding="utf-8") as f:
                             content = f.read()
                         # 줄바꿈 문자 제거
-                        one_line_content = content.replace('\n', '').replace('\r', '')
+                        one_line_content = content.replace('\n', ' ').replace('\r', ' ')
                         # 같은 파일에 덮어쓰기
                         with open(file_path, "w", encoding="utf-8") as f:
                             f.write(one_line_content)

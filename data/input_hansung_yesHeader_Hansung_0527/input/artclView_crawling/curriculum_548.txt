@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/LibArt/60/123/artclView.doMarkdown Content:## 교과목 소개LP, GP, 할당, 수동법등 기본적인 Deterministic model에 관한 연구### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || A1381034 | 의사결정시스템연구 | 3 |

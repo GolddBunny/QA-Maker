@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/kscon/123/319/artclView.doMarkdown Content:## 교과목 소개FaaS를 활용한 스마트팩토리 클라우드 플랫폼을 실습을 통해 다뤄보고, 이 과정에서의 플랫폼 서비스 구축 및 의사결정 구조에 대해 논의하고 학습한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || R0745935 | 스마트팩토리 클라우드 플랫폼 | 2 |

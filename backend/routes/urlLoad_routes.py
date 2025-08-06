@@ -106,7 +106,8 @@ def get_urls_by_type(page_id, url_type=None):
     if url_type:
         query = query.where('type', '==', url_type)
     
-    query = query.order_by('timestamp', direction=firestore.Query.DESCENDING)
+    # 인덱스 오류를 피하기 위해 order_by 제거하고 Python에서 정렬
+    # query = query.order_by('timestamp', direction=firestore.Query.DESCENDING)
     docs = query.get()
     
     urls = []
@@ -115,8 +116,16 @@ def get_urls_by_type(page_id, url_type=None):
         urls.append({
             'url': data.get('url'),
             'date': data.get('date'),
-            'type': data.get('type')
+            'type': data.get('type'),
+            'timestamp': data.get('timestamp')  # 정렬용으로 추가
         })
+    
+    # Python에서 timestamp 기준으로 내림차순 정렬
+    urls.sort(key=lambda x: x.get('timestamp') or datetime.min, reverse=True)
+    
+    # timestamp 필드 제거 후 반환
+    for url in urls:
+        url.pop('timestamp', None)
     
     return urls
 
@@ -197,3 +206,16 @@ def get_all_saved_urls(page_id):
     urls = get_urls_by_type(page_id)  # 타입 필터 없이 모든 URL
     print(f"Firestore에서 가져온 전체 URL 목록 ({page_id}): {len(urls)}개")
     return jsonify({"success": True, "urls": urls}), 200
+
+# 일반 URL과 크롤링된 URL 목록 불러오기 (document 제외)
+@url_load_bp.route('/get-general-crawled-urls/<page_id>', methods=['GET'])
+def get_general_crawled_urls(page_id):
+    """일반 URL과 크롤링된 URL 목록 (general, crawled 타입만)"""
+    general_urls = get_urls_by_type(page_id, 'general')
+    crawled_urls = get_urls_by_type(page_id, 'crawled')
+    
+    # 두 리스트 합치기
+    all_urls = general_urls + crawled_urls
+    
+    print(f"Firestore에서 가져온 일반+크롤링 URL 목록 ({page_id}): {len(all_urls)}개 (general: {len(general_urls)}, crawled: {len(crawled_urls)})")
+    return jsonify({"success": True, "urls": all_urls}), 200

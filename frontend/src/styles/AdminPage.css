@@ -598,6 +598,7 @@ background-color: #e2dbf0;
   .document-table-scroll {
     max-height: 200px;
     min-height: 200px;
+  }
 
   .upload-table, .document-table, .user-table {
     display: block;
@@ -616,7 +617,7 @@ background-color: #e2dbf0;
     padding: 5px;
   }
 
-  file-support-text,
+  .file-support-text,
   .upload-container p {
     font-size: 12px;
   }
@@ -634,7 +635,31 @@ background-color: #e2dbf0;
     height: 50px;      /* 높이 줄임 */
     font-size: 14px;   /* 글자 크기 줄임 */
   }
-}}
+
+  /* 탭에서 새 도메인 페이지 버튼 관련 스타일 추가 */
+  .action-button {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    margin: 10px 0;
+  }
+
+  .org-circle {
+    width: 70px;
+    height: 70px;
+  }
+
+  .add-page-btn {
+    height: 35px;
+    font-size: 14px;
+    padding: 0 12px;
+  }
+
+  .new-page-input {
+    height: 55px;
+    font-size: 14px;
+  }
+}
 
 .duplicate-warning-box {
   position: relative;

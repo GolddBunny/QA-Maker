@@ -44,8 +44,12 @@ __pycache__/
 # 데이터 처리 중간 파일
 /data/processed/*
 /data/graphs/*
+/data/temp_download/*
+/data/IMPORTANT_crawling/*
 !/data/processed/.gitkeep
 !/data/graphs/.gitkeep
+!/data/temp_download/.gitkeep
+!/data/IMPORTANT_crawling/.gitkeep
 
 # Parquet 파일 (대용량 데이터)
 /data/parquet/output/*
@@ -71,6 +75,10 @@ py_GlobalSearch.py
 
 # 로그 파일
 *.log
+crawler.log
+hansung_*.log
+html_structuring.log
+jina_crawling.log
 
 # 운영체제 파일
 Thumbs.db
@@ -82,6 +90,7 @@ Desktop.ini
 .git/
 frontend/.git/
 data/input/*/input
+data/input/*/cache
 
 # 데이터 폴더 무시
 /frontend/public/data/
@@ -91,3 +100,19 @@ data/input/*/input
 
 # firebase
 /backend/services/firebase/qamaker-e32d7-firebase-adminsdk-fbsvc-0408d84c8c.json
+
+# 임시 및 테스트 파일
+*.txt
+test_*.py
+requirements_test.txt
+
+# 크롤링 결과 JSON 파일 (대용량)
+/backend/services/crawling_service/urlCrawling_CSE/*/
+/backend/services/crawling_service/urlCrawling_*/
+
+# CSV 데이터 파일
+/backend/context_data_*.csv
+
+# Node.js 관련
+package-lock.json
+node_modules/

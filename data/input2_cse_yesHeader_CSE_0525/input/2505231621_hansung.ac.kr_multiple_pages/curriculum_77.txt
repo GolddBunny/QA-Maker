@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/CSE/141/1608/artclView.doMarkdown Content:## 교과목 소개본 과목에서는 C 프로그램의 기본적인 문법을 학습하고 실습을 통해 이를 습득함으로서 공학적 응용문제를 프로그램을 통하여 해결하는 방법을 익힌다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || V020005 | 프로그래밍언어론 | 3 |

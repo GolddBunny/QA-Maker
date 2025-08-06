@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/CSE/141/185/artclView.doMarkdown Content:## 교과목 소개무인지상차량(UGV), 무인수상정(USV) 등 무인장비를 운용하여 전투의 효율성을 증대시키고 인력을 절감하며, 기존 인간위주의 전투체계를 보완하기 위한 무인체계를 학습한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || M0935819 | 국방무인체계 | 2 |

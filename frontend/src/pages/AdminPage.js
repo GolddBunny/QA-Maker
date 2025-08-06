@@ -7,7 +7,7 @@ import { FileDropHandler } from '../api/handleFileDrop';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
-import { applyIndexing, updateIndexing, executeFullPipeline } from '../api/IndexingButton';
+import { applyIndexing, updateIndexing, executeFullPipeline, executeIndexingOnly } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
@@ -361,6 +361,60 @@ const AdminPage = () => {
       }
     };
 
+    // 인덱싱 재시작 버튼 (기존 파일들 이용)
+    const handleRestartIndexing = async () => {
+      if (!pageId) {
+        alert("먼저 페이지를 생성해주세요.");
+        return;
+      }
+      if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
+        alert("먼저 문서나 URL을 업로드해주세요.");
+        return;
+      }
+
+      if (isAnyProcessing) return;
+      setShowProgressing(true);
+      localStorage.setItem(`showProgressing_${pageId}`, 'true');
+      setIsApplyLoading(true);
+
+      try {
+        // 인덱싱 단계로 바로 설정
+        setCurrentStep('indexing');
+        setStepExecutionTimes({
+          crawling: null,
+          structuring: null,
+          document: null,
+          indexing: null
+        });
+
+        // 기존 파일들을 이용한 인덱싱만 실행
+        const final_result = await executeIndexingOnly(pageId, handleStepComplete);
+        
+        if (final_result.success) {
+          setIsNewPage(false);
+
+          console.log("=== 인덱싱 재시작 완료 ===");
+          console.log("실행시간:", final_result.execution_times.total, "초");
+
+          // 인덱싱 완료 후 데이터 다시 로드
+          await Promise.all([
+            fetchSavedUrls(pageId).then(setUploadedUrls),
+            loadDocumentsInfo(pageId),
+            checkOutputFolder(pageId)
+          ]);
+        } else {
+          alert(`인덱싱 재시작 실패: ${final_result.error}`);
+          setShowProgressing(false); // 실패 시에만 자동으로 닫기
+        }
+      } catch (error) {
+        console.error("인덱싱 재시작 중 오류:", error);
+        alert("인덱싱 재시작 중 오류가 발생했습니다.");
+        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+      } finally {
+        setIsApplyLoading(false);
+      }
+    };
+
     const handleUpdate = async () => {
       if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
         alert("먼저 문서나 URL을 업로드해주세요.");
@@ -639,6 +693,13 @@ const AdminPage = () => {
               </button>
               <button 
                 className="btn-apply-update"
+                onClick={handleRestartIndexing}
+                disabled={isCheckingOutput}
+              > 
+                Restart Indexing
+              </button>
+              <button 
+                className="btn-apply-update"
                 onClick={handleAnalyzer}
                 disabled={isCheckingOutput}
               > 
@@ -646,13 +707,22 @@ const AdminPage = () => {
               </button>
             </>
           ) : (
-            <button 
-              className="btn-apply-update"
-              onClick={handleApply}
-              disabled={isCheckingOutput || hasOutput === null}
-            > 
-              Build QA System
-            </button>
+            <>
+              <button 
+                className="btn-apply-update"
+                onClick={handleApply}
+                disabled={isCheckingOutput || hasOutput === null}
+              > 
+                Build QA System
+              </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleRestartIndexing}
+                disabled={isCheckingOutput}
+              > 
+                Restart Indexing
+              </button>
+            </>
           )}
         </div>
 
@@ -663,7 +733,7 @@ const AdminPage = () => {
               setShowProgressing(false);
               localStorage.removeItem(`showProgressing_${pageId}`);
             }}
-            onAnalyzer={() => navigate('/analyzer')}
+            onAnalyzer={() => navigate(`/dashboard/${pageId}`, { state: { conversionTime } })}
             isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계

@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/Engineering/49/2555/artclView.doMarkdown Content:## 교과목 소개전자회로 및 집적회로의 주요 회로소자인 트랜지스터와 다이오드로 이용되는 반도체소자의 동작원리와 특성을 익힌다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || V035001 | 반도체소자 | 3 |

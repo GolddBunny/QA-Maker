@@ -264,7 +264,7 @@ def batch_jina_crawling(url_list_file, output_dir=None, max_workers=4, verbose=F
     Args:
         url_list_file: URL 목록이 저장된 파일 경로
         output_dir: 결과를 저장할 디렉토리 경로
-        max_workers: 동시에 실행할 최대 작업자 수 (기본값 4로 감소)
+        max_workers: 동시에 실행할 최대 작업자 수
         verbose: 상세 로그 출력 여부
     """
     url_file_path = Path(url_list_file)

@@ -7,6 +7,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request, make_response
 from services.document_service.convert2txt import convert2txt
 from firebase_config import bucket
+from services.execution_time_service import get_tracker
 
 generate_bp = Blueprint('generate', __name__)
 
@@ -14,6 +15,9 @@ generate_bp = Blueprint('generate', __name__)
 def apply_documents(page_id):
     """GraphRAG 인덱싱 처리"""
     print(f"[서버 로그] 요청 메서드: {request.method}, 경로: /apply/{page_id}")
+
+    # 실행 시간 트래커 가져오기
+    tracker = get_tracker(page_id)
 
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
@@ -45,7 +49,6 @@ def apply_documents(page_id):
                 'success': True,
                 'execution_time': 0
             })
-
 
         # graphrag index 명령어 실행
         start_time = time.time()
@@ -105,6 +108,15 @@ def apply_documents(page_id):
                     # os.remove(file_path)
                     # print(f"Deleted local file: {file_path}")
 
+        # 실행 시간 트래커에 기록
+        additional_data = {
+            "base_path": base_path,
+            "txt_files_count": len(txt_files),
+            "uploaded_files_count": len(uploaded_files),
+            "process_returncode": process.returncode
+        }
+        tracker.record_step('document_indexing', execution_time, additional_data)
+
         return jsonify({
             'success': True,
             'execution_time': execution_time
@@ -120,6 +132,10 @@ def apply_documents(page_id):
 @generate_bp.route('/update/<page_id>', methods=['POST'])
 def update(page_id):
     """증분 인덱싱"""
+    
+    # 실행 시간 트래커 가져오기
+    tracker = get_tracker(page_id)
+    
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         output_path = os.path.join(base_path, 'output')
@@ -210,6 +226,17 @@ def update(page_id):
                     # 업로드 후 파일 삭제
                     # os.remove(file_path)
                     # print(f"Deleted local file: {file_path}")
+
+        # 실행 시간 트래커에 기록
+        additional_data = {
+            "base_path": base_path,
+            "url_input_path": url_input_path,
+            "downloaded_existing": downloaded,
+            "operation_type": "index" if not downloaded else "update",
+            "uploaded_files_count": len(uploaded_files),
+            "process_returncode": process.returncode
+        }
+        tracker.record_step('incremental_indexing', execution_time, additional_data)
 
         return jsonify({
             'success': True,

@@ -15,7 +15,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 from pathlib import Path
 
-# User-Agent 목록
+# 웹 사이트 차단을 피하기 위한 User-Agent 목록
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
@@ -25,11 +25,11 @@ USER_AGENTS = [
 class Crawler:
     def __init__(self, urls=None, output_base_dir=None):
         self.visited_urls = set()
-        self.saved_files = []
-        self.saved_attachments = []
-        self.delay = 1  # 요청 간 딜레이 (초)
-        self.urls_to_crawl = urls or []
-        self.curriculum_counter = 0  # curriculum 페이지 카운터
+        self.saved_files = []   # 저장된 파일 목록 추적
+        self.saved_attachments = [] # 다운로드된 첨부파일 목록 추적
+        self.delay = 1  # 서버 부하 방지를 위한 요청 간 딜레이 설정
+        self.urls_to_crawl = urls or [] # 크롤링할 URL 목록
+        self.curriculum_counter = 0  # curriculum 페이지 번호 매기기용 카운터
         
         # 첫 번째 URL에서 도메인 추출 (모든 URL이 같은 도메인이라고 가정)
         if self.urls_to_crawl:
@@ -157,85 +157,258 @@ class Crawler:
                 
         return links, doc_links
     
-    def extract_view_util_metadata(self, soup):
-        """view-util 태그에서 분류, 작성일, 작성자 정보 추출"""
+    def extract_metadata_generic(self, soup):
+        """범용적인 메타데이터 추출 - 다양한 패턴 지원"""
         metadata = {
             'category': '',
             'date': '',
             'author': ''
         }
         
-        # view-util 클래스를 가진 div 태그 찾기
+        # 패턴 1: view-util 클래스 (한성대 스타일)
         view_util = soup.find('div', class_='view-util')
-        if not view_util:
-            return metadata
+        if view_util:
+            dl_tags = view_util.find_all('dl')
+            for dl in dl_tags:
+                dt = dl.find('dt')
+                dd = dl.find('dd')
+                
+                if dt and dd:
+                    dt_text = dt.get_text().strip()
+                    dd_text = dd.get_text().strip()
+                    
+                    # 분류 정보 추출
+                    if any(keyword in dt_text for keyword in ['분류', 'category', 'Category']):
+                        metadata['category'] = dd_text
+                    
+                    # 작성일 정보 추출
+                    elif any(keyword in dt_text for keyword in ['작성일', 'date', 'Date', '등록일', '게시일']):
+                        metadata['date'] = dd_text
+                    
+                    # 작성자 정보 추출
+                    elif any(keyword in dt_text for keyword in ['작성자', 'author', 'Author', '글쓴이']):
+                        metadata['author'] = dd_text
         
-        # dl 태그들을 찾아서 정보 추출
-        dl_tags = view_util.find_all('dl')
+        # 패턴 2: 일반적인 메타데이터 영역들
+        meta_selectors = [
+            'div.meta', 'div.metadata', 'div.post-meta', 'div.article-meta',
+            'div.info', 'div.post-info', 'div.article-info',
+            'div.details', 'div.post-details'
+        ]
         
-        for dl in dl_tags:
-            dt = dl.find('dt')
-            dd = dl.find('dd')
-            
-            if dt and dd:
-                dt_text = dt.get_text().strip()
-                dd_text = dd.get_text().strip()
-                
-                # 분류 정보 추출
-                if '분류' in dt_text:
-                    metadata['category'] = dd_text
-                
-                # 작성일 정보 추출
-                elif '작성일' in dt_text:
-                    metadata['date'] = dd_text
-                
-                # 작성자 정보 추출
-                elif '작성자' in dt_text:
-                    metadata['author'] = dd_text
+        for selector in meta_selectors:
+            meta_area = soup.select_one(selector)
+            if meta_area and not any(metadata.values()):  # 이미 찾았으면 건너뛰기
+                # span, div, p 태그에서 메타데이터 찾기
+                for elem in meta_area.find_all(['span', 'div', 'p', 'dt', 'dd']):
+                    text = elem.get_text().strip()
+                    
+                    # 날짜 패턴 찾기
+                    if not metadata['date']:
+                        date_patterns = [
+                            r'\d{4}[-./]\d{1,2}[-./]\d{1,2}',  # 2024-01-01, 2024.01.01, 2024/01/01
+                            r'\d{1,2}[-./]\d{1,2}[-./]\d{4}',  # 01-01-2024, 01.01.2024, 01/01/2024
+                            r'\d{4}년\s*\d{1,2}월\s*\d{1,2}일'  # 2024년 1월 1일
+                        ]
+                        for pattern in date_patterns:
+                            match = re.search(pattern, text)
+                            if match:
+                                metadata['date'] = match.group()
+                                break
+                    
+                    # 작성자 패턴 찾기
+                    if not metadata['author']:
+                        if any(keyword in text for keyword in ['작성자:', 'Author:', '글쓴이:']):
+                            author_text = re.sub(r'(작성자:|Author:|글쓴이:)', '', text).strip()
+                            if author_text:
+                                metadata['author'] = author_text
+        
+        # 패턴 3: time 태그에서 날짜 추출
+        if not metadata['date']:
+            time_tag = soup.find('time')
+            if time_tag:
+                datetime_attr = time_tag.get('datetime')
+                if datetime_attr:
+                    metadata['date'] = datetime_attr
+                elif time_tag.get_text().strip():
+                    metadata['date'] = time_tag.get_text().strip()
         
         return metadata
 
+    def extract_title_generic(self, soup):
+        """범용적인 제목 추출 - 다양한 패턴 지원"""
+        title = ""
+        
+        # 패턴 1: view-title 클래스 (한성대 스타일)
+        view_title = soup.find('h2', class_='view-title')
+        if view_title:
+            title = view_title.get_text().strip()
+            return title
+        
+        # 패턴 2: 일반적인 제목 클래스들
+        title_selectors = [
+            'h1.title', 'h2.title', 'h3.title',
+            'h1.post-title', 'h2.post-title', 'h3.post-title',
+            'h1.article-title', 'h2.article-title', 'h3.article-title',
+            '.title h1', '.title h2', '.title h3',
+            '.post-title', '.article-title', '.entry-title'
+        ]
+        
+        for selector in title_selectors:
+            title_elem = soup.select_one(selector)
+            if title_elem and title_elem.get_text().strip():
+                title = title_elem.get_text().strip()
+                return title
+        
+        # 패턴 3: 첫 번째 h1, h2 태그
+        for tag in ['h1', 'h2']:
+            heading = soup.find(tag)
+            if heading and heading.get_text().strip():
+                title = heading.get_text().strip()
+                return title
+        
+        # 패턴 4: title 태그
+        if soup.title and soup.title.string:
+            title = soup.title.string.strip()
+            return title
+        
+        return title
+
+    def extract_main_content_generic(self, soup):
+        """범용적인 주요 콘텐츠 영역 추출 - 다양한 패턴 지원"""
+        main_contents = []
+        
+        # 패턴 1: 한성대 스타일
+        hansung_selectors = ['div.view-con', 'div.contents']
+        for selector in hansung_selectors:
+            content_elem = soup.select_one(selector)
+            if content_elem:
+                main_contents.append(content_elem)
+                return main_contents
+        
+        # 패턴 2: 일반적인 콘텐츠 영역들
+        content_selectors = [
+            'article', 'main', 
+            'div.content', 'div.post-content', 'div.article-content',
+            'div.entry-content', 'div.post-body', 'div.article-body',
+            'div.text-content', 'div.main-content', 'section.content',
+            'div[class*="content"]', 'div[class*="post"]', 'div[class*="article"]'
+        ]
+        
+        for selector in content_selectors:
+            content_elems = soup.select(selector)
+            if content_elems:
+                main_contents.extend(content_elems)
+                return main_contents
+        
+        # 패턴 3: 클래스명에 content, article 포함된 div 찾기 (기존 로직 유지)
+        for div in soup.find_all('div', class_=True):
+            classes = div.get('class', [])
+            if any('content' in cls.lower() or 'article' in cls.lower() for cls in classes):
+                main_contents.append(div)
+        
+        if main_contents:
+            return main_contents
+        
+        # 패턴 4: 최후의 수단 - body 전체
+        if soup.body:
+            main_contents = [soup.body]
+        else:
+            main_contents = [soup]
+        
+        return main_contents
+
+    def extract_attachments_generic(self, soup, base_url):
+        """범용적인 첨부파일 정보 추출 - 다양한 패턴 지원"""
+        attachments = []
+        
+        # 패턴 1: 모든 링크에서 문서 파일 찾기
+        for anchor in soup.find_all('a', href=True):
+            href = anchor['href']
+            full_url = urljoin(base_url, href)
+            
+            # 파일 확장자 확인
+            if self.is_document_url(full_url):
+                # 링크 텍스트에서 파일명 추출
+                link_text = anchor.get_text().strip()
+                if not link_text:
+                    # 링크 텍스트가 없으면 URL에서 파일명 추출
+                    link_text = full_url.split('/')[-1]
+                
+                attachments.append({
+                    'name': link_text,
+                    'url': full_url
+                })
+        
+        # 패턴 2: 첨부파일 관련 영역들
+        attachment_selectors = [
+            'div[class*="attach"]', 'div[class*="file"]', 'div[class*="download"]',
+            'section[class*="attach"]', 'section[class*="file"]',
+            '.attachments', '.files', '.downloads', '.attachment-list'
+        ]
+        
+        for selector in attachment_selectors:
+            attach_sections = soup.select(selector)
+            for section in attach_sections:
+                for anchor in section.find_all('a', href=True):
+                    href = anchor['href']
+                    full_url = urljoin(base_url, href)
+                    link_text = anchor.get_text().strip()
+                    
+                    # 중복 제거
+                    if link_text and not any(att['name'] == link_text for att in attachments):
+                        attachments.append({
+                            'name': link_text,
+                            'url': full_url
+                        })
+        
+        # 패턴 3: 특정 텍스트 패턴 (첨부파일, 다운로드 등)
+        attachment_keywords = ['첨부파일', '첨부', '다운로드', 'download', 'attachment', 'file']
+        for keyword in attachment_keywords:
+            # 해당 키워드가 포함된 요소 찾기
+            elements = soup.find_all(text=re.compile(keyword, re.IGNORECASE))
+            for elem in elements:
+                parent = elem.parent
+                if parent:
+                    # 부모 요소에서 링크 찾기
+                    for anchor in parent.find_all('a', href=True):
+                        href = anchor['href']
+                        full_url = urljoin(base_url, href)
+                        link_text = anchor.get_text().strip()
+                        
+                        # 중복 제거
+                        if link_text and not any(att['name'] == link_text for att in attachments):
+                            attachments.append({
+                                'name': link_text,
+                                'url': full_url
+                            })
+        
+        return attachments
+
+    def extract_view_util_metadata(self, soup):
+        """기존 view-util 메타데이터 추출 (하위 호환성 유지)"""
+        return self.extract_metadata_generic(soup)
+
     def html_to_markdown(self, html_content):
-        """HTML 내용을 마크다운 형식으로 변환"""
+        """HTML 내용을 마크다운 형식으로 변환 - 범용적 접근법 적용"""
         soup = BeautifulSoup(html_content, 'html.parser')
         
-        # view-util 메타데이터 추출
-        metadata = self.extract_view_util_metadata(soup)
+        # 범용적 메타데이터 추출
+        metadata = self.extract_metadata_generic(soup)
         
         # 스크립트, 스타일, 헤드 태그 제거
         for tag in soup.find_all(['script', 'style', 'head', 'meta', 'link', 'iframe']):
             tag.decompose()
             
-        # 페이지 제목 찾기
-        title = ""
-        if soup.find('h2', class_='view-title'):
-            title = soup.find('h2', class_='view-title').get_text().strip()
-        elif soup.title:
-            title = soup.title.string.strip() if soup.title.string else ""
+        # 범용적 제목 추출
+        title = self.extract_title_generic(soup)
         
         # 중복 내용 방지를 위한 처리된 텍스트 집합
         processed_texts = set()
         content_parts = []
         
-        # 주요 콘텐츠 영역 찾기
-        main_contents = []
-        
-        # 주요 콘텐츠 영역 찾기
-        if soup.find('div', class_='view-con'):
-            main_contents.append(soup.find('div', class_='view-con'))
-        elif soup.find('div', class_='contents'):
-            main_contents.append(soup.find('div', class_='contents'))
-        elif soup.find('article'):
-            main_contents.append(soup.find('article'))
-        else:
-            # 특정 클래스가 없으면 body에서 주요 div 태그 찾기
-            for div in soup.find_all('div', class_=True):
-                if 'content' in div.get('class', [''])[0].lower() or 'article' in div.get('class', [''])[0].lower():
-                    main_contents.append(div)
-        
-        # 주요 콘텐츠 영역이 없으면 body 전체 사용
-        if not main_contents:
-            main_contents = [soup.body] if soup.body else [soup]
+        # 범용적 주요 콘텐츠 영역 찾기
+        main_contents = self.extract_main_content_generic(soup)
         
         # 내용 추출
         for main_content in main_contents:
@@ -495,42 +668,8 @@ class Crawler:
         return ""
 
     def extract_attachments_info(self, soup, base_url):
-        """페이지에서 첨부파일 정보 추출"""
-        attachments = []
-        
-        # 일반적인 첨부파일 링크 패턴들 확인
-        for anchor in soup.find_all('a', href=True):
-            href = anchor['href']
-            full_url = urljoin(base_url, href)
-            
-            # 파일 확장자 확인
-            if self.is_document_url(full_url):
-                # 링크 텍스트에서 파일명 추출
-                link_text = anchor.get_text().strip()
-                if not link_text:
-                    # 링크 텍스트가 없으면 URL에서 파일명 추출
-                    link_text = full_url.split('/')[-1]
-                
-                attachments.append({
-                    'name': link_text,
-                    'url': full_url
-                })
-        
-        # 첨부파일 영역에서 추가 정보 확인
-        attach_sections = soup.find_all(['div', 'section'], class_=lambda x: x and ('attach' in x.lower() or 'file' in x.lower()))
-        for section in attach_sections:
-            for anchor in section.find_all('a', href=True):
-                href = anchor['href']
-                full_url = urljoin(base_url, href)
-                link_text = anchor.get_text().strip()
-                
-                if link_text and not any(att['name'] == link_text for att in attachments):
-                    attachments.append({
-                        'name': link_text,
-                        'url': full_url
-                    })
-        
-        return attachments
+        """첨부파일 정보 추출 (하위 호환성 유지)"""
+        return self.extract_attachments_generic(soup, base_url)
 
     def clean_filename(self, filename):
         """파일명에서 사용할 수 없는 문자 제거"""
@@ -561,6 +700,65 @@ class Crawler:
         """크롤링한 페이지를 텍스트 파일로 저장"""
         os.makedirs(self.output_dir, exist_ok=True)
         
+        # 통합 구조화 처리기 사용
+        try:
+            from .integrated_structure_processor import IntegratedStructureProcessor
+            
+            # 구조화 처리기 초기화
+            structure_processor = IntegratedStructureProcessor(output_dir=self.output_dir)
+            
+            # 단일 페이지 구조화 처리
+            structured_page = structure_processor.process_single_page(html_content, url)
+            
+            # 향상된 마크다운 콘텐츠 생성
+            enhanced_content = structure_processor._generate_enhanced_markdown(structured_page)
+            
+            # 파일명 생성
+            if structured_page.title and structured_page.title.strip():
+                filename = self.clean_filename(structured_page.title.strip())
+            else:
+                # 제목이 없는 경우
+                if 'curriculum' in url.lower():
+                    self.curriculum_counter += 1
+                    filename = f"curriculum_{self.curriculum_counter}"
+                else:
+                    parsed_url = urlparse(url)
+                    path = parsed_url.path.strip('/')
+                    if path:
+                        path = path.replace('/', '_')
+                        if path.endswith('.html'):
+                            path = path[:-5]
+                        filename = f"{domain}_{path}"
+                    else:
+                        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                        filename = f"{domain}_{timestamp}"
+            
+            filename = f"{filename}.txt"
+            file_path = os.path.join(self.output_dir, filename)
+            
+            # 파일명 중복 처리
+            counter = 1
+            original_path = file_path
+            while os.path.exists(file_path):
+                name_without_ext = original_path[:-4]
+                file_path = f"{name_without_ext}_{counter}.txt"
+                counter += 1
+            
+            # 향상된 콘텐츠 저장
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(enhanced_content)
+            
+            print(f"구조화된 텍스트 파일 저장 완료: {file_path}")
+            self.saved_files.append(file_path)
+            return file_path
+            
+        except ImportError:
+            # 기존 방식으로 폴백
+            print("통합 구조화 처리기를 사용할 수 없어 기존 방식으로 처리합니다.")
+            return self._save_page_legacy(url, html_content, domain, attachments_info)
+    
+    def _save_page_legacy(self, url, html_content, domain, attachments_info=None):
+        """기존 방식의 페이지 저장 (폴백용)"""
         # HTML을 마크다운으로 변환
         title, content, metadata = self.html_to_markdown(html_content)
         
@@ -568,13 +766,10 @@ class Crawler:
         if title and title.strip():
             filename = self.clean_filename(title.strip())
         else:
-            # 제목이 없는 경우
             if 'curriculum' in url.lower():
-                # curriculum URL인 경우 특별한 넘버링
                 self.curriculum_counter += 1
                 filename = f"curriculum_{self.curriculum_counter}"
             else:
-                # 일반적인 URL 기반 파일명 생성
                 parsed_url = urlparse(url)
                 path = parsed_url.path.strip('/')
                 if path:
@@ -593,7 +788,7 @@ class Crawler:
         counter = 1
         original_path = file_path
         while os.path.exists(file_path):
-            name_without_ext = original_path[:-4]  # .txt 제거
+            name_without_ext = original_path[:-4]
             file_path = f"{name_without_ext}_{counter}.txt"
             counter += 1
         
@@ -631,7 +826,6 @@ Markdown Content:
             f.write(text_content)
         
         print(f"텍스트 파일 저장 완료: {file_path}")
-            
         self.saved_files.append(file_path)
         return file_path
 

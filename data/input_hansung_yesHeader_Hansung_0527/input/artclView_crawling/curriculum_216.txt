@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/CSE/143/596/artclView.doMarkdown Content:## 교과목 소개어플리케이션을 구현하기에 사용할 수 있는 히프, AVL 트리, 그래프와 같은 고급 자료구조와 관련된 알고리즘을 학습하고, 이들을 실제로 C 프로그래밍 언어 및 IDE(Visual Studio 등) 도구를 활용하여 프로그래밍 하는 방법을 학습한다. 또한, 해싱 기법과 다양한 정렬 알고리즘에 대해서 학습한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || V020010 | 알고리즘 | 3 |

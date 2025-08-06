@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import uuid
 from firebase_admin import firestore
 import time
+from services.execution_time_service import get_tracker
 
 document_bp = Blueprint('document', __name__)
 
@@ -121,6 +122,10 @@ def get_uploaded_documents(page_id):
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):
     """document 처리"""
+    
+    # 실행 시간 트래커 가져오기
+    tracker = get_tracker(page_id)
+    
     try:
         base_path, input_path, _ = ensure_page_directory(page_id)
         firebase_path = f"pages/{page_id}/documents"
@@ -139,6 +144,14 @@ def process_documents(page_id):
         convert2txt(firebase_path, input_path, bucket, filename_mapping)
         end_time = time.time()
         execution_time = round(end_time - start_time)
+
+        # 실행 시간 트래커에 기록
+        additional_data = {
+            "firebase_path": firebase_path,
+            "input_path": input_path,
+            "documents_processed": len(filename_mapping)
+        }
+        tracker.record_step('document_processing', execution_time, additional_data)
 
         print("모든 파일 .txt로 변환 완료")
         return jsonify({

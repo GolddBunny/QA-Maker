@@ -59,7 +59,8 @@ def convert2txt(firebase_path, output_folder, bucket, filename_mapping=None):
                         text = f.read()
                     base_name = os.path.splitext(filename_mapping.get(file_name, file_name))[0]
                     with open(output_path, 'w', encoding='utf-8') as out:
-                        out.write(f"headline: {base_name}\ncontent:\n{text}")
+                        out.write(f"{text}")
+                        # out.write(f"headline: {base_name}\ncontent:\n{text}")
                     print(f"[TXT 변환] {temp_path} → {output_path}")
                 except Exception as e:
                     print(f"[오류] {file_name} 변환 실패: {e}")

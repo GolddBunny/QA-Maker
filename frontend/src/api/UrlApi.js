@@ -3,7 +3,7 @@ const BASE_URL = 'http://localhost:5000/flask';
 // 저장된 URL 목록 가져오기
 export const fetchSavedUrls = async (pageId) => {
   try {
-    const response = await fetch(`${BASE_URL}/get-urls/${pageId}`, {
+    const response = await fetch(`${BASE_URL}/get-general-crawled-urls/${pageId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -124,28 +124,28 @@ export const crawlAndStructure = async (pageId) => {
   }
 };
 
-// 3단계 텍스트 정리
-export const line1 = async (pageId) => {
-  try {
-    console.log("UrlApi.js: 웹 크롤링 텍스트 line1 정리 시작:", pageId);
-    const response = await fetch(`${BASE_URL}/line1/${pageId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+// 3단계 텍스트 정리 - 비활성화됨
+// export const line1 = async (pageId) => {
+//   try {
+//     console.log("UrlApi.js: 웹 크롤링 텍스트 line1 정리 시작:", pageId);
+//     const response = await fetch(`${BASE_URL}/line1/${pageId}`, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
 
-    const data = await response.json();
-    if (data.success) {
-      return { success: true, results: data.results };
-    } else {
-      return { success: false, error: data.error };
-    }
-  } catch (error) {
-    console.error("UrlApi.js: 웹 크롤링 텍스트 line1 정리 API 오류:", error);
-    return { success: false, error: error.message };
-  }
-};
+//     const data = await response.json();
+//     if (data.success) {
+//       return { success: true, results: data.results };
+//     } else {
+//       return { success: false, error: data.error };
+//     }
+//   } catch (error) {
+//     console.error("UrlApi.js: 웹 크롤링 텍스트 line1 정리 API 오류:", error);
+//     return { success: false, error: error.message };
+//   }
+// };
 
 // 4단계 문서 다운로더 - 크롤링된 문서 URL을 다운로드하여 Firebase에 저장
 export const documentDownloader = async (pageId) => {

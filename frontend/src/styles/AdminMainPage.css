@@ -193,10 +193,6 @@
     font-size: 3rem;
   }
   
-  .features {
-    gap: 20px;
-  }
-  
   .action-buttons {
     flex-direction: column;
     align-items: center;

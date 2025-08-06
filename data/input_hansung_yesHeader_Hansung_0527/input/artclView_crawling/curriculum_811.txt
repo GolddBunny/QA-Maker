@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/SclScn/28/145/artclView.doMarkdown Content:## 교과목 소개전공필수의 데이터분석을 보다 심화하는 과정으로 미시경제측면에서 실제 데이터를 SAS를 이용하여 분석하고 분석결과를 해석한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || A1604215 | 데이터분석론II | 3 |
