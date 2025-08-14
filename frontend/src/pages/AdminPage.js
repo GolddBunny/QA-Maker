@@ -18,6 +18,53 @@ import { db } from "../firebase/sdk";
 
 const BASE_URL = 'http://localhost:5000/flask';
 
+const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
+  // 기본 시간 - firebase에 저장하는 데 걸림 (분 단위)
+  const BASE_TIME = 1;
+  
+  // 각 항목별 평균 처리 시간
+  const DOC_STRUCTURING_TIME_PER_MB = 30; // 문서 1MB당 구조화 시간 (초)
+  const DOC_INDEXING_TIME_PER_MB = 50;    // 문서 1MB당 인덱싱 시간 (초)
+  const URL_STRUCTURING_TIME = 40;            // URL 1개당 구조화 시간 (초)
+  const URL_INDEXING_TIME = 60;               // URL 1개당 인덱싱 시간 (초)
+  
+  // 총 처리 시간 계산 (초 단위)
+  const totalDocTime = totalDocSizeMB * (DOC_STRUCTURING_TIME_PER_MB + DOC_INDEXING_TIME_PER_MB);
+  const totalUrlTime = urlCount * (URL_STRUCTURING_TIME + URL_INDEXING_TIME);
+  const totalProcessingTime = totalDocTime + totalUrlTime;
+  
+  // 기본 시간을 초로 변환하여 더하기
+  const totalTimeInSeconds = totalProcessingTime + (BASE_TIME * 60);
+  
+  // 분 단위로 변환
+  const totalTimeInMinutes = Math.ceil(totalTimeInSeconds / 60);
+  
+  return {
+    totalMinutes: totalTimeInMinutes,
+    formattedTime: formatTime(totalTimeInMinutes),
+    breakdown: {
+      docStructuringTime: Math.ceil((totalDocSizeMB * DOC_STRUCTURING_TIME_PER_MB) / 60),
+      docIndexingTime: Math.ceil((totalDocSizeMB * DOC_INDEXING_TIME_PER_MB) / 60),
+      urlProcessingTime: Math.ceil(totalUrlTime / 60),
+      baseTime: BASE_TIME
+    }
+  };
+};
+
+const formatTime = (minutes) => {
+  if (minutes < 60) {
+    return `${minutes}분`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) {
+      return `${hours}시간`;
+    } else {
+      return `${hours}시간 ${remainingMinutes}분`;
+    }
+  }
+};
+
 const AdminPage = () => {
     const navigate = useNavigate();
     const { pageId } = useParams();  // URL에서 페이지 ID 가져오기
@@ -34,17 +81,19 @@ const AdminPage = () => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [duplicateFileName, setDuplicateFileName] = useState(null); //중복 파일 검사
+    const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
 
     const { currentPageId, updatePages, updatePageSysName, updatePageName,
       systemName, setSystemName, domainName, setDomainName
     } = usePageContext();
-    const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
+
     // Firebase QA History Context 사용 (pageId 기반, Firebase 사용)
     const { 
         qaHistory, 
         loading: qaLoading, 
         error: qaError 
     } = useQAHistoryContext(pageId, true); // useFirestore = true로 설정
+
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
     const [hasOutput, setHasOutput] = useState(null);
@@ -54,6 +103,7 @@ const AdminPage = () => {
       const saved = localStorage.getItem(`showProgressing_${pageId}`);
       return saved === 'true';
     });
+
     const [docCount, setDocCount] = useState(0);  //문서 수
     const [urlCount, setUrlCount] = useState(0);
     const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
@@ -65,6 +115,7 @@ const AdminPage = () => {
       document: null,
       indexing: null
     });
+    
     const stepTimesRef = useRef(stepExecutionTimes);
     const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
 
@@ -78,6 +129,20 @@ const AdminPage = () => {
       pageId,
       setDocCount
     }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
+
+    const totalDocSizeMB = useMemo(() => {
+      console.log('uploadedDocs:', uploadedDocs);
+      const total = uploadedDocs.reduce((total, doc) => {
+        console.log(`Document ${doc.original_filename}: size_mb = ${doc.size_mb}`);
+        return total + (doc.size_mb || 0);
+      }, 0);
+      console.log('Total document size (MB):', total);
+      return total;
+    }, [uploadedDocs]);
+
+    const estimatedTime = useMemo(() => {
+      return calculateEstimatedTime(urlCount, docCount, totalDocSizeMB);
+    }, [urlCount, docCount, totalDocSizeMB]);
 
     // handleCloseProgressing 수정
     const handleCloseProgressing = async () => {
@@ -122,7 +187,6 @@ const AdminPage = () => {
       }
     }, []);
 
-
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
@@ -138,9 +202,11 @@ const AdminPage = () => {
       try {
         const res = await fetch(`${BASE_URL}/documents/${pageId}`);  // 문서 목록 api
         const data = await res.json();
+        console.log('API Response:', data); // 응답 구조 확인
 
         if (data.success) {
             const uploaded = data.uploaded_files;
+            console.log('Uploaded files:', data.uploaded_files);
             setUploadedDocs(data.uploaded_files);
             setHasDocuments(data.uploaded_files.length > 0);
         } else {
@@ -334,8 +400,6 @@ const AdminPage = () => {
       }
     };
 
-    
-
     // 각 단계 완료 시 호출되는 콜백 함수
     const handleStepComplete = async (stepName, durationInSeconds) => {
       setStepExecutionTimes(prev => {
@@ -495,6 +559,11 @@ const AdminPage = () => {
       navigate(`/dashboard/${pageId}`, {
         state: { stepExecutionTimes: stepExecutionTimes } // state 직접 사용
       });
+    };
+
+    const handleUserDashboard = () => {
+      console.log("✅ UserDashboard로 navigate:", pageId);
+      navigate(`/userDashBoard/${pageId}`);
     };
 
     return (
@@ -715,6 +784,13 @@ const AdminPage = () => {
               > 
                 Go to Analyzer
               </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleUserDashboard}
+                disabled={isCheckingOutput}
+              > 
+                Go to UserDashboard
+              </button>
             </>
           ) : (
             <button 
@@ -740,6 +816,7 @@ const AdminPage = () => {
             isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계
+            estimatedTime={estimatedTime} // 새로 추가된 prop
           />
         )}
 

@@ -45,7 +45,13 @@ def upload_documents(page_id):
     for file in files:
         if file.filename == '':
             continue
-        
+
+        # 파일 크기 계산 (업로드 전)
+        file.seek(0, 2)  # 파일 끝으로 이동
+        file_size_bytes = file.tell()
+        file.seek(0)  # 파일 시작으로 되돌리기
+        size_mb = file_size_bytes / (1024 * 1024)
+
         original_filename = file.filename
         ext = os.path.splitext(original_filename)[1]
         uuid_name = f"{uuid.uuid4().hex}{ext}"
@@ -75,7 +81,8 @@ def upload_documents(page_id):
             'page_id': page_id,
             'upload_date': today_str,
             'category': "unknown",   
-            'date': today_str  
+            'date': today_str,
+            'size_mb': round(size_mb, 2)  # 크기 정보 추가  
         }
 
         # 문서명을 문서 ID로 사용하면 중복 이슈 있음 → UUID 또는 자동 ID 사용 권장
@@ -101,6 +108,24 @@ def get_uploaded_documents(page_id):
         result = []
         for doc in docs:
             data = doc.to_dict()
+            # Firebase Storage에서 실제 파일 크기 가져오기
+            firebase_filename = data.get('firebase_filename')
+            size_mb = 0
+            
+            if firebase_filename:
+                try:
+                    blob_path = f"pages/{page_id}/documents/{firebase_filename}"
+                    blob = bucket.blob(blob_path)
+                    
+                    # blob이 존재하면 크기 정보 가져오기
+                    if blob.exists():
+                        blob.reload()  # 메타데이터 새로고침
+                        size_bytes = blob.size
+                        size_mb = size_bytes / (1024 * 1024) if size_bytes else 0
+                except Exception as e:
+                    print(f"파일 크기 조회 오류 ({firebase_filename}): {str(e)}")
+                    size_mb = 0
+                    
             result.append({
                 'original_filename': data.get('original_filename'),
                 'category': data.get('category', 'unknown'),
@@ -160,7 +185,6 @@ def process_documents(page_id):
 
     
 # 문서 직접 업로드 시 텍스트 추출
-
 @document_bp.route('/process-document-direct', methods=['POST'])
 def process_document_direct():
     if 'file' not in request.files:

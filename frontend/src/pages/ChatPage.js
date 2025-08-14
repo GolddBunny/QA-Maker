@@ -12,7 +12,6 @@ import answerGraphData from '../json/answer_graphml_data.json';
 const BASE_URL = 'http://localhost:5000/flask';
 
 function ChatPage() {
-    
     const { currentPageId, setCurrentPageId } = usePageContext();
     const { qaHistory, addQA, updateQAHeadlines, updateSelectedHeadline, updateQASources } = useQAHistoryContext();
     const [qaList, setQaList] = useState([]);
@@ -612,6 +611,7 @@ function ChatPage() {
             relatedQuestions: relatedQuestions || [],
             headlines: headlines || [], // 근거 문서 목록 추가
             sources: sources || [], // 소스 URL 정보 추가
+            satisfaction: 3, // 만족도 기본값 추가
         };
         
         if (qaId) {
@@ -776,7 +776,6 @@ function ChatPage() {
     const handleUrlOptionClick = () => {
         setSearchType('url');
         setShowUrlInput(true); // 입력창 보이게
-
     };
 
     const handleAddUrl = () => {
@@ -799,33 +798,64 @@ function ChatPage() {
     
     // 근거 문서 목록 가져오기 또는 로컬 저장소에서 불러오기
     // headline 가져올 때도 localStorage만 사용
+    // fetchHeadlinesForMessage 함수 - 디버깅 추가
     const fetchHeadlinesForMessage = async (index) => {
+        console.log(`[fetchHeadlinesForMessage] index: ${index} 시작`);
+        
         const currentQA = qaList[index];
         
         // 이미 해당 메시지에 headline 정보가 있는지 확인
         if (currentQA && currentQA.headlines && currentQA.headlines.length > 0) {
-            return currentQA.headlines;
+            console.log(`[캐시에서 반환] headlines: ${currentQA.headlines.length}개`);
+            console.log(`[캐시에서 반환] headlinesData: ${currentQA.headlinesData?.length || 0}개`);
+            
+            // headlinesData가 없거나 비어있으면 서버에서 다시 가져오기
+            if (!currentQA.headlinesData || currentQA.headlinesData.length === 0) {
+                console.log(`[캐시 무효] headlinesData가 없어서 서버에서 다시 가져옴`);
+                // 아래 서버 호출 로직으로 계속 진행
+            } else {
+                return {
+                    headlines: currentQA.headlines,
+                    headlinesData: currentQA.headlinesData
+                };
+            }
         }
-        
+
         // localStorage에서 현재 QA와 대화 인덱스로 headline 정보를 찾음
         if (currentQaId) {
             const qaItem = qaHistory.find(qa => qa.id === currentQaId);
             if (qaItem && qaItem.conversations && qaItem.conversations[index] && 
                 qaItem.conversations[index].headlines && 
                 qaItem.conversations[index].headlines.length > 0) {
-                return qaItem.conversations[index].headlines;
+                console.log(`[localStorage에서 반환] headlines: ${qaItem.conversations[index].headlines.length}개`);
+                console.log(`[localStorage에서 반환] headlinesData: ${qaItem.conversations[index].headlinesData?.length || 0}개`);
+                
+                // headlinesData가 없거나 비어있으면 서버에서 다시 가져오기
+                if (!qaItem.conversations[index].headlinesData || qaItem.conversations[index].headlinesData.length === 0) {
+                    console.log(`[localStorage 무효] headlinesData가 없어서 서버에서 다시 가져옴`);
+                    // 아래 서버 호출 로직으로 계속 진행
+                } else {
+                    return {
+                        headlines: qaItem.conversations[index].headlines,
+                        headlinesData: qaItem.conversations[index].headlinesData
+                    };
+                }
             }
         }
         
         // 서버에서 headline 정보 가져오기
         setHeadlinesLoading(true);
         try {
-            const response = await fetch(`${BASE_URL}/api/context-sources?page_id=${currentPageId}`);
+            const apiUrl = `${BASE_URL}/api/context-sources?page_id=${currentPageId}`;
+            console.log(`[API 호출] URL: ${apiUrl}`);
+            
+            const response = await fetch(apiUrl);
             if (!response.ok) {
                 throw new Error(`서버 응답 오류: ${response.status}`);
             }
             
             const data = await response.json();
+            console.log(`[API 응답] data:`, data);
             
             if (data.error) {
                 throw new Error(data.error);
@@ -835,25 +865,42 @@ function ChatPage() {
                 throw new Error("사용 가능한 headline이 없습니다");
             }
             
+            const headlinesData = data.headlines_data || [];
+            console.log(`[서버에서 받음] headlines: ${data.headlines.length}개`);
+            console.log(`[서버에서 받음] headlines_data: ${headlinesData.length}개`);
+            
+            // headlinesData 내용 확인
+            headlinesData.forEach((item, idx) => {
+                console.log(`[headlinesData ${idx}] headline: "${item.headline}", content: "${item.content?.substring(0, 50)}..."`);
+            });
+            
             if (currentQaId) { 
-                // 가져온 headline 정보 QA 히스토리에 저장 (localStorage와 Firebase 모두)
-                updateQAHeadlines(currentQaId, index, data.headlines, true); // Firebase에도 저장
+                // 가져온 headline 정보 QA 히스토리에 저장
+                updateQAHeadlines(currentQaId, index, data.headlines, true, headlinesData);
             }
             
-            setQaList(prevQaList => { // 현재 대화 목록에도 headline 정보 추가
+            setQaList(prevQaList => {
                 const updatedList = [...prevQaList];
                 if (updatedList[index]) {
                     updatedList[index].headlines = data.headlines;
+                    updatedList[index].headlinesData = headlinesData;
                     updatedList[index].selectedHeadline = data.headlines[0];
+                    console.log(`[qaList 업데이트] index ${index}에 headline 정보 저장`);
                 }
                 return updatedList;
             });
             
-            return data.headlines;
+            return {
+                headlines: data.headlines,
+                headlinesData: headlinesData
+            };
             
         } catch (error) {
-            console.error("headline 목록 가져오기 실패:", error);
-            return [];
+            console.error("[오류] headline 목록 가져오기 실패:", error);
+            return {
+                headlines: [],
+                headlinesData: []
+            };
         } finally {
             setHeadlinesLoading(false);
         }
@@ -910,42 +957,86 @@ function ChatPage() {
     };
 
     // Document URL 업데이트
+    // updateDocumentUrl 함수에 하이라이팅 파라미터 추가
+    // updateDocumentUrl 함수 - 디버깅 추가
     const updateDocumentUrl = async (headline) => {
-    if (!headline) return false;
-        
-    // HWP 파일인지 먼저 확인
-    const isHwpFile = await checkIfHwpFile(headline);
-        if (isHwpFile) {
-            handleHwpDownload(headline);
-            return false; // HWP 파일이므로 문서 뷰어를 열지 않음
+        if (!headline) {
+            setPdfUrl('');
+            return false;
         }
-
-        // 특수문자 처리 및 파일명 정리 (괄호 등에 대한 처리)
-        let processedHeadline = headline.trim();
-        const encodedHeadline = encodeURIComponent(processedHeadline); // 한글 인코딩 처리
         
-        // 파일명에 사용될 수 있는 확장자 체크를 서버에서 처리하도록 함
-        const url = `${BASE_URL}/api/document/${encodedHeadline}?page_id=${currentPageId}`;
-        
-        console.log(`문서 요청 URL: ${url}`);
-        setPdfUrl(url);
-        
-        // 파일 로딩 확인을 위한 테스트 요청
         try {
-            const response = await fetch(url, { method: 'HEAD' });
-            console.log(`문서 응답 상태: ${response.status}`);
-            if (!response.ok) {
-                console.error('문서를 찾을 수 없습니다. 확인 필요.');
-                return false;
+            let highlightText = '';
+            
+            // 현재 선택된 headline에 해당하는 content 찾기
+            // 먼저 현재 메시지 인덱스 확인
+            let messageIndex = currentMessageIndex;
+            if (messageIndex === null && qaList.length > 0) {
+                messageIndex = qaList.length - 1;
             }
+            
+            // headlinesData가 있는지 확인하고, 없으면 서버에서 가져오기
+            let headlinesData = [];
+            if (messageIndex !== null && qaList[messageIndex] && qaList[messageIndex].headlinesData) {
+                headlinesData = qaList[messageIndex].headlinesData;
+            } else {
+                // headlinesData가 없으면 서버에서 가져오기
+                const headlinesResult = await fetchHeadlinesForMessage(messageIndex || 0);
+                headlinesData = headlinesResult.headlinesData || [];
+            }
+            
+            // 선택된 headline에 해당하는 content 찾기
+            const headlineData = headlinesData.find(item => item.headline === headline);
+            if (headlineData && headlineData.content) {
+                highlightText = headlineData.content;
+                console.log(`[하이라이팅] headline: ${headline}`);
+                console.log(`[하이라이팅] content: ${highlightText.substring(0, 100)}...`);
+            } else {
+                console.log(`[하이라이팅] headline "${headline}"에 대한 content를 찾을 수 없음`);
+            }
+            
+            const encodedHeadline = encodeURIComponent(headline.trim());
+            let documentUrl = `${BASE_URL}/api/document/${encodedHeadline}?page_id=${currentPageId}`;
+            
+            // 하이라이팅할 텍스트가 있으면 URL에 추가
+            if (highlightText) {
+                const encodedHighlight = encodeURIComponent(highlightText);
+                documentUrl += `&highlight=${encodedHighlight}`;
+                console.log(`[하이라이팅] 텍스트 있음 - 최종 URL: ${documentUrl}`);
+            } else {
+                console.log(`[하이라이팅] 텍스트 없음 - URL: ${documentUrl}`);
+            }
+            
+            // 서버에서 파일 유형 확인
+            const response = await fetch(documentUrl, { method: 'HEAD' });
+            
+            if (!response.ok) {
+                if (response.status === 400) {
+                    const errorData = await (await fetch(documentUrl)).json();
+                    if (errorData.error && errorData.error.includes('HWP')) {
+                        await handleDownloadDocument(headline);
+                        setDocumentErrorMessage("HWP 파일은 뷰어에서 지원되지 않아 다운로드했습니다.");
+                        return false;
+                    }
+                }
+                throw new Error(`문서를 불러올 수 없습니다: ${response.status}`);
+            }
+            
+            setPdfUrl(documentUrl);
+            setDocumentErrorMessage('');
+            console.log(`[성공] PDF URL 설정 완료`);
             return true;
+            
         } catch (error) {
-            console.error('문서 요청 오류:', error);
+            console.error('[오류] 문서 URL 업데이트 오류:', error);
+            setDocumentErrorMessage(`문서를 불러올 수 없습니다: ${error.message}`);
+            setPdfUrl('');
             return false;
         }
     };
 
     // 근거 문서 열기 핸들러
+    // handleShowDocument 함수에서 반환값 처리 수정
     const handleShowDocument = async (index, specificHeadline = null) => {
         setCurrentMessageIndex(index);
         
@@ -968,7 +1059,8 @@ function ChatPage() {
         });
         
         // 해당 메시지 headline 목록 가져오기
-        const messageHeadlines = await fetchHeadlinesForMessage(index);
+        const messageHeadlinesResult = await fetchHeadlinesForMessage(index);
+        const messageHeadlines = messageHeadlinesResult.headlines;
         
         if (messageHeadlines.length > 0) {
             setHeadlines(messageHeadlines);
@@ -1007,7 +1099,6 @@ function ChatPage() {
                 document.querySelector('.chat-container').classList.add('shift-left');
             } else {
                 // HWP 파일인 경우 뷰어를 열지 않고 현재 상태 유지
-                // 이미 updateDocumentUrl에서 다운로드 처리가 완료됨
                 console.log('HWP 파일이므로 뷰어를 열지 않습니다.');
             }
         } else {
@@ -1166,11 +1257,13 @@ function ChatPage() {
                 </div>
                 <div className="chat-messages">
                     {qaList.map((qa, index) => (
-                        <ChatMessage 
-                            key={index} 
-                            qa={qa} 
-                            index={index} 
-                            handleShowGraph={handleShowGraph} 
+                        <ChatMessage
+                            key={index}
+                            qa={qa}
+                            index={index}
+                            qaId={currentQaId}
+                            // conversationIndex={qaIndex}
+                            handleShowGraph={handleShowGraph}
                             showGraph={showGraph}
                             handleShowDocument={handleShowDocument}
                             showDocument={showDocument && currentMessageIndex === index}
