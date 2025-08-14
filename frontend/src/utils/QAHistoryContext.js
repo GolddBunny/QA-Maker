@@ -245,6 +245,7 @@ export function QAHistoryProvider({ children }) {
                 };
                 await updateDoc(docRef, cleanDataForFirestore(updateData));
                 console.log("Firestore QA 항목 업데이트 완료:", newQA.id);
+                return existingQA.firestoreId; // 기존 firestoreId 반환
             } else {
                 // 새 항목 추가
                 const addData = {
@@ -254,6 +255,7 @@ export function QAHistoryProvider({ children }) {
                 };
                 const docRef = await addDoc(qaHistoryRef, cleanDataForFirestore(addData));
                 console.log("Firestore 새 QA 항목 추가 완료:", docRef.id);
+                return docRef.id; // 새로 생성된 firestoreId 반환
             }
         } catch (err) {
             console.error("Firestore QA 항목 저장 실패:", err);
@@ -270,7 +272,37 @@ export function QAHistoryProvider({ children }) {
         
         // Firebase에는 필요시에만 저장 (관리자 페이지용)
         if (saveToFirestore) {
-            await addQAToFirestore(newQA);
+            try {
+                const firestoreId = await addQAToFirestore(newQA);
+                console.log("받은 firestoreId:", firestoreId);
+                
+                if (firestoreId) {
+                    // localStorage 업데이트
+                    const currentHistory = loadFromLocalStorage();
+                    const qaIndex = currentHistory.findIndex(qa => qa.id === newQA.id);
+                    if (qaIndex !== -1) {
+                        currentHistory[qaIndex].firestoreId = firestoreId;
+                        saveToLocalStorage(currentHistory);
+                        console.log("localStorage에 firestoreId 저장 완료:", newQA.id, "->", firestoreId);
+                    }
+                    
+                    // 메모리 상태 즉시 업데이트 (중요!)
+                    setQaHistory(prevHistory => {
+                        const updatedHistory = [...prevHistory];
+                        const memoryQaIndex = updatedHistory.findIndex(qa => qa.id === newQA.id);
+                        if (memoryQaIndex !== -1) {
+                            updatedHistory[memoryQaIndex] = {
+                                ...updatedHistory[memoryQaIndex],
+                                firestoreId: firestoreId
+                            };
+                            console.log("메모리에 firestoreId 저장 완료:", newQA.id, "->", firestoreId);
+                        }
+                        return updatedHistory;
+                    });
+                }
+            } catch (error) {
+                console.error("Firebase 저장 중 오류:", error);
+            }
         }
     };
 
@@ -782,6 +814,115 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
+    // 10. 만족도 업데이트 함수 추가 (localStorage용)
+    const updateQASatisfactionInLocalStorage = (qaId, conversationIndex, satisfaction) => {
+        try {
+            const currentHistory = loadFromLocalStorage();
+            const qaIndex = currentHistory.findIndex(qa => qa.id === qaId);
+            
+            if (qaIndex !== -1) {
+                const updatedHistory = [...currentHistory];
+                const updatedConversations = [...(updatedHistory[qaIndex].conversations || [])];
+                
+                if (updatedConversations[conversationIndex]) {
+                    updatedConversations[conversationIndex] = {
+                        ...updatedConversations[conversationIndex],
+                        satisfaction: satisfaction || 3 // 기본값 3
+                    };
+                    
+                    updatedHistory[qaIndex] = {
+                        ...updatedHistory[qaIndex],
+                        conversations: updatedConversations,
+                        updatedAt: new Date().toISOString()
+                    };
+                    
+                    saveToLocalStorage(updatedHistory);
+                    setQaHistory(updatedHistory);
+                    
+                    console.log("localStorage 만족도 업데이트 완료:", qaId, "만족도:", satisfaction);
+                }
+            }
+        } catch (err) {
+            console.error("localStorage 만족도 업데이트 실패:", err);
+            setError(err.message);
+            throw err;
+        }
+    };
+
+    // 11. 만족도 업데이트 함수 추가 (Firebase용)
+    const updateQASatisfactionInFirestore = async (qaId, conversationIndex, satisfaction) => {
+        try {
+            // 먼저 메모리에서 찾기
+            let qaItem = qaHistory.find(qa => qa.id === qaId);
+            console.log("메모리에서 찾은 qaItem:", qaItem);
+            
+            // 메모리에 없으면 localStorage에서 찾기
+            if (!qaItem) {
+                const localHistory = loadFromLocalStorage();
+                qaItem = localHistory.find(qa => qa.id === qaId);
+                console.log("localStorage에서 찾은 qaItem:", qaItem);
+                
+                // localStorage에서 찾았으면 메모리도 업데이트
+                if (qaItem) {
+                    setQaHistory(localHistory);
+                }
+            }
+            
+            console.log("Firebase 업데이트 시작:", qaId, conversationIndex, satisfaction);
+            console.log("최종 qaItem:", qaItem);
+            console.log("qaItem.firestoreId:", qaItem?.firestoreId);
+            
+            if (qaItem && qaItem.firestoreId) {
+                const updatedConversations = [...(qaItem.conversations || [])];
+                console.log("업데이트 전 conversations:", updatedConversations);
+                
+                if (updatedConversations[conversationIndex]) {
+                    updatedConversations[conversationIndex] = {
+                        ...updatedConversations[conversationIndex],
+                        satisfaction: satisfaction
+                    };
+                    
+                    console.log("업데이트 후 conversations:", updatedConversations);
+                    
+                    const docRef = doc(db, 'qaHistory', qaItem.firestoreId);
+                    const updateData = {
+                        conversations: updatedConversations,
+                        updatedAt: new Date().toISOString()
+                    };
+                    await updateDoc(docRef, cleanDataForFirestore(updateData));
+                    
+                    console.log("Firestore 만족도 업데이트 완료:", qaId, "만족도:", satisfaction);
+                } else {
+                    console.error("conversationIndex가 범위를 벗어남:", conversationIndex, updatedConversations.length);
+                }
+            } else {
+                console.error("qaItem 또는 firestoreId가 없음:", qaItem);
+                // 다시 Firebase에 새로 저장하지 않도록 수정
+                throw new Error(`QA 항목을 찾을 수 없거나 firestoreId가 없습니다: ${qaId}`);
+            }
+        } catch (err) {
+            console.error("Firestore 만족도 업데이트 실패:", err);
+            setError(err.message);
+            throw err;
+        }
+    };
+
+    // 12. 통합 만족도 업데이트 함수
+    const updateQASatisfaction = async (qaId, conversationIndex, satisfaction, updateFirestore = false) => {
+        try {
+            // localStorage는 항상 업데이트
+            updateQASatisfactionInLocalStorage(qaId, conversationIndex, satisfaction);
+            
+            // Firebase는 필요시에만 업데이트
+            if (updateFirestore) {
+                await updateQASatisfactionInFirestore(qaId, conversationIndex, satisfaction);
+            }
+        } catch (error) {
+            console.error("만족도 업데이트 실패:", error);
+            // Firebase 업데이트가 실패해도 localStorage는 업데이트된 상태 유지
+        }
+    };
+
     // 컨텍스트 값 설정
     const contextValue = {
         qaHistory,
@@ -792,20 +933,23 @@ export function QAHistoryProvider({ children }) {
         updateQAHeadlines, // (qaId, conversationIndex, headlines, updateFirestore = false)
         updateSelectedHeadline, // (qaId, conversationIndex, headline, updateFirestore = false)
         updateQASources, // (qaId, conversationIndex, sources, updateFirestore = false)
-        updateQAConfidence, // (qaId, conversationIndex, confidenceData, updateFirestore = false) - 새로 추가
-        updateQARelatedQuestions, // (qaId, conversationIndex, relatedQuestions, updateFirestore = false) - 새로 추가
+        updateQAConfidence, // (qaId, conversationIndex, confidenceData, updateFirestore = false)
+        updateQARelatedQuestions, // (qaId, conversationIndex, relatedQuestions, updateFirestore = false)
+        updateQASatisfaction, // (qaId, conversationIndex, satisfaction, updateFirestore = false) - 새로 추가
         getQAHistoryByPageId, // (pageId, fromFirestore = false)
         loadAllFromFirestore, // 관리자 페이지용
         // localStorage 전용 함수들
         addQAToLocalStorage,
         deleteQAFromLocalStorage,
-        updateQAConfidenceInLocalStorage, // 새로 추가
-        updateQARelatedQuestionsInLocalStorage, // 새로 추가
+        updateQAConfidenceInLocalStorage,
+        updateQARelatedQuestionsInLocalStorage,
+        updateQASatisfactionInLocalStorage, // 새로 추가
         // Firebase 전용 함수들 (관리자 페이지용)
         addQAToFirestore,
         deleteQAFromFirestore,
-        updateQAConfidenceInFirestore, // 새로 추가
-        updateQARelatedQuestionsInFirestore, // 새로 추가
+        updateQAConfidenceInFirestore,
+        updateQARelatedQuestionsInFirestore,
+        updateQASatisfactionInFirestore, // 새로 추가
         loadFromLocalStorage,
         saveToLocalStorage
     };

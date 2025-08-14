@@ -38,95 +38,61 @@ def find_url_and_title_from_source_id(df: pd.DataFrame, source_id: int) -> Optio
         row = df[df['human_readable_id'] == source_id]
         print("row ", row)
         
+        def extract_title_url(text: str) -> Optional[Dict[str, str]]:
+            # 우선 Title과 URL이 붙은 형태
+            combined_match = re.search(r'Title:\s*([^U]+?)URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
+            if combined_match:
+                title = combined_match.group(1).strip()
+                url = combined_match.group(2).strip()
+                return {'title': title, 'url': url}
+
+            # 분리된 형태
+            title_match = re.search(r'Title:\s*([^U\n]+)', text)
+            url_match = re.search(r'URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
+            if title_match or url_match:
+                title = title_match.group(1).strip() if title_match else None
+                url = url_match.group(1).strip() if url_match else None
+                return {'title': title, 'url': url}
+
+            return None
+        
         if not row.empty:
             text = row.iloc[0]['text']
             print("row text[0]: ", text)
-            
-            # 패턴 수정: URL 뒤에 Markdown이나 다른 텍스트가 오는 경우 처리
-            # Title과 URL Source 사이에 줄바꿈이 없는 경우
-            combined_match = re.search(r'Title:\s*([^U]+?)URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
-            
-            title_match = None
-            url_match = None
-            
-            if combined_match:
-                title_match = type('Match', (), {'group': lambda self, n: combined_match.group(1).strip()})()
-                url_match = type('Match', (), {'group': lambda self, n: combined_match.group(2).strip()})()
-            else:
-                # 대안 패턴: 각각 따로 찾기
-                title_match_regex = re.search(r'Title:\s*([^U\n]+)', text)
-                url_match_regex = re.search(r'URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
-                
-                if title_match_regex:
-                    title_match = type('Match', (), {'group': lambda self, n: title_match_regex.group(1).strip()})()
-                if url_match_regex:
-                    url_match = type('Match', (), {'group': lambda self, n: url_match_regex.group(2).strip()})()
-            
-            print("title_match: ", title_match)
-            print("url_match: ", url_match)
-            
-            # 현재 행에서 찾았으면 반환
-            if title_match and url_match:
-                title = title_match.group(1).strip()
-                # title이 20글자 넘으면 줄이기
+            result = extract_title_url(text)
+
+            if result and result.get('title') and result.get('url'):
+                title = result['title']
                 if len(title) > 20:
                     title = title[:20] + "..."
-                return {
-                    'title': title,
-                    'url': url_match.group(1).strip()
-                }
-            
-            # fallback: 이전 행들에서 탐색
-            for i in range(1, 5):
-                prev_id = source_id - i
-                prev_row = df[df['human_readable_id'] == prev_id]
-                if not prev_row.empty:
-                    prev_text = prev_row.iloc[0]['text']
-                    print(f"fallback row text[{prev_id}]: ", prev_text)
-                    
-                    # 동일한 패턴으로 이전 행에서도 찾기
-                    prev_combined_match = re.search(r'Title:\s*([^U]+?)URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', prev_text)
-                    
-                    prev_title_match = None
-                    prev_url_match = None
-                    
-                    if prev_combined_match:
-                        prev_title_match = type('Match', (), {'group': lambda self, n: prev_combined_match.group(1).strip()})()
-                        prev_url_match = type('Match', (), {'group': lambda self, n: prev_combined_match.group(2).strip()})()
-                    else:
-                        # 대안 패턴
-                        prev_title_match_regex = re.search(r'Title:\s*([^U\n]+)', prev_text)
-                        prev_url_match_regex = re.search(r'URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', prev_text)
-                        
-                        if prev_title_match_regex:
-                            prev_title_match = type('Match', (), {'group': lambda self, n: prev_title_match_regex.group(1).strip()})()
-                        if prev_url_match_regex:
-                            prev_url_match = type('Match', (), {'group': lambda self, n: prev_url_match_regex.group(2).strip()})()
-                    
-                    print(f"fallback title_match[{prev_id}]: ", prev_title_match)
-                    print(f"fallback url_match[{prev_id}]: ", prev_url_match)
-                    
-                    if prev_title_match and prev_url_match:
-                        title = prev_title_match.group(1).strip()
-                        # title이 20글자 넘으면 줄이기
-                        if len(title) > 20:
-                            title = title[:20] + "..."
-                        return {
-                            'title': title,
-                            'url': prev_url_match.group(1).strip()
-                        }
-            
-            # 부분적으로라도 찾은 경우 반환
-            title = title_match.group(1).strip() if title_match else None
-            if title and len(title) > 20:
-                title = title[:20] + "..."
-            return {
-                'title': title,
-                'url': url_match.group(1).strip() if url_match else None
-            }
+                return {'title': title, 'url': result['url'], 'fallback': False}
+
+        # fallback: 이전 행들에서 탐색 (하나라도 찾으면 바로 반환)
+        for i in range(1, 3):
+            prev_id = source_id - i
+            prev_row = df[df['human_readable_id'] == prev_id]
+            if not prev_row.empty:
+                prev_text = prev_row.iloc[0]['text']
+                print(f"fallback row text[{prev_id}]: ", prev_text)
+                result = extract_title_url(prev_text)
+
+                if result and result.get('title') and result.get('url'):
+                    title = result['title']
+                    if len(title) > 20:
+                        title = title[:20] + "..."
+                    return {'title': title, 'url': result['url'], 'fallback': True}
+
+        # 일부만 찾은 경우 (ex. title만 있는 경우)
+        result = extract_title_url(text) if not row.empty else None
+        title = result['title'] if result and result.get('title') else None
+        url = result['url'] if result and result.get('url') else None
+        if title and len(title) > 20:
+            title = title[:20] + "..."
+        if title or url:
+            return {'title': title, 'url': url, 'fallback': False}
         
         return None
-        
+
     except Exception as e:
         print(f"Error in find_url_and_title_from_source_id: {e}")
         return None

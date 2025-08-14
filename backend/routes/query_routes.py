@@ -366,7 +366,6 @@ def run_graphrag_query(page_id, message):
         raise RuntimeError(f"run_graphrag_query 실패: {str(e)}")
 
 
-
 @query_bp.route('/generate-graph', methods=['POST'])
 def generate_graph():    
     try:
