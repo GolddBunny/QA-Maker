@@ -146,15 +146,20 @@ def should_exclude_url(url):
             return True
     return False
 
-def jina_crawling(crawl_url, output_dir, session=None, verbose=False):
+def jina_crawling(crawl_url, output_dir, url_breadcrumb_map=None, session=None, verbose=False):
     """단일 URL을 Jina를 통해 크롤링합니다."""
     if session is None:
         session = create_session_with_retry()
     
+    # URL 공백 제거 및 정규화
+    crawl_url = crawl_url.strip()
+    
+    # Jina API URL 구성 - 이미 http/https로 시작하는 경우 그대로 사용
     if crawl_url.startswith(('http://', 'https://')):
         url = f"https://r.jina.ai/{crawl_url}"
     else:
-        url = f"https://r.jina.ai/{crawl_url}"
+        # http/https가 없는 경우 https 추가
+        url = f"https://r.jina.ai/https://{crawl_url}"
     
     # Jina API 적용할 헤더
     headers = {
@@ -239,18 +244,34 @@ def jina_crawling(crawl_url, output_dir, session=None, verbose=False):
         file_path = output_dir / f"{stem}_{counter}.txt"
         counter += 1
     
+    # Breadcrumb 정보 추가
+    breadcrumb = url_breadcrumb_map.get(crawl_url, "") if url_breadcrumb_map else ""
+    if verbose:
+        print(f"🔍 Jina Breadcrumb 확인 - URL: {crawl_url}")
+        print(f"📍 매핑된 Breadcrumb: '{breadcrumb}'")
+        print(f"📊 전체 매핑 개수: {len(url_breadcrumb_map) if url_breadcrumb_map else 0}")
+    
+    if breadcrumb and breadcrumb != "unknown":
+        final_content = f"# Breadcrumb: {breadcrumb}\n\n{response.text}"
+        if verbose:
+            print(f"✅ Jina에 Breadcrumb 추가됨: {breadcrumb}")
+    else:
+        final_content = response.text
+        if verbose:
+            print(f"❌ Jina에 Breadcrumb 추가되지 않음 (빈 값 또는 'unknown')")
+    
     with open(file_path, "w", encoding="utf-8") as f:
-        f.write(response.text)
+        f.write(final_content)
     
     if verbose:
         logger.debug(f"저장: {file_path}")
     
     return str(file_path)
 
-def process_single_url(url, output_dir, session, verbose=False):
+def process_single_url(url, output_dir, session, url_breadcrumb_map=None, verbose=False):
     """단일 URL을 처리하는 함수."""
     try:
-        file_path = jina_crawling(url, output_dir, session, verbose)
+        file_path = jina_crawling(url, output_dir, url_breadcrumb_map, session, verbose)
         return True, file_path
     except Exception as e:
         error_msg = f"URL 크롤링 실패: {url}, 오류: {e}"
@@ -258,7 +279,7 @@ def process_single_url(url, output_dir, session, verbose=False):
             logger.error(error_msg)
         return False, error_msg
 
-def batch_jina_crawling(url_list_file, output_dir=None, max_workers=4, verbose=False):
+def batch_jina_crawling(url_list_file, output_dir=None, url_breadcrumb_map=None, max_workers=4, verbose=False):
     """URL 목록 파일에서 URL을 읽어 병렬 크롤링
     
     Args:
@@ -342,7 +363,7 @@ def batch_jina_crawling(url_list_file, output_dir=None, max_workers=4, verbose=F
             future_to_url = {}
             for i, url in enumerate(url_batch):
                 session = sessions[i % len(sessions)]
-                future = executor.submit(process_single_url, url, output_dir, session, verbose)
+                future = executor.submit(process_single_url, url, output_dir, session, url_breadcrumb_map, verbose)
                 future_to_url[future] = url
             
             # 진행률 표시

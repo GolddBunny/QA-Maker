@@ -23,13 +23,14 @@ USER_AGENTS = [
 ]
 
 class Crawler:
-    def __init__(self, urls=None, output_base_dir=None):
+    def __init__(self, urls=None, output_base_dir=None, url_breadcrumb_map=None):
         self.visited_urls = set()
         self.saved_files = []   # 저장된 파일 목록 추적
         self.saved_attachments = [] # 다운로드된 첨부파일 목록 추적
         self.delay = 1  # 서버 부하 방지를 위한 요청 간 딜레이 설정
         self.urls_to_crawl = urls or [] # 크롤링할 URL 목록
         self.curriculum_counter = 0  # curriculum 페이지 번호 매기기용 카운터
+        self.url_breadcrumb_map = url_breadcrumb_map or {}  # URL-breadcrumb 매핑
         
         # 첫 번째 URL에서 도메인 추출 (모든 URL이 같은 도메인이라고 가정)
         if self.urls_to_crawl:
@@ -744,9 +745,22 @@ class Crawler:
                 file_path = f"{name_without_ext}_{counter}.txt"
                 counter += 1
             
+            # Breadcrumb 정보 추가
+            breadcrumb = self.url_breadcrumb_map.get(url, "")
+            print(f"🔍 Breadcrumb 확인 - URL: {url}")
+            print(f"📍 매핑된 Breadcrumb: '{breadcrumb}'")
+            print(f"📊 전체 매핑 개수: {len(self.url_breadcrumb_map)}")
+            
+            if breadcrumb and breadcrumb != "unknown":
+                final_content = f"# Breadcrumb: {breadcrumb}\n\n{enhanced_content}"
+                print(f"✅ Breadcrumb 추가됨: {breadcrumb}")
+            else:
+                final_content = enhanced_content
+                print(f"❌ Breadcrumb 추가되지 않음 (빈 값 또는 'unknown')")
+            
             # 향상된 콘텐츠 저장
             with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(enhanced_content)
+                f.write(final_content)
             
             print(f"구조화된 텍스트 파일 저장 완료: {file_path}")
             self.saved_files.append(file_path)
@@ -811,8 +825,17 @@ class Crawler:
             if metadata['author']:
                 metadata_text += f"작성자: {metadata['author']}\n"
         
+        # Breadcrumb 정보 추가
+        breadcrumb = self.url_breadcrumb_map.get(url, "") if hasattr(self, 'url_breadcrumb_map') and self.url_breadcrumb_map else ""
+        breadcrumb_text = ""
+        if breadcrumb and breadcrumb != "unknown":
+            breadcrumb_text = f"# Breadcrumb: {breadcrumb}\n\n"
+            print(f"✅ Legacy 방식에 Breadcrumb 추가됨: {breadcrumb}")
+        else:
+            print(f"❌ Legacy 방식에 Breadcrumb 추가되지 않음 (빈 값 또는 'unknown')")
+        
         # 마크다운 형식으로 파일 내용 구성
-        text_content = f"""Title: {title}
+        text_content = f"""{breadcrumb_text}Title: {title}
 
 URL Source: {url}{metadata_text}
 
@@ -831,6 +854,9 @@ Markdown Content:
 
     def crawl_single_page(self, url, progress_info=""):
         """단일 페이지만 크롤링하는 함수"""
+        # URL 공백 제거 및 정규화
+        url = url.strip()
+        
         parsed_url = urlparse(url)
         domain = parsed_url.netloc.replace('.', '_')
         

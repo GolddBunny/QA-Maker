@@ -1,11 +1,96 @@
 # url list를 받아서 크롤링 시작 -> html_Structuring.py 호출 ( -> Jina, artclView 크롤링 시작 - > 크롤링 결과 저장) -> 크롤링 결과 반환
 
 import os
-import sys
 import tempfile
+import json
 from pathlib import Path
-from datetime import datetime
 from services.crawling_service.html_Structuring import crawl_from_file
+
+def extract_url_breadcrumb_mapping(page_id):
+    """URL 트리 JSON 파일에서 URL-breadcrumb 매핑을 추출"""
+    try:
+        # URL 트리 JSON 파일 경로 찾기 (여러 경로 시도)
+        possible_paths = [
+            Path("../data/crawling"),
+            Path(__file__).parent / "urlCrawling_CSE"
+        ]
+        
+        crawling_dir = None
+        for path in possible_paths:
+            print(f"🔍 크롤링 디렉토리 확인: {path.absolute()}")
+            if path.exists():
+                crawling_dir = path
+                print(f"✅ 크롤링 디렉토리 발견: {crawling_dir}")
+                break
+        
+        if crawling_dir is None:
+            print("❌ 크롤링 디렉토리를 찾을 수 없습니다.")
+            return {}
+        
+        # page_id와 관련된 디렉토리 찾기 (범용적 매칭)
+        found_dirs = []
+        matching_dirs = []
+        
+        for dir_path in crawling_dir.iterdir():
+            if dir_path.is_dir():
+                found_dirs.append(dir_path.name)
+                # page_id가 디렉토리명에 포함되어 있는지 확인 (대소문자 무시)
+                if (page_id in dir_path.name or 
+                    page_id.lower() in dir_path.name.lower()):
+                    matching_dirs.append(dir_path)
+        
+        # 매칭된 디렉토리가 없으면 가장 최근 디렉토리 사용
+        if not matching_dirs:
+            print(f"⚠️ page_id '{page_id}'와 정확히 매칭되는 디렉토리를 찾을 수 없습니다.")
+            print(f"📁 발견된 디렉토리들: {found_dirs}")
+            # 가장 최근 디렉토리 선택 (타임스탬프 기준)
+            timestamp_dirs = [d for d in crawling_dir.iterdir() if d.is_dir() and any(c.isdigit() for c in d.name[:8])]
+            if timestamp_dirs:
+                matching_dirs = [sorted(timestamp_dirs, key=lambda x: x.name, reverse=True)[0]]
+                print(f"🕒 가장 최근 디렉토리 사용: {matching_dirs[0].name}")
+        
+        # 매칭된 디렉토리들에서 JSON 파일 찾기
+        for dir_path in matching_dirs:
+            print(f"✅ 매칭 디렉토리 발견: {dir_path}")
+            
+            # url_tree_*.json 파일 찾기
+            json_files = list(dir_path.glob("url_tree_*.json"))
+            print(f"📄 JSON 파일 개수: {len(json_files)}")
+            
+            for json_file in json_files:
+                print(f"📖 JSON 파일 읽기: {json_file}")
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    tree_data = json.load(f)
+                
+                # 재귀적으로 URL-breadcrumb 매핑 추출
+                url_breadcrumb_map = {}
+                
+                def extract_from_node(node):
+                    if 'url' in node and 'breadcrumb' in node:
+                        url_breadcrumb_map[node['url']] = node['breadcrumb']
+                    
+                    if 'children' in node:
+                        for child in node['children']:
+                            extract_from_node(child)
+                
+                extract_from_node(tree_data)
+                print(f"✅ 매핑 추출 완료: {len(url_breadcrumb_map)}개")
+                
+                # 디버깅: 추출된 매핑의 샘플 출력
+                if url_breadcrumb_map:
+                    print("📋 추출된 매핑 샘플:")
+                    for i, (url, breadcrumb) in enumerate(list(url_breadcrumb_map.items())[:3]):
+                        print(f"   {i+1}. {url} -> {breadcrumb}")
+                
+                return url_breadcrumb_map
+        
+        print("❌ 유효한 JSON 파일을 찾을 수 없습니다.")
+        return {}
+    except Exception as e:
+        print(f"Breadcrumb 매핑 추출 중 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        return {}
 
 def main(page_id, url_list):
     """
@@ -29,7 +114,7 @@ def main(page_id, url_list):
         urls = [item['url'] for item in url_list if 'url' in item]
         
         if not urls:
-            print(f"crawling_and_structuring.py: 🔄 유효한 URL이 없습니다.")
+            print("crawling_and_structuring.py: 🔄 유효한 URL이 없습니다.")
             return {
                 "success": False,
                 "error": "유효한 URL이 없습니다."
@@ -54,11 +139,24 @@ def main(page_id, url_list):
         print(f"🔗 크롤링할 URL 개수: {len(urls)}")
         
         try:
+            # URL-breadcrumb 매핑 추출
+            url_breadcrumb_map = extract_url_breadcrumb_mapping(page_id)
+            print(f"📍 Breadcrumb 매핑 추출: {len(url_breadcrumb_map)}개 URL")
+            
+            # 디버깅: 매핑 내용 일부 출력
+            if url_breadcrumb_map:
+                print("📋 Breadcrumb 매핑 샘플:")
+                for i, (url, breadcrumb) in enumerate(list(url_breadcrumb_map.items())[:3]):
+                    print(f"   {i+1}. {url} -> {breadcrumb}")
+            else:
+                print("⚠️ Breadcrumb 매핑이 비어있습니다!")
+            
             # 통합 크롤링 실행
             results = crawl_from_file(
                 url_file_path=temp_url_file,
                 page_id=page_id,
                 output_base_dir=str(url_input_path),
+                url_breadcrumb_map=url_breadcrumb_map,
                 verbose=True
             )
             
@@ -164,5 +262,46 @@ def main(page_id, url_list):
 #         import traceback
 #         traceback.print_exc()
 
+def test_breadcrumb_extraction(page_id):
+    """Breadcrumb 매핑 추출 테스트
+    
+    Args:
+        page_id (str): 테스트할 페이지 ID
+    """
+    print(f"🧪 Breadcrumb 매핑 추출 테스트 시작 - Page ID: {page_id}")
+    mapping = extract_url_breadcrumb_mapping(page_id)
+    print(f"📊 테스트 결과: {len(mapping)}개 매핑 추출")
+    if mapping:
+        print("📋 추출된 매핑:")
+        for i, (url, breadcrumb) in enumerate(list(mapping.items())[:5]):
+            print(f"  {i+1}. {url}")
+            print(f"      -> {breadcrumb}")
+    else:
+        print("❌ 매핑이 추출되지 않았습니다.")
+    return mapping
+
+def test_crawling_with_breadcrumb(page_id, test_urls):
+    """실제 크롤링에서 breadcrumb이 포함되는지 테스트
+    
+    Args:
+        page_id (str): 페이지 ID
+        test_urls (list): 테스트용 URL 리스트
+    """
+    print(f"\n🧪 통합 크롤링 breadcrumb 테스트 시작 - Page ID: {page_id}")
+    
+    try:
+        result = main(page_id, test_urls)
+        print(f"📊 크롤링 테스트 결과: {result}")
+        return result
+    except Exception as e:
+        print(f"❌ 테스트 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 # if __name__ == "__main__":
-#     test_integrated_crawling() 
+#     # 개별 테스트 실행 예시
+#     # test_page_id = "your_page_id_here"
+#     # test_urls = [{"url": "your_test_url_here"}]
+#     # test_breadcrumb_extraction(test_page_id)
+#     # test_crawling_with_breadcrumb(test_page_id, test_urls) 

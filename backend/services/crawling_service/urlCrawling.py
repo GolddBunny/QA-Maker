@@ -2,6 +2,10 @@
 import warnings
 warnings.filterwarnings("ignore", message="The pseudo class ':contains' is deprecated", category=FutureWarning)
 
+# matplotlib 백엔드 설정 (GUI 스레드 오류 방지)
+import matplotlib
+matplotlib.use('Agg')  # GUI가 없는 백엔드 사용
+
 # 웹 크롤링 관련
 from bs4 import BeautifulSoup   # html 파싱 + 데이터 추출 : find_all(조건에 맞는 모든 태그 찾기), select(css 선택자 사용)
 import requests                                         # 정적 웹페이지 크롤링: 웹 요청 처리(get, post) + 웹 페이지 다운로드(text, json)
@@ -393,6 +397,8 @@ class URLTreeNode:
         """URL 비교를 위한 정규화"""
         try:
             from urllib.parse import urlparse, urlunparse
+            # URL 공백 제거
+            url = url.strip()
             parsed = urlparse(url)
             
             # 쿼리와 프래그먼트 제거, 경로 정규화
@@ -493,7 +499,7 @@ class URLTreeNode:
         }
 
 class ScopeLimitedCrawler:
-    def __init__(self, max_pages: int = 100000, delay: float = 1.0, timeout: int = 20, use_requests: bool = True, max_depth: int = 10):
+    def __init__(self, max_pages: int = 100000, delay: float = 1.0, timeout: int = 20, use_requests: bool = True, max_depth: int = 10, max_pagination_pages: int = 30):
         """크롤러 초기화.
         
         Args:
@@ -502,6 +508,7 @@ class ScopeLimitedCrawler:
             timeout: 페이지 로딩 시간 제한(초)
             use_requests: 간단한 페이지는 requests 사용, JS가 많은 페이지는 selenium 사용
             max_depth: 최대 깊이 제한
+            max_pagination_pages: 페이지네이션에서 크롤링할 최대 페이지 수
         """
         # 통합된 스레드 안전성을 위한 RLock 사용
         self.url_lock = threading.RLock()
@@ -534,7 +541,9 @@ class ScopeLimitedCrawler:
         self.driver = None
 
         # DFS를 위한 새로운 속성들
-        self.max_depth = max_depth  # 최대 깊이 제한
+        self.max_depth = max_depth
+        self.max_pagination_pages = max_pagination_pages  # 페이지네이션 최대 페이지 수 제한
+        self.pagination_urls_count = 0  # 전역 페이지네이션 URL 카운터
         self.url_tree: Optional[URLTreeNode] = None  # URL 트리 루트
         self.url_to_node: Dict[str, URLTreeNode] = {}  # URL -> 노드 매핑
         self.visit_order: List[str] = []  # 방문 순서 기록
@@ -702,6 +711,9 @@ class ScopeLimitedCrawler:
         if not url:
             return ""
         
+        # URL 공백 제거 및 정리
+        url = url.strip()
+        
         # 캐시에서 확인
         cached_result = self.normalization_cache.get(url)
         if cached_result is not None:
@@ -817,10 +829,20 @@ class ScopeLimitedCrawler:
     def is_in_scope(self, url: str) -> bool:
         """URL이 정의된 크롤링 범위 내에 있는지 확인 (모든 패턴 포함 필수)"""
         try:
+            # URL 공백 제거
+            url = url.strip()
             parsed = urlparse(url)
             
-            # 도메인 확인 - 기본 도메인에 속해야 함
-            if self.base_domain not in parsed.netloc:
+            # 도메인 확인 - 기본 도메인과 정확히 일치하거나 www 변형만 허용
+            current_domain = parsed.netloc.lower()
+            base_domain_lower = self.base_domain.lower()
+            
+            # www 제거한 도메인으로 비교
+            current_domain_no_www = current_domain.replace('www.', '', 1) if current_domain.startswith('www.') else current_domain
+            base_domain_no_www = base_domain_lower.replace('www.', '', 1) if base_domain_lower.startswith('www.') else base_domain_lower
+            
+            # 기본 도메인과 일치하지 않으면 제외 (www 변형 허용)
+            if current_domain_no_www != base_domain_no_www:
                 return False
             
             # scope_patterns가 비어있거나 빈 문자열만 있으면 도메인 전체 허용
@@ -906,9 +928,12 @@ class ScopeLimitedCrawler:
         if any(lower_url.endswith(ext) for ext in EXCLUDE_EXTENSIONS):
             return False
         
-        # 제외 패턴 확인
+        # 제외 패턴 확인 (단, API 기반 파일 다운로드는 예외 처리)
         for pattern in EXCLUDE_PATTERNS:
             if pattern in lower_url:
+                # API 경로에서 파일 다운로드 패턴이 있으면 예외 처리
+                if pattern == '/api/' and any(file_pattern in lower_url for file_pattern in ['/file', '/download', '/attach']):
+                    continue  # API 파일 다운로드는 제외하지 않음
                 return False
         
         # 1. 문서 파일 확장자 확인 (DOC_EXTENSIONS에 해당하는 것만)
@@ -1351,7 +1376,7 @@ class ScopeLimitedCrawler:
         
         logger.debug(f"URL 패턴: {url_pattern}, 마지막 페이지: {last_page}")
         
-        # 3. 직접 페이지 링크 추가
+        # 3. 직접 페이지 링크 추가 (전역 페이지 수 제한 적용)
         if pagination_element:
             for a in pagination_element.find_all('a', href=True):
                 href = a['href']
@@ -1366,22 +1391,59 @@ class ScopeLimitedCrawler:
                             # URL 정규화 적용
                             normalized_url = self.normalize_url(full_url)
                             if normalized_url not in pagination_urls and normalized_url != current_url:
+                                # 전역 페이지네이션 수 제한 체크
+                                if self.pagination_urls_count >= self.max_pagination_pages:
+                                    logger.debug(f"전역 페이지네이션 제한 ({self.max_pagination_pages}페이지) 도달, 추가 중단")
+                                    break
                                 pagination_urls.append(normalized_url)
+                                self.pagination_urls_count += 1
+                                logger.debug(f"직접 페이지네이션 링크 추가 (전역: {self.pagination_urls_count}/{self.max_pagination_pages}): {normalized_url}")
         
-        # 4. URL 패턴이 있고 마지막 페이지 번호가 있는 경우, 모든 페이지 URL 생성
+        # 4. URL 패턴이 있고 마지막 페이지 번호가 있는 경우, 모든 페이지 URL 생성 (전역 제한 적용)
         if url_pattern and last_page > 0:
-            for page_num in range(1, min(last_page + 1, 26)):  # 최대 25페이지로 제한
+            for page_num in range(1, min(last_page + 1, self.max_pagination_pages + 1)):  # 설정된 최대 페이지로 제한
+                # 전역 페이지네이션 수 제한 체크
+                if self.pagination_urls_count >= self.max_pagination_pages:
+                    logger.debug(f"전역 페이지네이션 제한 ({self.max_pagination_pages}페이지) 도달, 패턴 기반 URL 생성 중단")
+                    break
+                    
                 page_url = url_pattern.replace('{page}', str(page_num))
                 normalized_url = self.normalize_url(page_url)
                 if normalized_url not in pagination_urls and normalized_url != current_url:
                     pagination_urls.append(normalized_url)
-                    logger.debug(f"패턴 기반 페이지네이션 URL 추가: {normalized_url}")
+                    self.pagination_urls_count += 1
+                    logger.debug(f"패턴 기반 페이지네이션 URL 추가 (전역: {self.pagination_urls_count}/{self.max_pagination_pages}): {normalized_url}")
         
         # 페이지네이션 정보 로깅
         if pagination_urls:
             logger.debug(f"페이지네이션 발견: {len(pagination_urls)}개 페이지")
         
         return pagination_urls
+
+    def _is_over_pagination_limit(self, url: str) -> bool:
+        """URL이 페이지네이션 파라미터를 포함하고 그 값이 제한을 초과하는지 여부를 반환한다.
+
+        - 지원 키: page, pageNo, pageIndex, p, pg
+        - 경로 패턴: /page/<number>
+        """
+        try:
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(url)
+            query_dict = parse_qs(parsed.query)
+            page_keys = ["page", "pageNo", "pageIndex", "p", "pg"]
+            for key in page_keys:
+                if key in query_dict and query_dict[key]:
+                    value = query_dict[key][0]
+                    if value.isdigit() and int(value) > self.max_pagination_pages:
+                        return True
+            # 경로 기반 패턴 확인 (/page/123)
+            path = parsed.path or ""
+            match = re.search(r"/(?:p|page)/(\d+)", path, re.IGNORECASE)
+            if match and int(match.group(1)) > self.max_pagination_pages:
+                return True
+            return False
+        except Exception:
+            return False
 
     def _extract_pagination_pattern(self, soup: BeautifulSoup, current_url: str, pagination_element) -> Tuple[str, int]:
         """페이지네이션 URL 패턴과 마지막 페이지 번호 추출 (Origin에서 이식)"""
@@ -1561,7 +1623,9 @@ class ScopeLimitedCrawler:
             
             # 실제 GET 요청으로 내용 확인 (최후 수단)
             try:
-                response = self.session.get(url, timeout=10, stream=True)
+                # HTTP 요청 직전 URL 정리
+                clean_url = url.strip()
+                response = self.session.get(clean_url, timeout=10, stream=True)
                 # 응답 헤더 재확인
                 content_disposition = response.headers.get('Content-Disposition', '')
                 if content_disposition:
@@ -1648,7 +1712,9 @@ class ScopeLimitedCrawler:
                         if retries > 0:
                             self.session.headers.update({"User-Agent": random.choice(USER_AGENTS)})
                             
-                        response = self.session.get(url, timeout=self.timeout)
+                        # HTTP 요청 직전 URL 정리
+                        clean_url = url.strip()
+                        response = self.session.get(clean_url, timeout=self.timeout)
                         
                         # 여기가 수정된 부분 - raise_for_status() 호출 전에 500 에러 확인
                         if 500 <= response.status_code < 600:  # 모든 5xx 에러 처리
@@ -1723,7 +1789,9 @@ class ScopeLimitedCrawler:
                     # 최대 2번 재시도 
                     for attempt in range(2):
                         try:
-                            self.driver.get(url)
+                            # Selenium 요청 직전 URL 정리
+                            clean_url = url.strip()
+                            self.driver.get(clean_url)
                             
                             # 로딩 후 페이지의 상태를 확인
                             if "500 error" in self.driver.page_source.lower() or "500 에러" in self.driver.page_source.lower():
@@ -1855,6 +1923,10 @@ class ScopeLimitedCrawler:
             doc_urls_file = os.path.join(domain_dir, f"document_urls_{timestamp}.txt")
             self._save_document_urls(doc_urls_file)
             
+            # 페이지 URL 별도 파일로 저장
+            page_urls_file = os.path.join(domain_dir, f"page_urls_{timestamp}.txt")
+            self._save_page_urls(page_urls_file)
+            
             # 통계 생성
             stats = self._generate_tree_statistics()
             
@@ -1877,7 +1949,8 @@ class ScopeLimitedCrawler:
                     "avg_load_time": stats["avg_load_time"]
                 },
                 "tree_file": tree_file,
-                "doc_urls_file": doc_urls_file
+                "doc_urls_file": doc_urls_file,
+                "page_urls_file": page_urls_file
             }
             
             json_file = os.path.join(domain_dir, f"dfs_results_{timestamp}.json")
@@ -1924,13 +1997,14 @@ class ScopeLimitedCrawler:
                     logger.warning("노드가 없어 시각화를 건너뜁니다.")
             
             # 파일 개수 및 완료 메시지 출력 (시각화 완료 후)
-            total_files = 4 + (1 if visualization_file else 0)
+            total_files = 5 + (1 if visualization_file else 0)
             logger.info(f"🗂️ 생성된 파일: {total_files}개")
             logger.info(f"   📋 문서 URL 목록: {os.path.basename(doc_urls_file)}")
+            logger.info(f"   📄 페이지 URL 목록: {os.path.basename(page_urls_file)}")
             logger.info(f"⚡ 실행 시간: {time.time() - start_time:.1f}초")
             
             # 파일 생성 목록 업데이트
-            files_generated = ["url_tree", "dfs_results", "crawling_log", "document_urls"]
+            files_generated = ["url_tree", "dfs_results", "crawling_log", "document_urls", "page_urls"]
             if visualization_file:
                 files_generated.append("graph_visualization")
             
@@ -1943,6 +2017,7 @@ class ScopeLimitedCrawler:
                 "results_dir": domain_dir,
                 "tree_file": tree_file,
                 "doc_urls_file": doc_urls_file,
+                "page_urls_file": page_urls_file,
                 "visualization_file": visualization_file,
                 "execution_time": time.time() - start_time,
                 "files_generated": files_generated
@@ -2144,6 +2219,10 @@ class ScopeLimitedCrawler:
                 logger.debug(f"{progress} 페이지네이션 발견: {len(pagination_urls)}개 추가 페이지")
             
             for child_url in all_child_links:
+                # 전역 페이지네이션 한도 초과 URL은 어떤 경로에서 오든 스킵
+                if self._is_over_pagination_limit(child_url):
+                    logger.debug(f"전역 페이지네이션 한도 초과 스킵: {child_url}")
+                    continue
                 normalized_child = self.normalize_url(child_url)
                 
                 if (normalized_child and 
@@ -2313,6 +2392,20 @@ class ScopeLimitedCrawler:
             logger.debug(f"문서 URL 저장 완료: {doc_urls_file} ({len(sorted_doc_urls)}개)")
         except Exception as e:
             logger.error(f"문서 URL 저장 실패: {e}")
+    
+    def _save_page_urls(self, page_urls_file: str) -> None:
+        """문서가 아닌 페이지 URL들을 텍스트 파일로 저장"""
+        try:
+            # 페이지 URL을 정렬하여 저장 (일관성 있는 순서)
+            sorted_page_urls = sorted(list(self.all_page_urls))
+            
+            with open(page_urls_file, 'w', encoding='utf-8') as f:
+                for page_url in sorted_page_urls:
+                    f.write(f"{page_url}\n")
+            
+            logger.debug(f"페이지 URL 저장 완료: {page_urls_file} ({len(sorted_page_urls)}개)")
+        except Exception as e:
+            logger.error(f"페이지 URL 저장 실패: {e}")
     
     def _generate_tree_statistics(self) -> Dict[str, Any]:
         """트리 통계 생성 (필수 정보만)"""
@@ -3037,7 +3130,7 @@ class ScopeLimitedCrawler:
             logger.debug(f"URL 제목 추출 실패: {e}")
             return ""
 
-def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_requests=True, verbose=False, max_depth=10, generate_extra_files=None):
+def main(start_url, scope=None, max_pages=10000, delay=1.0, timeout=20, use_requests=True, verbose=False, max_depth=10, generate_extra_files=None, max_pagination_pages=30):
     """매개변수로 크롤러 실행 (DFS 방식)"""
     if verbose:
         logger.setLevel(logging.INFO)
@@ -3047,7 +3140,8 @@ def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_reque
     # 시작 시간 기록
     start_time = time.time()
     
-    # URL 정규화
+    # URL 정규화 및 공백 제거
+    start_url = start_url.strip()
     if not start_url.startswith(('http://', 'https://')):
         start_url = 'https://' + start_url
     
@@ -3057,7 +3151,7 @@ def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_reque
         logger.debug(f"📊 추가 파일 생성 예정: {generate_extra_files}")
     
     with ScopeLimitedCrawler(max_pages=max_pages, delay=delay, timeout=timeout, 
-                            use_requests=use_requests, max_depth=max_depth) as crawler:
+                            use_requests=use_requests, max_depth=max_depth, max_pagination_pages=max_pagination_pages) as crawler:
         
         # DFS 크롤링 실행
         results = crawler.discover_urls_dfs(start_url, scope)
@@ -3074,7 +3168,7 @@ def main(start_url, scope=None, max_pages=1000, delay=1.0, timeout=20, use_reque
         
         if results:
             results["execution_time_seconds"] = execution_time
-            base_files = 5 if results.get("visualization_file") else 4  # 기본 4개 + 그래프 1개
+            base_files = 6 if results.get("visualization_file") else 5  # 기본 5개 + 그래프 1개
             extra_files_count = len(results.get("extra_files", {})) if generate_extra_files else 0
             total_files = base_files + extra_files_count
             
@@ -3106,7 +3200,9 @@ def extract_document_urls_from_results(results: Dict[str, Any]) -> List[str]:
 if __name__ == "__main__":
     # 테스트 실행 예시
     results = main(
-        start_url="https://hansung.ac.kr/sites/CSE/index.do",
+        # start_url="https://spri.kr/",
+        # start_url="https://cse.snu.ac.kr/",
+        start_url="https://www.oss.kr/",
         scope=None,
         max_pages=99999,
         delay=0.5,

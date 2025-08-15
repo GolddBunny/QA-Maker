@@ -97,6 +97,8 @@ data/input/*/cache
 /frontend/src/json
 /backend/context_data_*.csv
 /frontend/src/json/answer_graphml_data.json
+*.manifest
+*.parquet
 
 # firebase
 /backend/services/firebase/qamaker-e32d7-firebase-adminsdk-fbsvc-0408d84c8c.json
