@@ -1,5 +1,5 @@
-<img width="468" height="40" alt="image" src="https://github.com/user-attachments/assets/b35d2470-4554-48e3-98ab-6d3812cf6ed5" /># QA Maker
->도메인에 특화된 Q&A 시스템을 자동으로 생성하는 웹 프레임워크<br>
+# QA Maker
+> 도메인에 특화된 Q&A 시스템을 자동으로 생성하는 웹 프레임워크<br>
 
 ---
 
@@ -39,22 +39,23 @@
 
 **- QA Maker의 주요기능 -**
 -	QA Maker의 주요 기능
-  +  웹 크롤링
-  + 구조화
-  + 지식 그래프 생성
-  + QA Maker 실행 후 생성 결과물
+    +  웹 크롤링
+    +  구조화
+    +  지식 그래프 생성
+    +  QA Maker 실행 후 생성 결과물
 
 -	Q&A 시스템의 주요 기능
-  + 질의응답
-  + 근거 URL 및 문서 시각화 
-  + 정확도
-  + 사용자 만족도
-  + 관련 질문 추천
+    +  질의응답
+    +  근거 URL 및 문서 시각화 
+    +  정확도
+    +  사용자 만족도
+    +  관련 질문 추천
 
 ---
 ## 시스템 구성 및 아키텍처
 ### 1. QA Maker 시스템 전체 구성
-  QA Maker 시스템은 도메인 URL만으로 해당 도메인의 질의응답 시스템을 자동으로 생성하는 웹 프레임워크이다. QA Maker 시스템은 그림 9과 같이 크게 Q&A 생성 서버 부분과 생성된 Q&A 시스템으로 구성된다. 
+<br>
+    QA Maker 시스템은 도메인 URL만으로 해당 도메인의 질의응답 시스템을 자동으로 생성하는 웹 프레임워크이다. QA Maker 시스템은 그림 9과 같이 크게 Q&A 생성 서버 부분과 생성된 Q&A 시스템으로 구성된다. 
   Q&A 생성 서버는 React 기반 관리자 페이지와 Flask 기반 Q&A 생성 서버로 구성된다. 생성된 Q&A 시스템은 React 기반 사용자 페이지와 Flask 기반 도메인 Q&A 시스템으로 구성된다.  
   Q&A 시스템을 만들고자 하는 관리자는 웹 브라우저에서 Q&A 생성 서버의 URL에 접속하여 Q&A 생성 서버를 활용한다. 도메인 URL 이나 문서를 등록하면 자동으로 지식 그래프를 생성하고 Q&A 생성 서버와 독립적으로 운영되는 Q&A 시스템이 생성된다. 
   질의하고자 하는 사용자는 웹 브라우저에서 생성된 Q&A 시스템의 URL에 접속하여 Q&A 시스템의 사용자 페이지를 통해 질의응답할 수 있다. 
@@ -62,77 +63,91 @@
 <img width="4115" height="2814" alt="전체 아키텍쳐" src="https://github.com/user-attachments/assets/b95539fa-72f9-44be-b856-6a9c77c6f412" />
 
 ### 2. Q&A 생성 서버
-1) 관리자 페이지
-   <details>
-    <summary>새 도메인 생성 모듈</summary>
-      새 도메인 생성 모듈을 통해 관리자가 새로운 도메인을 추가할 수 있다.
-   </details> 
-   <details>
-    <summary>URL / 문서 업로드 모듈</summary>
-      관리자가 도메인 URL이나 PDF, HWP, DOCX 등의 문서를 업로드할 수 있으며, 입력된 URL과 문서의 유효성을 자동으로 검증한다.
-   </details> 
-   <details>
-    <summary>로그 분석 모듈</summary>
-      시스템 생성이 완료되면 로그 분석 페이지가 생성되어 크롤링 시간, 구조화 시간, 지식 그래프 생성 시간 등 단계별 처리 기록을 제공한다. 로그 분석 모듈을 통해 수집된 문서와 URL 목록을 확인하고 D3.js 기반으로 생성된 지식 그래프를 시각적으로 탐색할 수 있으며, 줌과 세부 정보 표시 등의 탐색 기능을 제공한다.
-   </details> 
-
-2) Q&A 생성 서버
-   <details>
-    <summary>도메인 정보 관리 모듈</summary>
-      관리자가 웹 브라우저에서 새 도메인을 등록하면 Flask 내의 도메인 정보 관리 모듈이 해당 요청을 처리한다. 
-   </details> 
-   <details>
-    <summary>URL 크롤링 및 문서 수집 모듈</summary>
-      requests 라이브러리로 정적 HTML을 수집하고, JavaScript 기반 동적 페이지는 Selenium WebDriver로 처리한다. BeautifulSoup4를 통해 HTML을 파싱하여 관리자가 입력한 도메인 URL 내 모든 하위 페이지를 탐색하고, 업로드된 문서를 함께 수집한다.
-   </details> 
-   <details>
-    <summary>HTML 및 문서 구조화 모듈</summary>
-      JinaAPI를 활용한 웹페이지 마크다운 변환, pymupdf4llm을 통한 PDF 텍스트 추출, olefile과 zlib을 이용한 HWP 파일 처리, docx2pdf를 통한 DOCX 변환 등 각 문서 형식별 전용 라이브러리를 사용해 텍스트를 추출하고, 계층적 마크다운 형식으로 변환하여 저장한다.
-   </details> 
-   <details>
-    <summary>지식 그래프 생성 모듈</summary>
-      GraphRAG와 OpenAI LLM을 활용해 엔티티와 관계 정보를 추출하며, LanceDB에 entity-description 쌍으로 저장하고 Firebase DB를 통해 전체 지식 그래프를 관리한다.
-   </details> 
-
-3) lanceDB
-4) Firebase DB
-   <details>
-    <summary>도메인 정보</summary>
-      관리자가 등록한 도메인을 관리하며 도메인 추가 및 목록 조회 시 활용된다.
-   </details> 
-   <details>
-    <summary>원본 문서</summary>
-      크롤링된 URL 및 기타 문서 원본을 저장하여 응답 시 근거 자료로 활용된다.
-   </details> 
-   <details>
-    <summary>질문 이력</summary>
-     사용자 질의와 생생된 응답, 만족도 평가를 기록한다.
-   </details> 
-   <details>
-    <summary>지식그래프 데이터</summary>
-     Q&A 시스템 생성이 완료된 후 해당 도메인의 지식그래프 전체를 저장한다
-   </details> 
-
-### 3. 생성된 Q&A 시스템
-1) 사용자 페이지
-   <details>
-    <summary>질의응답 모듈</summary>
-      사용자가 입력한 자연어 질의를 GraphRAG에 전달하여 OpenAI API를 활용해 생성된 응답과 함께 근거 문서, 정확도, 관련 질문을 함께 화면에 표시한다.
-   </details> 
-   <details>
-    <summary>그래프 시각화 모듈</summary>
-      응답 생성 시 참고된 엔티티와 관계를 D3.js를 사용해 지식 그래프로 시각화하여 답변의 근거를 명확히 보여준다.
-   </details> 
-
-2) 생성된 Q&A 시스템
-    <details>
-      <summary>답변 생성 모듈</summary>
-        사용자가 입력한 질의를 GraphRAG를 통해 관련 엔티티와 관계를 조회하고, OpenAI API를 활용해 자연스러운 답변을 생성하여 반환한다. 답변과 함께 근거 문서가 필요한 경우 PyMuPDDF 라이브러리와 LibreOffice 소프트웨어를 사용하며, 지식 그래프를 시각화하는 경우 Firebase DB를 통해 지식 그래프 정보를 조회한다
+<details>
+  <summary><h4>1) 관리자 페이지</h4></summary>
+     <details>
+      <summary>새 도메인 생성 모듈</summary>
+        새 도메인 생성 모듈을 통해 관리자가 새로운 도메인을 추가할 수 있다.
      </details> 
      <details>
-      <summary>질의 수집 및 분석 모듈</summary>
-        Firebase를 활용하여 사용자 질의 및 만족도를 수집하고 이를 해당 도메인 정보 품질의 지표로 활용한다.
-   </details> 
+      <summary>URL / 문서 업로드 모듈</summary>
+        관리자가 도메인 URL이나 PDF, HWP, DOCX 등의 문서를 업로드할 수 있으며, 입력된 URL과 문서의 유효성을 자동으로 검증한다.
+     </details> 
+     <details>
+      <summary>로그 분석 모듈</summary>
+        시스템 생성이 완료되면 로그 분석 페이지가 생성되어 크롤링 시간, 구조화 시간, 지식 그래프 생성 시간 등 단계별 처리 기록을 제공한다. 로그 분석 모듈을 통해 수집된 문서와 URL 목록을 확인하고 D3.js 기반으로 생성된 지식 그래프를 시각적으로 탐색할 수 있으며, 줌과 세부 정보 표시 등의 탐색 기능을 제공한다.
+     </details> 
+</details> 
+
+<details>
+  <summary><h4>2) Q&A 생성 서버</h4></summary>
+     <details>
+      <summary>도메인 정보 관리 모듈</summary>
+        관리자가 웹 브라우저에서 새 도메인을 등록하면 Flask 내의 도메인 정보 관리 모듈이 해당 요청을 처리한다. 
+     </details> 
+     <details>
+      <summary>URL 크롤링 및 문서 수집 모듈</summary>
+        requests 라이브러리로 정적 HTML을 수집하고, JavaScript 기반 동적 페이지는 Selenium WebDriver로 처리한다. BeautifulSoup4를 통해 HTML을 파싱하여 관리자가 입력한 도메인 URL 내 모든 하위 페이지를 탐색하고, 업로드된 문서를 함께 수집한다.
+     </details> 
+     <details>
+      <summary>HTML 및 문서 구조화 모듈</summary>
+        JinaAPI를 활용한 웹페이지 마크다운 변환, pymupdf4llm을 통한 PDF 텍스트 추출, olefile과 zlib을 이용한 HWP 파일 처리, docx2pdf를 통한 DOCX 변환 등 각 문서 형식별 전용 라이브러리를 사용해 텍스트를 추출하고, 계층적 마크다운 형식으로 변환하여 저장한다.
+     </details> 
+     <details>
+      <summary>지식 그래프 생성 모듈</summary>
+        GraphRAG와 OpenAI LLM을 활용해 엔티티와 관계 정보를 추출하며, LanceDB에 entity-description 쌍으로 저장하고 Firebase DB를 통해 전체 지식 그래프를 관리한다.
+     </details> 
+</details>
+
+<details>
+  <summary><h4>3) lanceDB</h4></summary>
+</details>
+
+<details>
+  <summary><h4>4) Firebase DB</h4></summary>
+     <details>
+      <summary>도메인 정보</summary>
+        관리자가 등록한 도메인을 관리하며 도메인 추가 및 목록 조회 시 활용된다.
+     </details> 
+     <details>
+      <summary>원본 문서</summary>
+        크롤링된 URL 및 기타 문서 원본을 저장하여 응답 시 근거 자료로 활용된다.
+     </details> 
+     <details>
+      <summary>질문 이력</summary>
+       사용자 질의와 생생된 응답, 만족도 평가를 기록한다.
+     </details> 
+     <details>
+      <summary>지식그래프 데이터</summary>
+       Q&A 시스템 생성이 완료된 후 해당 도메인의 지식그래프 전체를 저장한다
+     </details> 
+</details>
+
+
+### 3. 생성된 Q&A 시스템
+<details>
+  <summary><h4>1) 사용자 페이지</h4></summary>
+     <details>
+      <summary>질의응답 모듈</summary>
+        사용자가 입력한 자연어 질의를 GraphRAG에 전달하여 OpenAI API를 활용해 생성된 응답과 함께 근거 문서, 정확도, 관련 질문을 함께 화면에 표시한다.
+     </details> 
+     <details>
+      <summary>그래프 시각화 모듈</summary>
+        응답 생성 시 참고된 엔티티와 관계를 D3.js를 사용해 지식 그래프로 시각화하여 답변의 근거를 명확히 보여준다.
+     </details> 
+</details> 
+
+<details>
+  <summary><h4>2) 생성된 Q&A 시스템</h4></summary>
+      <details>
+        <summary>답변 생성 모듈</summary>
+          사용자가 입력한 질의를 GraphRAG를 통해 관련 엔티티와 관계를 조회하고, OpenAI API를 활용해 자연스러운 답변을 생성하여 반환한다. 답변과 함께 근거 문서가 필요한 경우 PyMuPDDF 라이브러리와 LibreOffice 소프트웨어를 사용하며, 지식 그래프를 시각화하는 경우 Firebase DB를 통해 지식 그래프 정보를 조회한다
+       </details> 
+       <details>
+        <summary>질의 수집 및 분석 모듈</summary>
+          Firebase를 활용하여 사용자 질의 및 만족도를 수집하고 이를 해당 도메인 정보 품질의 지표로 활용한다.
+     </details> 
+</details> 
 
 ---
 ## 기대 효과
