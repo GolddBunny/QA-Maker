@@ -61,8 +61,6 @@
   질의하고자 하는 사용자는 웹 브라우저에서 생성된 Q&A 시스템의 URL에 접속하여 Q&A 시스템의 사용자 페이지를 통해 질의응답할 수 있다. 
 <br><br>
 <img width="1384" height="812" alt="깃허브 작품개요ㅗ" src="https://github.com/user-attachments/assets/aca8b153-ac08-4ba1-87a3-221b7d54d5ee" />
-
-
 ### 2. Q&A 생성 서버
 <details>
   <summary><h4>1) 관리자 페이지</h4></summary>
@@ -79,7 +77,6 @@
         시스템 생성이 완료되면 로그 분석 페이지가 생성되어 크롤링 시간, 구조화 시간, 지식 그래프 생성 시간 등 단계별 처리 기록을 제공한다. 로그 분석 모듈을 통해 수집된 문서와 URL 목록을 확인하고 D3.js 기반으로 생성된 지식 그래프를 시각적으로 탐색할 수 있으며, 줌과 세부 정보 표시 등의 탐색 기능을 제공한다.
      </details> 
 </details> 
-
 <details>
   <summary><h4>2) Q&A 생성 서버</h4></summary>
      <details>
@@ -99,11 +96,9 @@
         GraphRAG와 OpenAI LLM을 활용해 엔티티와 관계 정보를 추출하며, LanceDB에 entity-description 쌍으로 저장하고 Firebase DB를 통해 전체 지식 그래프를 관리한다.
      </details> 
 </details>
-
 <details>
   <summary><h4>3) lanceDB</h4></summary>
 </details>
-
 <details>
   <summary><h4>4) Firebase DB</h4></summary>
      <details>
@@ -123,8 +118,6 @@
        Q&A 시스템 생성이 완료된 후 해당 도메인의 지식그래프 전체를 저장한다
      </details> 
 </details>
-
-
 ### 3. 생성된 Q&A 시스템
 <details>
   <summary><h4>1) 사용자 페이지</h4></summary>
@@ -137,7 +130,6 @@
         응답 생성 시 참고된 엔티티와 관계를 D3.js를 사용해 지식 그래프로 시각화하여 답변의 근거를 명확히 보여준다.
      </details> 
 </details> 
-
 <details>
   <summary><h4>2) 생성된 Q&A 시스템</h4></summary>
       <details>
