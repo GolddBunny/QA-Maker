@@ -61,7 +61,9 @@
   질의하고자 하는 사용자는 웹 브라우저에서 생성된 Q&A 시스템의 URL에 접속하여 Q&A 시스템의 사용자 페이지를 통해 질의응답할 수 있다. 
 <br><br>
 <img width="1384" height="812" alt="깃허브 작품개요ㅗ" src="https://github.com/user-attachments/assets/aca8b153-ac08-4ba1-87a3-221b7d54d5ee" />
+
 ### 2. Q&A 생성 서버
+
 <details>
   <summary><h4>1) 관리자 페이지</h4></summary>
      <details>
@@ -118,7 +120,9 @@
        Q&A 시스템 생성이 완료된 후 해당 도메인의 지식그래프 전체를 저장한다
      </details> 
 </details>
+
 ### 3. 생성된 Q&A 시스템
+
 <details>
   <summary><h4>1) 사용자 페이지</h4></summary>
      <details>
