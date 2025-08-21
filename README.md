@@ -60,7 +60,8 @@
   Q&A 시스템을 만들고자 하는 관리자는 웹 브라우저에서 Q&A 생성 서버의 URL에 접속하여 Q&A 생성 서버를 활용한다. 도메인 URL 이나 문서를 등록하면 자동으로 지식 그래프를 생성하고 Q&A 생성 서버와 독립적으로 운영되는 Q&A 시스템이 생성된다. 
   질의하고자 하는 사용자는 웹 브라우저에서 생성된 Q&A 시스템의 URL에 접속하여 Q&A 시스템의 사용자 페이지를 통해 질의응답할 수 있다. 
 <br><br>
-<img width="4115" height="2814" alt="전체 아키텍쳐" src="https://github.com/user-attachments/assets/b95539fa-72f9-44be-b856-6a9c77c6f412" />
+<img width="1384" height="812" alt="깃허브 작품개요ㅗ" src="https://github.com/user-attachments/assets/aca8b153-ac08-4ba1-87a3-221b7d54d5ee" />
+
 
 ### 2. Q&A 생성 서버
 <details>
