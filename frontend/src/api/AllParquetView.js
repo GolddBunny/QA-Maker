@@ -1,10 +1,11 @@
 const BASE_URL = 'http://localhost:5000/flask';
 
+// 특정 엔티티 데이터를 서버에서 가져오는 함수
 export const fetchEntities = async (id, setError) => {
   if (!id) return null;
 
   try {
-    const res = await fetch(`${BASE_URL}/api/entity/${id}`);
+    const res = await fetch(`${BASE_URL}/api/entity/${id}`);  // 서버 API 호출
     if (!res.ok) {
       const errorData = await res.json();
       throw new Error(`Entity fetch error: ${res.statusText}, Details: ${JSON.stringify(errorData)}`);
@@ -18,11 +19,12 @@ export const fetchEntities = async (id, setError) => {
   }
 };
 
+// 관계 데이터를 서버에서 가져오는 함수
 export const fetchRelationships = async (id, setError) => {
   if (!id) return null;
 
   try {
-    const res = await fetch(`${BASE_URL}/api/relationship/${id}`);
+    const res = await fetch(`${BASE_URL}/api/relationship/${id}`);    // 서버 API 호출
     if (!res.ok) {
       const errorData = await res.json();
       throw new Error(`Relationship fetch error: ${res.statusText}, Details: ${JSON.stringify(errorData)}`);
