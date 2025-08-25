@@ -35,7 +35,7 @@ def main(output_dir, page_id):
                         folder_processed_files += 1
                         total_processed_files += 1
                     except Exception as file_error:
-                        print(f"⚠️ 파일 처리 실패: {file_path} - {file_error}")
+                        print(f"파일 처리 실패: {file_path} - {file_error}")
             
             # 처리된 파일이 있는 폴더만 기록
             if folder_processed_files > 0:

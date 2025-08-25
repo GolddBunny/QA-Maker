@@ -54,7 +54,12 @@ class LLMEvaluator:
         self.model = model
     
     def extract_statements(self, text: str) -> List[str]:
-        """LLM을 사용하여 텍스트에서 진술 추출"""
+        """
+        주어진 텍스트에서 사실적 진술(statement)만 뽑아내는 함수
+        - 완전한 정보만 포함하도록 설계
+        - 조언/권유 문장은 제거
+        - LLM 호출 실패 시 간단 문장 분리로 폴백
+        """
         prompt = f"""
                 다음 텍스트에서 개별적인 사실적 진술들을 추출해주세요.
                 - 각 진술은 하나의 완전한 정보를 담고 있어야 합니다.
@@ -86,21 +91,25 @@ class LLMEvaluator:
                     statement = re.sub(r'^\d+\.\s*', '', line).strip()
                     if statement and statement != "진술 없음":
                         statements.append(statement)
-            #print("Extracted statements:", statements)
             return statements
-            
         except Exception as e:
             print(f"LLM 진술 추출 오류: {e}")
-            # 폴백: 간단한 문장 분리
             return self._fallback_extract_statements(text)
     
     def _fallback_extract_statements(self, text: str) -> List[str]:
-        """LLM 실패 시 폴백 진술 추출"""
+        """LLM 호출 실패 시 간단 문장 단위로 진술 추출
+        - 문장 길이 최소 10 이상만 사용
+        - 완벽하지 않지만 최소한의 정보 추출 가능
+        """
         sentences = re.split(r'[.!?。]', text)
         return [s.strip() for s in sentences if len(s.strip()) > 10]
     
     def check_statement_support(self, statements: str, contexts: List[str]) -> float:
-        """여러 진술을 한번에 평가하여 지원 점수 반환"""
+        """각 진술(statement)이 주어진 context에서 얼마나 뒷받침되는지 평가
+        - 0~1 점수로 반환
+        - 완전 일치/추론 가능/관련 있음/약간 관련/모순 여부로 나누어 점수
+        - LLM 실패 시 SequenceMatcher 기반 폴백
+        """
         contexts_text = "\n".join(contexts)
         statements_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(statements)])
 
@@ -137,7 +146,7 @@ class LLMEvaluator:
                 temperature=0
             )
             content = response.choices[0].message.content.strip()
-            print("🧮 다중 지원 점수 응답:", content)
+            print("다중 지원 점수 응답:", content)
 
             lines = content.splitlines()
             scores = []
@@ -153,7 +162,10 @@ class LLMEvaluator:
             return [self._fallback_check_support(s, contexts) for s in statements]
     
     def _fallback_check_support(self, statement: str, contexts: List[str]) -> bool:
-        """LLM 실패 시 폴백 지원 확인"""
+        """LLM 호출 실패 시, SequenceMatcher 기반으로 간단 점수 계산
+        - ratio를 0~1로 제한
+        - 매우 단순하지만 최소한의 점수 산정 가능
+        """
         from difflib import SequenceMatcher
 
         joined_context = " ".join(contexts)
@@ -237,11 +249,11 @@ class AccuracyCalculator:
         scores = self.llm_evaluator.check_statement_support(statements, contexts)
 
         for s, sc in zip(statements, scores):
-            print(f"🧾 진술: {s} → 점수: {sc}")
+            print(f"진술: {s} → 점수: {sc}")
 
         faithfulness = sum(scores) / len(statements)
-        print(f"✅ 신실성 점수 (정량): {faithfulness:.3f}")
-        print(f"⏱️ 완료 시간: {time.time() - start_time:.2f}초")
+        print(f"신실성 점수 (정량): {faithfulness:.3f}")
+        print(f"⏱완료 시간: {time.time() - start_time:.2f}초")
         return round(faithfulness, 3)
     
     def calculate_relevancy(self, question: str, answer: str) -> float:
@@ -262,7 +274,7 @@ class AccuracyCalculator:
         
         similarity = min(1.0, similarity)
         elapsed = time.time() - start_time
-        print(f"✅ 관련성 계산 완료: {elapsed:.2f}초")
+        print(f"관련성 계산 완료: {elapsed:.2f}초")
         return round(similarity, 3)
     
     # def calculate_precision(self, contexts: List[str], question: str) -> float:
@@ -329,7 +341,7 @@ class AccuracyCalculator:
 
             # fallback: 리스트 길이 안 맞으면 전부 False
             if len(result_flags) != len(contexts):
-                print("⚠️ 판정 수 불일치, 전부 False 처리")
+                print("판정 수 불일치, 전부 False 처리")
                 return [False] * len(contexts)
 
             return result_flags
@@ -365,10 +377,6 @@ class AccuracyCalculator:
             print("required_info 또는 context 없음")
             return 1.0
 
-        #print(f"검증할 핵심 정보: {required_info}")
-        #print(f"검색된 컨텍스트: {contexts}")
-        #print(f"AI 답변: {answer}")
-        
         total_score = 0
         max_score = len(required_info)
         
@@ -390,12 +398,12 @@ class AccuracyCalculator:
         # 최종 recall 계산
         recall = total_score / max_score if max_score > 0 else 1.0
         
-        print(f"\n📊 최종 결과:")
+        print(f"\n최종 결과:")
         print(f"총 점수: {total_score}/{max_score}")
         print(f"Context Recall: {recall}")
         
         elapsed = time.time() - start_time
-        print(f"✅ recall 계산 완료: {elapsed:.2f}초")
+        print(f"recall 계산 완료: {elapsed:.2f}초")
 
         return round(recall, 3)
     
@@ -781,7 +789,7 @@ def read_csv_as_text_list(file_path: str) -> list[str]:
 
 # def main():
 #     """사용자 인터페이스"""
-#     print("🚀 QAGen 범용 정확도 계산기")
+#     print("QAGen 범용 정확도 계산기")
 #     print("=" * 50)
     
 #     load_dotenv()
@@ -802,7 +810,7 @@ def read_csv_as_text_list(file_path: str) -> list[str]:
 #         print("="*50)
         
 #         # 사용자 입력
-#         question = input("📝 질문: ").strip()
+#         question = input("질문: ").strip()
 #         if question.lower() == 'quit':
 #             break
         
@@ -822,21 +830,21 @@ def read_csv_as_text_list(file_path: str) -> list[str]:
 #             contexts.extend(read_csv_as_text_list(file))
 
 #         try:
-#             print("\n⏳ 계산 중...")
+#             print("\n계산 중...")
 #             result = calculator.calculate_accuracy(question, answer, contexts)
             
 #             # 결과 출력
-#             print("\n" + "🎯 평가 결과")
+#             print("\n" + "평가 결과")
 #             print("="*30)
 #             print(f"최종 정확도: {result['percentage']}%")
 #             print(f"등급: {result['grade']} ({result['level']})")
             
-#             print("\n📊 세부 점수:")
+#             print("\n세부 점수:")
 #             for name, score in result['metrics'].items():
 #                 weight = result['weights'][name]
 #                 print(f"  • {name}: {score} (가중치: {weight})")
             
-#             print("\n🧮 계산 과정:")
+#             print("\n계산 과정:")
 #             for breakdown in result['detailed_breakdown'].values():
 #                 print(f"  • {breakdown}")
             
@@ -845,7 +853,7 @@ def read_csv_as_text_list(file_path: str) -> list[str]:
 #             print(f"  = {round(total_sum, 3)}")
             
 #         except Exception as e:
-#             print(f"❌ 오류 발생: {e}")
+#             print(f"오류 발생: {e}")
 
 # if __name__ == "__main__":
 #     main() 

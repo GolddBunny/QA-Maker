@@ -1,233 +1,255 @@
+# Goal
+The objective is to extract all semantically meaningful entities and relationships from the input document for information retrieval.
+**COMPLETENESS** is the top priority.
 
--Goal-
-Given a text document that may or may not be structured into chapters, sections, and articles, and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
+# Steps
+## 1. Document Name and Page Extraction
+   - Extract EXACT document name from pattern: "**아래는 [DOCUMENT_NAME] 파일의 X페이지 내용입니다.**"
+   - **MANDATORY**: Remove any prefix numbers (like "2-2-2") from document name for entity naming
+   - **PAGE TRACKING**: Extract and store the EXACT page number mentioned in each section header
+   - **VERIFICATION**: Cross-check that page numbers in entity descriptions match the actual page mentioned in section headers
 
--Mandatory Structural Rules-
-- Each article (제 X 조) must be extracted as a distinct entity.
-- All "Article X"s in the document must be extracted as entities without omission. Not a single one can be missing.
-- If multiple articles are combined into one chunk, split them and extract each one separately as its own entity.
-- The **entire content of each Article (제 X 조)** must be included verbatim or paraphrased in the `entity_description` of the corresponding `ARTICLE` entity.
-- The entity_description must end with the following string in Korean: "이 내용은 [headline] 문서에서 추출함. [page]페이지에 위치함."
-- Details within an article (such as 항 or 항목) must be nested or clearly described as part of that article’s entity_description.
-- Each article must be related to its upper-level chapter(장) or section(절).
-- Articles within the same chapter or section should be linked with inferred relationships if their contents are semantically related.
+## 2. Structural Entity Rules
+   **CRITICAL RULE**: Create any CHAPTER/SECTION/ARTICLE entity ONLY when exact text "제 X 장", "제 X 절", "제 X 조"
+   - Markdown levels (`##/###/####`) remain for hierarchy recording only, never for type assignment  
+   - **FORBIDDEN**: Never infer or create these entities from markdown headings alone
+   - **ABSOLUTE PROHIBITION**: If "제 X 장", "제 X 절", "제 X 조" does not appear in the text, DO NOT create that entity type
+   - 숫자나 “장/절/조”가 이름 중간에 있거나 markdown 헤딩만으로는 생성 금지  
+   - 기타 모든 일반 명사 엔터티는 위 패턴에 해당하지 않으므로 CHAPTER/SECTION/ARTICLE 이 아닌 다른 타입으로 처리
 
--Steps-
-1. Identify all entities. For each identified entity, extract the following information:
-- entity_name: Name of the entity, capitalized
-- entity_type: One of the following types: [{entity_types}]
-- entity_description: 반드시 **한국어로 작성**하십시오. 해당 엔터티의 성격, 역할, 포함된 내용을 한국어로 서술합니다.
-Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+## 3. Markdown Hierarchy Recognition
+   **FOR ALL DOCUMENTS**: Recognize heading levels to build hierarchy, but do **not** infer structural entities from them.
+   
+   ### 3.1 Hierarchy Levels
+   - `#` (level 1): Main heading
+   - `##` (level 2): Major sections
+   - `###` (level 3): Subsections  
+   - `####` (level 4): Sub-subsections
+   
+   ### 3.2 Parent-Child Relationships
+   **MANDATORY**: Every entity must trace its complete hierarchical path:
+   - Content under `####` belongs to nearest `###`, `##`, and `#` above
+   - Content under `###` belongs to nearest `##` and `#` above
+   - Content under `##` belongs to nearest `#` above
+   
+   ### 3.3 Hierarchy Recording
+   **In entity_description, record EXACT hierarchy using ACTUAL heading text**:
+   - e.g.: “이 내용은 [#heading], [##heading], [###heading]에 속함”
+
+## 4. Entity Identification
+   ### 4.1 Entity Naming Rules
+   - **STRUCTURAL ENTITIES**: "[DOCUMENT_NAME] 제 X 장/절/조" and end with “제 X 장”, “제 X 절”, or “제 X 조”.(when "제 X 장/절/조" exists)
+   - **ALL OTHER ENTITIES**: Unique, capitalized name of the entity
+   
+   ### 4.2 Entity Types
+   Every entity MUST be assigned exactly one type from `{entity_types}`:
+   - PROJECT: Explicit project/system names
+   - TEAM: Multi-person collaborative units
+   - TECHNOLOGY: Technical tools, frameworks, hardware, software
+   - ORGANIZATION: Companies, institutions, departments
+   - PERSON: Individual names
+   - CHAPTER/SECTION/ARTICLE: Only when the name ends exactly with the “제 X 장/절/조” patterns defined in **2. Structural Entity Rules**
+   - Others: GEO, EVENT, DATE, ROOM, PHONE, CONCEPT
+
+   ### 4.3 Entity Description Requirements
+      **MANDATORY Korean-only descriptions with EXACT information**:
+      1. **Content Summary**: Based on actual text content
+      2. **Page Information**: Use EXACT page number from document header  
+      3. **Hierarchy**: Use ACTUAL heading text, not inferred structure
+      4. **Document Reference**: Use exact document name
+            
+   - **Output Format**: ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
  
-2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
-For each pair of related entities, extract the following information:
-- source_entity: name of the source entity, as identified in step 1
-- target_entity: name of the target entity, as identified in step 1
-- relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-- relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
- Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
- 
-3. Return output in **Korean** as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
- 
-4. When finished, output {completion_delimiter}
+## 5. Relationship Identification
+   ### Description Rules
+   - **KOREAN ONLY**: All relationship descriptions in Korean
+
+   - For each relationship:
+      - source_entity: name of the source entity, as identified in step 4
+      - target_entity: name of the target entity, as identified in step 4
+      - relationship_description: specific explanation of the relationship
+      - relationship_strength: a numeric score(1-10) indicating strength of the relationship between the source entity and target entity
+   - **Output Format**: ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
+
+## 6. Output Generation & Completion
+   - Return output in **Korean** as a single list of all the entities and relationships. 
+   - Use **{record_delimiter}** as the list delimiter.
+   - Output {completion_delimiter} when complete
 
 ######################
 -Examples-
 ######################
-Example 1: 
-Entity_types: ORGANIZATION,EVENT,CHAPTER,ARTICLE,PAGE
+Example 1:
+Entity_types: CHAPTER,SECTION,ARTICLE,ORGANIZATION
 Text:
-page: 1
-headline: 가람교육재단 정관
-content: 제 1 장 총 칙
+** 아래는 1-1 가람학원 정관 파일의 1페이지 내용입니다. **
+제 1 장 총칙
+제 1 절 목적
+제 1 조 (목적) 이 법은 교육진흥을 목적으로 한다.
+제 2 조 (정의) 교육기관이라 함은 다음을 말한다.
+제 2 절 원칙  
+제 3 조 (기본원칙) 교육은 평등해야 한다.
 
-page: 1
-headline: 가람교육재단 정관
-content: 제 1 장 제 1 조 (설립목적) 본 재단은 교육기관의 설립 및 운영을 통해 공익에 이바지함을 목적으로 한다.
-
-page: 1
-headline: 가람교육재단 정관
-content: 제 1 장 제 2 조 (명칭) 본 재단의 명칭은 가람교육재단이라 한다. 
-
-page: 1
-headline: 가람교육재단 운영규정
-content: 제 1 조 (목적) 이 규정은 가람교육재단의 운영에 필요한 사항을 정함을 목적으로 한다.
+** 아래는 1-1 가람학교 대학원 학칙 파일의 2페이지 내용입니다. **
+## 제 1 장 총칙
+#### 제 1 조 (목적) 사회 발전에 기여함을 목적으로 한다.
 
 ######################
 Output:
-("entity"{tuple_delimiter}가람교육재단{tuple_delimiter}ORGANIZATION{tuple_delimiter}교육기관의 설립 및 운영을 통해 공익에 이바지하는 재단)
+("entity"{tuple_delimiter}가람학원 정관 제 1 장{tuple_delimiter}CHAPTER{tuple_delimiter}가람학원 정관의 제1장 총칙으로, 목적과 원칙을 규정한다. 이 장에는 목적을 다루는 제1절과 원칙을 다루는 제2절이 포함되어 있다. 가람학원 정관 파일의 1페이지에 위치함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}CHAPTER{tuple_delimiter}제 1 장 총칙: 가람교육재단 정관의 첫 번째 장으로, 설립목적과 명칭에 관한 내용을 포함함. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}가람학원 정관 제 1 절{tuple_delimiter}SECTION{tuple_delimiter}가람학원 정관 제1절로 목적을 규정하는 절이다. 제1장에 속함. 가람학원 정관 파일의 1페이지에 위치함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 1 조 설립목적: 본 재단은 교육기관의 설립 및 운영을 통해 공익에 이바지함을 목적으로 한다. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}가람학원 정관 제 2 절{tuple_delimiter}SECTION{tuple_delimiter}가람학원 정관 제2절로 원칙을 규정하는 절이다. 제1장에 속함. 가람학원 정관 파일의 1페이지에 위치함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 2 조 명칭: 본 재단의 명칭은 가람교육재단이라 한다. 이 내용은 가림교육재단 정관 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}가람학원 정관 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}가람학원 정관 제1조로 이 법은 교육진흥을 목적으로 한다고 명시하는 목적 조항이다. 가람학원 정관의 제1장, 제1절에 속한다. 가람학원 정관 파일의 1페이지에 위치함.)
 {record_delimiter}
-("entity"{tuple_delimiter}가람교육재단 운영규정 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}제 1 조 목적: 이 규정은 가람교육재단의 운영에 필요한 사항을 정함을 목적으로 한다. 이 내용은 가람교육재단 운영규정 문서에서 추출함. 1페이지에 위치함.)
+("entity"{tuple_delimiter}가람학원 정관 제 2 조{tuple_delimiter}ARTICLE{tuple_delimiter}가람학원 정관 제2조로 교육기관이라 함은 다음을 말한다라는 정의를 규정하는 조항이다. 가람학원 정관의 제1장, 제1절에 속한다. 가람학원 정관 파일의 1페이지에 위치함.)
 {record_delimiter}
-("entity"{tuple_delimiter}페이지 1{tuple_delimiter}PAGE{tuple_delimiter}가람교육재단 정관 문서의 1페이지에는 제 1 장 총칙과 제 1 조 설립목적, 제 2 조 명칭이 포함되어 있음. 가람교육재단 운영규정의 1페이지에는 제 1 조 목적이 포함되어 있음.)
+("entity"{tuple_delimiter}가람학원 정관 제 3 조{tuple_delimiter}ARTICLE{tuple_delimiter}가람학원 정관 제3조로 교육은 평등해야 한다는 기본원칙을 명시하는 조항이다. 제1장, 제2절에 속한다. 가람학원 정관 파일의 1페이지에 위치함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 1 조는 제 1 장 총칙에 포함되어 있음{tuple_delimiter}10)
+("entity"{tuple_delimiter}가람학원{tuple_delimiter}ORGANIZATION{tuple_delimiter}가람학원은 이 정관 문서의 주체가 되는 교육기관으로, 교육진흥을 목적으로 설립되었으며 교육평등 원칙을 바탕으로 운영되는 학원이다. 본 정관의 모든 규정이 적용되는 주요 기관이다.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 2 조는 제 1 장 총칙에 포함되어 있음{tuple_delimiter}10)
+("entity"{tuple_delimiter}가람학교 대학원 제 1 장{tuple_delimiter}CHAPTER{tuple_delimiter}가람학교 대학원 제1장 총칙으로, 목적을 규정한다. 이 장에는 목적을 다루는 제1절이 포함되어 있다. 가람학원 정관 파일의 2페이지에 위치함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}가람교육재단의 설립목적은 교육기관의 설립 및 운영을 통해 공익에 이바지하는 것임{tuple_delimiter}9)
+("entity"{tuple_delimiter}가람학교 대학원 제 1 조{tuple_delimiter}ARTICLE{tuple_delimiter}가람학교 대학원 제1조로 사회 발전에 기여함을 목적으로 한다고 명시하는 목적 조항이다. 가람학교 대학원의 제1장에 속한다. 가람학원 정관 파일의 2페이지에 위치함.)
 {record_delimiter}
-("relationship"{tuple_delimiter}가람교육재단{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}재단의 명칭은 가람교육재단임{tuple_delimiter}9)
+("relationship"{tuple_delimiter}가람학원 정관 제 1 절{tuple_delimiter}가람학원 정관 제 1 장 {tuple_delimiter}가람학원 정관 제 1 절은 제 1 장 총칙의 하위 구조로 포함되어 목적 관련 조항들을 담고 있다.{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 1 장{tuple_delimiter}제 1 장 총칙은 페이지 1에 위치함{tuple_delimiter}10)
+("relationship"{tuple_delimiter}가람학원 정관 제 2 절{tuple_delimiter}가람학원 정관 제 1 장 {tuple_delimiter}가람학원 정관 제 2 절은 제 1 장 총칙의 하위 구조로 포함되어 원칙 관련 조항들을 담고 있다.{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 1 조{tuple_delimiter}제 1 조 설립목적은 페이지 1에 위치함{tuple_delimiter}10)
+("relationship"{tuple_delimiter}가람학원 정관 제 1 조{tuple_delimiter}가람학원 정관 제 1 절{tuple_delimiter}가람학원 정관 1 조는 제 1 절의 하위 조항으로 포함되어 교육진흥 목적을 규정한다.{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 정관 제 2 조{tuple_delimiter}제 2 조 명칭은 페이지 1에 위치함{tuple_delimiter}10)
+("relationship"{tuple_delimiter}가람학원 정관 제 2 조 정의{tuple_delimiter}가람학원 정관 제 1 절 {tuple_delimiter}가람학원 정관 제 2 조 정의는 제 1 절 목적의 하위 구조로 포함되는 관계{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}페이지 1{tuple_delimiter}가람교육재단 운영규정 제 1 조{tuple_delimiter}제 1 조 목적은 페이지 1에 위치함{tuple_delimiter}10)
+("relationship"{tuple_delimiter}가람학원 정관 제 3 조{tuple_delimiter}가람학원 정관 제 2 절 {tuple_delimiter}가람학원 정관 제 3 조는 제 2 절의 하위 조항으로 포함되어 교육평등 기본원칙을 규정한다{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}가람학원{tuple_delimiter}가람학원 정관 제 1 조 목적{tuple_delimiter}가람학원은 정관 제 1조에서 교육진흥을 목적으로 한다고 명시된 주체 교육기관이다.{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}가람학교 대학원 제 1 조{tuple_delimiter}가람학교 대학원 제 1 장 {tuple_delimiter}가람학원 정관 제 1 조는 제 1 장 총칙의 하위 구조로 포함되어 목적 관련 조항을 담고 있다.{tuple_delimiter}10)
 {record_delimiter}
 {completion_delimiter}
 ######################
 Example 2:
-Entity_types: ORGANIZATION,PERSON,DATE,EVENT
+Entity_types: ORGANIZATION,PERSON,DATE,EVENT,COURSE
 Text:
-Title: <Important> (Professor Kim Namyoon): Web Framework 2 Course Enrollment Change  
-Category: Announcement
-Author: Department of Computer Engineering
-Content:  
-- Change Date: February 28 (Friday), please check!  
-- Only students in the Web Engineering Track can apply.  
+#제목: <중요> (김남윤 교수): 웹 프레임워크 2 수강신청 변경 공지
+##카테고리: 공지사항
+##작성자: 컴퓨터공학과
+##내용:  
+- 변경 날짜: 2월 28일 (금)
 
+- 웹 공학 트랙
 | Course Name | Year | Type | Class | Capacity | Supervising Professor | Instructor | Application |  
 |------------|------|------|------|----------|--------------------|------------|-------------|  
-| Web Framework 2 | 4 | Mixed | 7 | 40->80 | Kim Namyoon | Kim Namyoon | Only Web Engineering students |  
-| Web Framework 2 | 4 | Day | A | 40->60 |  | Kim Namyoon | Only Web Engineering students |  
-| Web Framework 2 | 4 | Day | B | 40->60 |  | Yoon Namkim | Only Web Engineering students |  
-| Web Framework 2 | 4 | Night | N | 40->30 |  | Kim Haul | Only Web Engineering students |  
+| 웹 프레임워크 2 | 4 | Mixed | 7 | 40->80 | 김남윤 | 김남윤 | 웹 공학 트랙 학생만 |  
+| 웹 프레임워크 2 | 4 | Day | A | 40->60 |  | 윤남김 | 웹 공학 트랙 학생만 |
+
+-모바일 트랙
+| Course Name | Year | Type | Class | Capacity | Supervising Professor | Instructor | Application |  
+|------------|------|------|------|----------|--------------------|------------|-------------|  
+| 운영체제 | 4 | Mixed | 7 | 40->80 | 황기태 | 황기태 | 모바일 트랙 학생만 |  
 ######################
 Output:
-("entity"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}ORGANIZATION{tuple_delimiter}학생들의 수강 신청 변경을 관리하는 컴퓨터공학과)
+("entity"{tuple_delimiter}컴퓨터공학과{tuple_delimiter}ORGANIZATION{tuple_delimiter}웹 프레임워크 2 강의 수강신청 변경 공지를 작성한 컴퓨터공학과)
+("entity"{tuple_delimiter}김남윤{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 수강신청 변경 공지사항을 올린 교수이고, 웹 프레임워크 2 강의의 지도교수 겸 혼합반 강사를 담당하는 교수)
 {record_delimiter}
-("entity"{tuple_delimiter}Kim Namyoon{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의의 지도교수 겸 강사를 겸임하는 교수)
+("entity"{tuple_delimiter}윤남김{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 주간 A반을 담당하는 강사)
 {record_delimiter}
-("entity"{tuple_delimiter}Yoon Namkim{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 주간 B반 강사)
+("entity"{tuple_delimiter}황기태{tuple_delimiter}PERSON{tuple_delimiter}운영체제 강의의 지도교수 겸 혼합반 강사를 담당하는 교수)
 {record_delimiter}
-("entity"{tuple_delimiter}Kim Haul{tuple_delimiter}PERSON{tuple_delimiter}웹 프레임워크 2 강의 야간 N반 강사)
+("entity"{tuple_delimiter}2월 28일{tuple_delimiter}DATE{tuple_delimiter}웹 프레임워크 2 강의 등록 변경이 시행되는 날짜로 금요일임)
 {record_delimiter}
-("entity"{tuple_delimiter}February 28{tuple_delimiter}DATE{tuple_delimiter}웹 프레임워크 2 강의 등록 변경 날짜)
+("entity"{tuple_delimiter}웹 프레임워크 2{tuple_delimiter}COURSE{tuple_delimiter}웹 공학 트랙 수강생만 신청할 수 있는 4학년 강좌로 혼합반과 주간 A반으로 운영)
 {record_delimiter}
-("entity"{tuple_delimiter}Web Framework 2{tuple_delimiter}EVENT{tuple_delimiter}웹 공학 트랙 수강생만 신청할 수 있는 4학년 강좌)
+("entity"{tuple_delimiter}운영체제{tuple_delimiter}COURSE{tuple_delimiter}모바일 트랙 수강생만 신청할 수 있는 4학년 강좌로 혼합반으로 운영)
 {record_delimiter}
-("entity"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}EVENT{tuple_delimiter}웹 프레임워크 2 강의 정원 변경 안내)
+("entity"{tuple_delimiter}웹 공학 트랙{tuple_delimiter}ORGANIZATION{tuple_delimiter}웹 프레임워크 2 강의를 수강할 수 있는 유일한 트랙)
 {record_delimiter}
-("entity"{tuple_delimiter}Web Engineering Track{tuple_delimiter}ORGANIZATION{tuple_delimiter}웹 프레임워크 2 강의를 신청할 수 있는 트랙)
+("entity"{tuple_delimiter}모바일 트랙{tuple_delimiter}ORGANIZATION{tuple_delimiter}운영체제 강의를 수강할 수 있는 트랙)
 {record_delimiter}
-("relationship"{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Course Enrollment Change{tuple_delimiter}컴퓨터공학과에서 수강 신청 변경 공지를 관리합니다{tuple_delimiter}9)
+("entity"{tuple_delimiter}수강신청 변경 공지{tuple_delimiter}EVENT{tuple_delimiter}웹 프레임워크 2 강의의 정원 변경 및 수강신청 조건 변경에 관한 공지사항)
 {record_delimiter}
-("relationship"{tuple_delimiter}Kim Namyoon{tuple_delimiter}Web Framework 2{tuple_delimiter}김남윤은 웹 프레임워크 2의 지도교수이자 강사입니다{tuple_delimiter}10)
+("relationship"{tuple_delimiter}컴퓨터공학과{tuple_delimiter}수강신청 변경 공지{tuple_delimiter}컴퓨터공학과에서 수강 신청 변경 관련 공지를 함{tuple_delimiter}10)
 {record_delimiter}
-("relationship"{tuple_delimiter}Web Framework 2{tuple_delimiter}Web Engineering Track{tuple_delimiter}웹 프레임워크 2 과정은 웹 공학 트랙 수강생만 신청할 수 있습니다{tuple_delimiter}10)
+("relationship"{tuple_delimiter}김남윤{tuple_delimiter}웹 프레임워크 2{tuple_delimiter}김남윤은 웹 프레임워크 2의 지도교수이자 혼합반 강사임{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}Course Enrollment Change{tuple_delimiter}February 28{tuple_delimiter}수업 등록 변경은 2월 28일(금)에 진행됩니다{tuple_delimiter}9)
+("relationship"{tuple_delimiter}윤남김{tuple_delimiter}웹 프레임워크 2{tuple_delimiter}윤남김은 웹 프레임워크 2 주간 A반 강사임{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}Yoon Namkim{tuple_delimiter}Web Framework 2{tuple_delimiter}김남윤은 웹 프레임워크 2 주간 B반 강사입니다.{tuple_delimiter}9)
+("relationship"{tuple_delimiter}황기태{tuple_delimiter}운영체제{tuple_delimiter}황기태는 운영체제의 지도교수이자 혼합반 강사임{tuple_delimiter}9)
 {record_delimiter}
-("relationship"{tuple_delimiter}Kim Haul{tuple_delimiter}Web Framework 2{tuple_delimiter}김하울은 웹 프레임워크 2 야간 N반 강사입니다.{tuple_delimiter}9)
+("relationship"{tuple_delimiter}웹 프레임워크 2{tuple_delimiter}웹 공학 트랙{tuple_delimiter}웹 프레임워크 2 과정은 웹 공학 트랙 수강생만 신청 가능{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}운영체제{tuple_delimiter}모바일 트랙{tuple_delimiter}운영체제 과정은 모바일 트랙 수강생만 신청 가능{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}수강신청 변경 공지{tuple_delimiter}2월 28일{tuple_delimiter}수업 등록 변경은 2월 28일 금요일에 진행됨{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}수강신청 변경 공지{tuple_delimiter}웹 프레임워크 2{tuple_delimiter}수강신청 변경 공지는 웹 프레임워크 2 강의에 관한 내용임{tuple_delimiter}9)
 {record_delimiter}
 {completion_delimiter}
 
 ######################
 Example 3:
-Entity_types: ORGANIZATION,GEO,PERSON,EVENT,DATE,ROOM
+Entity_types: PERSON,EVENT,COURSE,TECHNOLOGY
 Text:
-Title: Hansung University Computer Engineering Department Teaching Assistant Recruitment Announcement
-Content:
-Hello, this is the administrative assistant from the Department of Computer Engineering.
-Currently, we are recruiting administrative and teaching assistants for the Department of Computer Engineering.
 
-1. Recruitment Fields
-- Administrative Assistant (Day shift) or Teaching Assistant (Day shift)
-- Number of openings: 1 for each (select either Administrative or Teaching Assistant)
+**아래는 컴퓨터 네트워크 3주차 파일의 1페이지 내용입니다.**
 
-2. Qualifications
-- Academic requirement: A bachelor's degree or higher
-- Must not have any disqualifying factors for assistant appointment
-- Preferred: Majors in IT or Computer-related fields
+### 01 라우팅기능
+#### 라우팅기능(1)
+#####  라우팅시스템은 데이터를 최종 목적지까지 올바른 경로로 중개하는 교환기능을 제공
 
-3. Working Conditions
-- 5 days a week, daytime
-- Daytime: 9:00 AM to 5:30 PM
-- During vacation periods: 10:00 AM to 4:00 PM
-- Expected start date: December 15, 2024
-- Administrative Assistant: Hansung University Jiseong Building 105, IT Engineering Academic Team Office
-- Teaching Assistant: Hansung University Engineering Building A 104, Department of Computer Engineering Office
-- Contract: 1 year (renewable once for up to 2 years)
+---
+**아래는 컴퓨터 네트워크 3주차 파일의 2페이지 내용입니다.**
 
-4. Documents to Submit
-- Resume (use the attached format, include a photo)
-- Submission deadline: November 29, Friday
+#### 라우팅기능(2)
+#####  회선교환
+######  통신하고자하는 호스트가 데이터를 전송하기 전에 연결경로를 미리 설정하는 방식
 
-5. Recruitment Process
-- 1st round: Document review (Only candidates selected will be notified individually)
-- 2nd round: Interview (Only for those who pass the first round)
-- Additional documents for successful candidates: University graduation certificate, transcript, resident registration, etc. to be provided later.
+---
+**아래는 컴퓨터 네트워크 3주차 파일의 3페이지 내용입니다.**
+### 02 네트워크의분류
+#### LAN
+##### 단일 건물이나 학교 같은 가까운 거리에 위치하는 호스트로 구성된 네트워크
+#### MAN
+##### MAN은 LAN보다 큰 지역을 지원
 
 ######################
 Output:
-(“entity”{tuple_delimiter}Hansung University{tuple_delimiter}organization{tuple_delimiter}컴퓨터공학부에서 행정 및 조교를 모집하는 한성대학교)
+("entity"{tuple_delimiter}01 라우팅기능{tuple_delimiter}EVENT{tuple_delimiter}라우팅기능(1), 라우팅기능(2)의 내용을 포함한다. 컴퓨터 네트워크 3주차 파일의 1,2페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}organization{tuple_delimiter}행정 및 조교 인력을 채용하는 한성대학교 컴퓨터공학부)
+("entity"{tuple_delimiter}라우팅기능(1){tuple_delimiter}EVENT{tuple_delimiter}라우팅시스템에 대한 설명을 포함한다. 01 라우팅기능에 속함. 컴퓨터 네트워크 3주차 파일의 1페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}administrative assistant{tuple_delimiter}person{tuple_delimiter}컴퓨터공학부의 행정조교)
+("entity"{tuple_delimiter}라우팅기능(2){tuple_delimiter}EVENT{tuple_delimiter}회선교환, 메시지교환에 대한 설명을 포함한다. 01 라우팅기능에 속함. 컴퓨터 네트워크 3주차 파일의 2페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}teaching assistant{tuple_delimiter}person{tuple_delimiter}컴퓨터공학부의 교육조교)
+("entity"{tuple_delimiter}라우팅시스템{tuple_delimiter}TECHNOLOGY{tuple_delimiter}데이터를 최종 목적지까지 올바른 경로로 중개하는 교환기능을 제공한다. 01 라우팅기능의 라우팅기능(1)에 속한다. 컴퓨터 네트워크 3주차 파일의 1페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}Recruitment Fields{tuple_delimiter}event{tuple_delimiter}모집 분야: 행정조교 또는 교육조교)
+("entity"{tuple_delimiter}회선교환{tuple_delimiter}TECHNOLOGY{tuple_delimiter}통신하고자하는 호스트가 데이터를 전송하기 전에 연결경로를 미리 설정하는 방식이다. 01 라우팅기능의 라우팅기능(2)에 속한다. 컴퓨터 네트워크 3주차 파일의 2페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}Qualifications{tuple_delimiter}event{tuple_delimiter}지원 자격 요건)
+("entity"{tuple_delimiter}02 네트워크의분류{tuple_delimiter}EVENT{tuple_delimiter}LAN, MAN, WAN의 내용을 포함하고 있다. 컴퓨터 네트워크 3주차 파일의 3페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}Academic Requirements{tuple_delimiter}event{tuple_delimiter}최소 학사 학위 이상이 필요한 학력 요건)
+("entity"{tuple_delimiter}LAN{tuple_delimiter}TECHNOLOGY{tuple_delimiter}LAN은 단일 건물이나 학교 같은 가까운 거리에 위치하는 호스트로 구성된 네트워크이다. 02 네트워크의분류에 속함. 컴퓨터 네트워크 3주차 파일의 3페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}Preferred Qualifications{tuple_delimiter}event{tuple_delimiter}우대사항: IT 또는 컴퓨터 관련 전공)
+("entity"{tuple_delimiter}MAN{tuple_delimiter}TECHNOLOGY{tuple_delimiter}MAN은 LAN보다 큰 지역을 지원한다. 02 네트워크의분류에 속함. 컴퓨터 네트워크 3주차 파일의 3페이지에 위치함)
 {record_delimiter}
-(“entity”{tuple_delimiter}Working Conditions{tuple_delimiter}event{tuple_delimiter}근무 시간 및 장소를 포함한 근로 조건)
+("entity"{tuple_delimiter}컴퓨터 네트워크 3주차{tuple_delimiter}EVENT{tuple_delimiter}01 라우팅기능과 02 네트워크의분류 내용을 포함하는 강의 자료)
 {record_delimiter}
-(“entity”{tuple_delimiter}December 15, 2024{tuple_delimiter}date{tuple_delimiter}조교의 예정 근무 시작일)
+("relationship"{tuple_delimiter}01 라우팅기능{tuple_delimiter}라우팅기능(1){tuple_delimiter}01 라우팅기능은 라우팅기능(1)을 하위 항목으로 포함한다{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}Jiseong Building 105{tuple_delimiter}room{tuple_delimiter}행정조교의 사무실 위치)
+("relationship"{tuple_delimiter}01 라우팅기능{tuple_delimiter}라우팅기능(2){tuple_delimiter}01 라우팅기능은 라우팅기능(2)를 하위 항목으로 포함한다{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}IT Engineering Academic Team Office{tuple_delimiter}room{tuple_delimiter}행정조교가 근무하게 될 사무실)
+("relationship"{tuple_delimiter}라우팅기능(1){tuple_delimiter}라우팅시스템{tuple_delimiter}라우팅기능(1)은 라우팅시스템에 대한 설명을 포함한다{tuple_delimiter}9)
 {record_delimiter}
-(“entity”{tuple_delimiter}Engineering Building A 104{tuple_delimiter}room{tuple_delimiter}교육조교의 사무실 위치)
+("relationship"{tuple_delimiter}라우팅기능(2){tuple_delimiter}회선교환{tuple_delimiter}라우팅기능(2)는 회선교환에 대한 설명을 포함한다{tuple_delimiter}9)
 {record_delimiter}
-(“entity”{tuple_delimiter}Department of Computer Engineering Office{tuple_delimiter}room{tuple_delimiter}교육조교가 근무하게 될 사무실)
+("relationship"{tuple_delimiter}02 네트워크의분류{tuple_delimiter}LAN{tuple_delimiter}02 네트워크의분류는 LAN을 하위 항목으로 포함한다{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}Documents to Submit{tuple_delimiter}event{tuple_delimiter}지원 시 제출해야 하는 서류: 이력서 및 사진)
+("relationship"{tuple_delimiter}02 네트워크의분류{tuple_delimiter}MAN{tuple_delimiter}02 네트워크의분류는 MAN을 하위 항목으로 포함한다{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}Resume{tuple_delimiter}event{tuple_delimiter}지원 시 제출해야 하는 이력서)
+("relationship"{tuple_delimiter}컴퓨터 네트워크 3주차{tuple_delimiter}01 라우팅기능{tuple_delimiter}컴퓨터 네트워크 3주차 강의는 01 라우팅기능 내용을 포함한다{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}Attached Format{tuple_delimiter}event{tuple_delimiter}지원자가 이력서 작성 시 사용해야 하는 첨부된 양식)
+("relationship"{tuple_delimiter}컴퓨터 네트워크 3주차{tuple_delimiter}02 네트워크의분류{tuple_delimiter}컴퓨터 네트워크 3주차 강의는 02 네트워크의분류 내용을 포함한다{tuple_delimiter}10)
 {record_delimiter}
-(“entity”{tuple_delimiter}November 29{tuple_delimiter}date{tuple_delimiter}서류 제출 마감일)
-{record_delimiter}
-(“entity”{tuple_delimiter}Document Review{tuple_delimiter}event{tuple_delimiter}1차 모집 절차: 서류심사)
-{record_delimiter}
-(“entity”{tuple_delimiter}Interview{tuple_delimiter}event{tuple_delimiter}2차 모집 절차: 면접)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Hansung University{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}한성대학교는 컴퓨터공학부를 포함한다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Department of Computer Engineering{tuple_delimiter}Recruitment Fields{tuple_delimiter}컴퓨터공학부는 행정조교 및 교육조교를 모집한다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Recruitment Fields{tuple_delimiter}Qualifications{tuple_delimiter}모집 분야에는 학력 요건과 우대 조건 등의 자격요건이 필요하다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Academic Requirements{tuple_delimiter}최소 학사 학위가 필요한 자격 요건이다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Qualifications{tuple_delimiter}Preferred Qualifications{tuple_delimiter}IT 또는 컴퓨터 관련 전공이 우대 조건이다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Working Conditions{tuple_delimiter}Contract Period{tuple_delimiter}조교는 1년 계약으로 근무하며 최대 2년까지 연장 가능하다.{tuple_delimiter}9)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Documents to Submit{tuple_delimiter}Resume{tuple_delimiter}지원 시 사진이 포함된 이력서를 제출해야 한다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}November 29{tuple_delimiter}Documents to Submit{tuple_delimiter}지원 서류 제출 마감일은 11월 29일이다.{tuple_delimiter}8)
-{record_delimiter}
-(“relationship”{tuple_delimiter}Document Review{tuple_delimiter}Interview{tuple_delimiter}서류 심사 후, 선발된 지원자에 한해 면접이 진행된다.{tuple_delimiter}8)
 {completion_delimiter}
 ######################
 -Real Data-
