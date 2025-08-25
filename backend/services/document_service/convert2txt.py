@@ -5,15 +5,16 @@ import docx
 import shutil
 
 from .hwp2txt import convert_hwp_file
-from .pdf2txt import extract_text_and_tables
+from .pdf_to_md_txt import convert_pdf_file
+from .docx_to_md_txt import convert_docx_file
 
 def convert2txt(firebase_path, output_folder, bucket, filename_mapping=None):
     """
-    지정된 폴더 내의 HWP, PDF, DOCX, Excel 파일을 TXT로 변환합니다.
+    지정된 폴더 내의 HWP, PDF, DOCX, TXT 파일을 TXT로 변환합니다.
     
     Args:
         folder_path (str): 변환할 파일들이 있는 폴더 경로 - firebase storage 
-        output_folder (str, optional): 변환된 TXT 파일을 저장할 폴더 (기본값: 원본 폴더에 저장)
+        output_folder (str, optional): 변환된 TXT 파일을 저장할 폴더
     
     Returns:
         None
@@ -50,9 +51,9 @@ def convert2txt(firebase_path, output_folder, bucket, filename_mapping=None):
             if lower_name.endswith('.hwp'):
                 convert_hwp_file(temp_path, output_path, original_filename=original_name)
             elif lower_name.endswith('.pdf'):
-                extract_text_and_tables(temp_path, output_path, original_filename=original_name)
+                convert_pdf_file(temp_path, output_path, original_filename=original_name)
             elif lower_name.endswith('.docx'):
-                convert_docx(temp_path, output_path, original_filename=original_name)
+                convert_docx_file(temp_path, output_path, original_filename=original_name)
             elif lower_name.endswith('.txt'):
                 try:
                     with open(temp_path, 'r', encoding='utf-8') as f:
@@ -69,20 +70,20 @@ def convert2txt(firebase_path, output_folder, bucket, filename_mapping=None):
     print("모든 파일 변환 완료")
 
 
-def convert_docx(file_path, output_path, original_filename):
-    """DOCX 파일을 TXT로 변환합니다."""
-    try:
-        doc = docx.Document(file_path)
-        text = '\n'.join([para.text for para in doc.paragraphs])
-        if original_filename:
-            headline = os.path.splitext(original_filename)[0]
-        else:
-            headline = os.path.splitext(os.path.basename(file_path))[0]
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(f"headline: {headline}\ncontent:\n{text}")
-        print(f"[DOCX 변환] {file_path} → {output_path}")
-    except Exception as e:
-        print(f"[오류] {file_path} 변환 실패: {e}")
+# def convert_docx(file_path, output_path, original_filename):
+#     """DOCX 파일을 TXT로 변환합니다."""
+#     try:
+#         doc = docx.Document(file_path)
+#         text = '\n'.join([para.text for para in doc.paragraphs])
+#         if original_filename:
+#             headline = os.path.splitext(original_filename)[0]
+#         else:
+#             headline = os.path.splitext(os.path.basename(file_path))[0]
+#         with open(output_path, 'w', encoding='utf-8') as f:
+#             f.write(f"headline: {headline}\ncontent:\n{text}")
+#         print(f"[DOCX 변환] {file_path} → {output_path}")
+#     except Exception as e:
+#         print(f"[오류] {file_path} 변환 실패: {e}")
 
 # def convert_excel(file_path, output_folder):
 #     """Excel 파일을 TXT로 변환"""
