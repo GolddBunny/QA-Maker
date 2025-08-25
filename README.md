@@ -270,3 +270,6 @@ QA Maker는 문서 간의 연관관계와 문서 내부의 상하 관계를 그�
 ### 2. 사용자 테스트 방법<br><br>
 <img width="1738" height="1771" alt="사용자테스트방법" src="https://github.com/user-attachments/assets/ed35b8c1-86f2-4b03-8b6f-2a2ba2ac938f" /><br><br>
 
+---
+## 📒 참고 자료
+Microsoft GraphRAG: https://github.com/microsoft/graphrag
