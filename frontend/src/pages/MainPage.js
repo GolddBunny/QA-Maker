@@ -152,6 +152,8 @@ function MainPage() {
       <div className="top-buttons">
         <div>
           <div className="stats">URL 수 {urlCount}</div>
+          {/* <div className="stats">URL 수 802</div> */}
+
         </div>
         <span className="stats-divider">|</span>
         <div>

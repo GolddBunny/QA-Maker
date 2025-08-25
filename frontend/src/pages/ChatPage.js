@@ -189,7 +189,16 @@ function ChatPage() {
                 return [];
             }
             
-            // Sources 형식 확인
+            // 1. 우선 CSV에서 모든 URL 소스 추출 시도
+            console.log("1. CSV에서 소스 추출 시도");
+            const csvSources = await extractSourcesFromCSV();
+            if (csvSources.length > 0) {
+                console.log("CSV에서 소스 추출 성공:", csvSources);
+                return csvSources;
+            }
+            
+            // 2. CSV에서 추출 실패시 기존 방식(Sources 패턴) 시도
+            console.log("2. 기존 Sources 패턴 방식으로 시도");
             if (!answerText.includes("Sources")) {
                 console.log("Sources 표기가 없어 소스 추출을 건너뜁니다.");
                 return [];
@@ -218,38 +227,67 @@ function ChatPage() {
                 return [];
             }
             
-            // 응답 형식 검증 및 로깅
-            //console.log("서버에서 받은 소스 데이터:", data.sources);
-            
             // 소스 데이터 검증
             if (!Array.isArray(data.sources)) {
                 console.error("소스 데이터가 배열이 아닙니다:", data.sources);
                 return [];
             }
             
-            // 각 소스 데이터의 구조 검증 및 로깅
+            // 각 소스 데이터의 구조 검증
             const validSources = data.sources.filter(source => {
                 if (!source || typeof source !== 'object') {
                     console.warn("유효하지 않은 소스 데이터:", source);
                     return false;
                 }
                 
-                // source_id는 필수, url과 title 중 하나는 있어야 함
-                if (!source.source_id || (!source.url && !source.title)) {
-                    console.warn("소스 ID가 없거나 URL/Title이 모두 없는 소스:", source);
+                // URL과 title 중 하나는 있어야 함
+                if (!source.url && !source.title) {
+                    console.warn("URL/Title이 모두 없는 소스:", source);
                     return false;
                 }
                 
-                console.log(`소스 ${source.source_id}: Title="${source.title || '없음'}", URL="${source.url || '없음'}"`);
+                console.log(`소스: Title="${source.title || '없음'}", URL="${source.url || '없음'}"`);
                 return true;
             });
             
             console.log(`총 ${data.sources.length}개 소스 중 ${validSources.length}개 유효한 소스 추출됨`);
-            
             return validSources;
             
         } catch (error) {
             console.error("소스 URL/Title 추출 실패:", error);
+            return [];
+        }
+    };
+
+    // CSV에서 직접 모든 URL 소스 추출하는 새로운 함수
+    const extractSourcesFromCSV = async () => {
+        try {
+            console.log("CSV에서 소스 추출 시작");
+            
+            const response = await fetch(`${BASE_URL}/extract-sources-from-csv`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`서버 응답 오류: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error("CSV 소스 추출 오류:", data.error);
+                return [];
+            }
+            
+            console.log(`CSV에서 총 ${data.total_count}개의 소스 추출됨:`, data.sources);
+            return data.sources || [];
+            
+        } catch (error) {
+            console.error("CSV에서 소스 추출 실패:", error);
             return [];
         }
     };
@@ -489,23 +527,17 @@ function ChatPage() {
                 }
 
                 // 4. 그래프 버튼 표시 (소스 URL 추출)
-                console.log("4. 그래프 버튼(소스 URL 추출) 시작");
+                console.log("4. 소스 URL 추출 시작");
                 const sourcesStartTime = performance.now();
                 let sourcesData = [];
                 try {
+                    // CSV에서 직접 추출하거나 답변에서 추출
                     sourcesData = await extractSourcesFromAnswer(localAnswer, currentPageId);
                     const sourcesEndTime = performance.now();
-                    console.log(`4. 소스 URL 추출 완료 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesData);
-                    
-                    updateQaList((updatedList, lastIndex) => {
-                        updatedList[lastIndex].sources = sourcesData;
-                        updatedList[lastIndex].actionButtonVisible = true;
-                        return updatedList;
-                    });
-                    console.log("4. 그래프 버튼 화면 표시 완료");
+                    console.log(`소스 URL 추출 완료 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesData);
                 } catch (sourcesError) {
                     const sourcesEndTime = performance.now();
-                    console.error(`4. 소스 URL 추출 실패 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesError);
+                    console.error(`소스 URL 추출 실패 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesError);
                 }
 
                 // 5. 로컬 정확도 계산 및 표시
@@ -798,64 +830,33 @@ function ChatPage() {
     
     // 근거 문서 목록 가져오기 또는 로컬 저장소에서 불러오기
     // headline 가져올 때도 localStorage만 사용
-    // fetchHeadlinesForMessage 함수 - 디버깅 추가
     const fetchHeadlinesForMessage = async (index) => {
-        console.log(`[fetchHeadlinesForMessage] index: ${index} 시작`);
-        
         const currentQA = qaList[index];
         
         // 이미 해당 메시지에 headline 정보가 있는지 확인
         if (currentQA && currentQA.headlines && currentQA.headlines.length > 0) {
-            console.log(`[캐시에서 반환] headlines: ${currentQA.headlines.length}개`);
-            console.log(`[캐시에서 반환] headlinesData: ${currentQA.headlinesData?.length || 0}개`);
-            
-            // headlinesData가 없거나 비어있으면 서버에서 다시 가져오기
-            if (!currentQA.headlinesData || currentQA.headlinesData.length === 0) {
-                console.log(`[캐시 무효] headlinesData가 없어서 서버에서 다시 가져옴`);
-                // 아래 서버 호출 로직으로 계속 진행
-            } else {
-                return {
-                    headlines: currentQA.headlines,
-                    headlinesData: currentQA.headlinesData
-                };
-            }
+            return currentQA.headlines;
         }
-
+        
         // localStorage에서 현재 QA와 대화 인덱스로 headline 정보를 찾음
         if (currentQaId) {
             const qaItem = qaHistory.find(qa => qa.id === currentQaId);
             if (qaItem && qaItem.conversations && qaItem.conversations[index] && 
                 qaItem.conversations[index].headlines && 
                 qaItem.conversations[index].headlines.length > 0) {
-                console.log(`[localStorage에서 반환] headlines: ${qaItem.conversations[index].headlines.length}개`);
-                console.log(`[localStorage에서 반환] headlinesData: ${qaItem.conversations[index].headlinesData?.length || 0}개`);
-                
-                // headlinesData가 없거나 비어있으면 서버에서 다시 가져오기
-                if (!qaItem.conversations[index].headlinesData || qaItem.conversations[index].headlinesData.length === 0) {
-                    console.log(`[localStorage 무효] headlinesData가 없어서 서버에서 다시 가져옴`);
-                    // 아래 서버 호출 로직으로 계속 진행
-                } else {
-                    return {
-                        headlines: qaItem.conversations[index].headlines,
-                        headlinesData: qaItem.conversations[index].headlinesData
-                    };
-                }
+                return qaItem.conversations[index].headlines;
             }
         }
         
         // 서버에서 headline 정보 가져오기
         setHeadlinesLoading(true);
         try {
-            const apiUrl = `${BASE_URL}/api/context-sources?page_id=${currentPageId}`;
-            console.log(`[API 호출] URL: ${apiUrl}`);
-            
-            const response = await fetch(apiUrl);
+            const response = await fetch(`${BASE_URL}/api/context-sources?page_id=${currentPageId}`);
             if (!response.ok) {
                 throw new Error(`서버 응답 오류: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log(`[API 응답] data:`, data);
             
             if (data.error) {
                 throw new Error(data.error);
@@ -865,42 +866,25 @@ function ChatPage() {
                 throw new Error("사용 가능한 headline이 없습니다");
             }
             
-            const headlinesData = data.headlines_data || [];
-            console.log(`[서버에서 받음] headlines: ${data.headlines.length}개`);
-            console.log(`[서버에서 받음] headlines_data: ${headlinesData.length}개`);
-            
-            // headlinesData 내용 확인
-            headlinesData.forEach((item, idx) => {
-                console.log(`[headlinesData ${idx}] headline: "${item.headline}", content: "${item.content?.substring(0, 50)}..."`);
-            });
-            
             if (currentQaId) { 
-                // 가져온 headline 정보 QA 히스토리에 저장
-                updateQAHeadlines(currentQaId, index, data.headlines, true, headlinesData);
+                // 가져온 headline 정보 QA 히스토리에 저장 (localStorage와 Firebase 모두)
+                updateQAHeadlines(currentQaId, index, data.headlines, true); // Firebase에도 저장
             }
             
-            setQaList(prevQaList => {
+            setQaList(prevQaList => { // 현재 대화 목록에도 headline 정보 추가
                 const updatedList = [...prevQaList];
                 if (updatedList[index]) {
                     updatedList[index].headlines = data.headlines;
-                    updatedList[index].headlinesData = headlinesData;
                     updatedList[index].selectedHeadline = data.headlines[0];
-                    console.log(`[qaList 업데이트] index ${index}에 headline 정보 저장`);
                 }
                 return updatedList;
             });
             
-            return {
-                headlines: data.headlines,
-                headlinesData: headlinesData
-            };
+            return data.headlines;
             
         } catch (error) {
-            console.error("[오류] headline 목록 가져오기 실패:", error);
-            return {
-                headlines: [],
-                headlinesData: []
-            };
+            console.error("headline 목록 가져오기 실패:", error);
+            return [];
         } finally {
             setHeadlinesLoading(false);
         }
@@ -957,86 +941,42 @@ function ChatPage() {
     };
 
     // Document URL 업데이트
-    // updateDocumentUrl 함수에 하이라이팅 파라미터 추가
-    // updateDocumentUrl 함수 - 디버깅 추가
     const updateDocumentUrl = async (headline) => {
-        if (!headline) {
-            setPdfUrl('');
-            return false;
-        }
+    if (!headline) return false;
         
+    // HWP 파일인지 먼저 확인
+    const isHwpFile = await checkIfHwpFile(headline);
+        if (isHwpFile) {
+            handleHwpDownload(headline);
+            return false; // HWP 파일이므로 문서 뷰어를 열지 않음
+        }
+
+        // 특수문자 처리 및 파일명 정리 (괄호 등에 대한 처리)
+        let processedHeadline = headline.trim();
+        const encodedHeadline = encodeURIComponent(processedHeadline); // 한글 인코딩 처리
+        
+        // 파일명에 사용될 수 있는 확장자 체크를 서버에서 처리하도록 함
+        const url = `${BASE_URL}/api/document/${encodedHeadline}?page_id=${currentPageId}`;
+        
+        console.log(`문서 요청 URL: ${url}`);
+        setPdfUrl(url);
+        
+        // 파일 로딩 확인을 위한 테스트 요청
         try {
-            let highlightText = '';
-            
-            // 현재 선택된 headline에 해당하는 content 찾기
-            // 먼저 현재 메시지 인덱스 확인
-            let messageIndex = currentMessageIndex;
-            if (messageIndex === null && qaList.length > 0) {
-                messageIndex = qaList.length - 1;
-            }
-            
-            // headlinesData가 있는지 확인하고, 없으면 서버에서 가져오기
-            let headlinesData = [];
-            if (messageIndex !== null && qaList[messageIndex] && qaList[messageIndex].headlinesData) {
-                headlinesData = qaList[messageIndex].headlinesData;
-            } else {
-                // headlinesData가 없으면 서버에서 가져오기
-                const headlinesResult = await fetchHeadlinesForMessage(messageIndex || 0);
-                headlinesData = headlinesResult.headlinesData || [];
-            }
-            
-            // 선택된 headline에 해당하는 content 찾기
-            const headlineData = headlinesData.find(item => item.headline === headline);
-            if (headlineData && headlineData.content) {
-                highlightText = headlineData.content;
-                console.log(`[하이라이팅] headline: ${headline}`);
-                console.log(`[하이라이팅] content: ${highlightText.substring(0, 100)}...`);
-            } else {
-                console.log(`[하이라이팅] headline "${headline}"에 대한 content를 찾을 수 없음`);
-            }
-            
-            const encodedHeadline = encodeURIComponent(headline.trim());
-            let documentUrl = `${BASE_URL}/api/document/${encodedHeadline}?page_id=${currentPageId}`;
-            
-            // 하이라이팅할 텍스트가 있으면 URL에 추가
-            if (highlightText) {
-                const encodedHighlight = encodeURIComponent(highlightText);
-                documentUrl += `&highlight=${encodedHighlight}`;
-                console.log(`[하이라이팅] 텍스트 있음 - 최종 URL: ${documentUrl}`);
-            } else {
-                console.log(`[하이라이팅] 텍스트 없음 - URL: ${documentUrl}`);
-            }
-            
-            // 서버에서 파일 유형 확인
-            const response = await fetch(documentUrl, { method: 'HEAD' });
-            
+            const response = await fetch(url, { method: 'HEAD' });
+            console.log(`문서 응답 상태: ${response.status}`);
             if (!response.ok) {
-                if (response.status === 400) {
-                    const errorData = await (await fetch(documentUrl)).json();
-                    if (errorData.error && errorData.error.includes('HWP')) {
-                        await handleDownloadDocument(headline);
-                        setDocumentErrorMessage("HWP 파일은 뷰어에서 지원되지 않아 다운로드했습니다.");
-                        return false;
-                    }
-                }
-                throw new Error(`문서를 불러올 수 없습니다: ${response.status}`);
+                console.error('문서를 찾을 수 없습니다. 확인 필요.');
+                return false;
             }
-            
-            setPdfUrl(documentUrl);
-            setDocumentErrorMessage('');
-            console.log(`[성공] PDF URL 설정 완료`);
             return true;
-            
         } catch (error) {
-            console.error('[오류] 문서 URL 업데이트 오류:', error);
-            setDocumentErrorMessage(`문서를 불러올 수 없습니다: ${error.message}`);
-            setPdfUrl('');
+            console.error('문서 요청 오류:', error);
             return false;
         }
     };
 
     // 근거 문서 열기 핸들러
-    // handleShowDocument 함수에서 반환값 처리 수정
     const handleShowDocument = async (index, specificHeadline = null) => {
         setCurrentMessageIndex(index);
         
@@ -1059,8 +999,7 @@ function ChatPage() {
         });
         
         // 해당 메시지 headline 목록 가져오기
-        const messageHeadlinesResult = await fetchHeadlinesForMessage(index);
-        const messageHeadlines = messageHeadlinesResult.headlines;
+        const messageHeadlines = await fetchHeadlinesForMessage(index);
         
         if (messageHeadlines.length > 0) {
             setHeadlines(messageHeadlines);
@@ -1099,6 +1038,7 @@ function ChatPage() {
                 document.querySelector('.chat-container').classList.add('shift-left');
             } else {
                 // HWP 파일인 경우 뷰어를 열지 않고 현재 상태 유지
+                // 이미 updateDocumentUrl에서 다운로드 처리가 완료됨
                 console.log('HWP 파일이므로 뷰어를 열지 않습니다.');
             }
         } else {
@@ -1253,7 +1193,7 @@ function ChatPage() {
             
             <div className={`chat-container ${showGraph || showDocument ? "shift-left" : ""} ${isSidebarOpen ? "sidebar-open" : ""}`}>
                 <div className="domain-name">
-                    <h2>{systemName + " QA 시스템" || "한성대 QA 시스템"}</h2>
+                    <h2>{systemName + " Q&A 시스템" || "한성대 Q&A 시스템"}</h2>
                 </div>
                 <div className="chat-messages">
                     {qaList.map((qa, index) => (
