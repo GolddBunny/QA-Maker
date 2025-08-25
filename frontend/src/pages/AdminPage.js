@@ -23,8 +23,8 @@ const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
   const BASE_TIME = 1;
   
   // 각 항목별 평균 처리 시간
-  const DOC_STRUCTURING_TIME_PER_MB = 30; // 문서 1MB당 구조화 시간 (초)
-  const DOC_INDEXING_TIME_PER_MB = 50;    // 문서 1MB당 인덱싱 시간 (초)
+  const DOC_STRUCTURING_TIME_PER_MB = 50; // 문서 1MB당 구조화 시간 (초)
+  const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
   const URL_STRUCTURING_TIME = 40;            // URL 1개당 구조화 시간 (초)
   const URL_INDEXING_TIME = 60;               // URL 1개당 인덱싱 시간 (초)
   
