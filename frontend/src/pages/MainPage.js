@@ -54,16 +54,16 @@ function MainPage() {
       if (!currentPageId) return;
 
       try {
-        // 문서 개수 가져오기
+        // 문서 개수
         const { count: documentCount } = await loadUploadedDocsFromFirestore(currentPageId);
         setDocCount(documentCount || 0);
 
-        // URL 개수 가져오기
+        // URL 개수
         const urls = await fetchSavedUrlsApi(currentPageId);
         const urlArray = Array.isArray(urls) ? urls : [];
         setUrlCount(urlArray.length);
 
-        // 엔티티 개수 가져오기
+        // 엔티티 개수
         const entitiesResult = await GetEntitiesCount(currentPageId);
         if (entitiesResult.success) {
           setEntityCount(entitiesResult.totalCount);
@@ -86,10 +86,12 @@ function MainPage() {
     }
   }, [currentPageId]);
 
+  // 사이드바
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // 검색
   const handleSearch = (e) => {
     e?.preventDefault();
     if (!message.trim() && !selectedFile) return;
@@ -129,6 +131,7 @@ function MainPage() {
     setShowUrlInput(true); // 입력창 보이게
   };
 
+  // URL 추가
   const handleAddUrl = () => {
     const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/;
     if (!urlPattern.test(urlInput.trim())) {
@@ -148,7 +151,7 @@ function MainPage() {
     <div className={`container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-      {/* 상단 버튼 - 실제 개수로 수정 */}
+      {/* 상단 버튼 */}
       <div className="top-buttons">
         <div>
           <div className="stats">URL 수 {urlCount}</div>
@@ -210,6 +213,7 @@ function MainPage() {
         />
       </div>
 
+      {/* URL 입력창 */}
       {showUrlInput && (
       <div className="url-input-box-main">
         <input
@@ -231,6 +235,7 @@ function MainPage() {
       </div>
       )}
 
+      {/* 문서 추가 창 */}
       {selectedFile && (
         <div className="selected-file-container">
         <div className="selected-file">
