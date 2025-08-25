@@ -11,6 +11,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* 대시보드 헤더 컨텐츠 */
 .dashboard-header-content {
   height: 100%;
   max-width: 100%;
