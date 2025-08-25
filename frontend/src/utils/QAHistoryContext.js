@@ -1,22 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-    collection, 
-    doc, 
-    getDocs, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
-    query, 
-    orderBy, 
-    onSnapshot,
-    where
-} from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import { db } from '../firebase/sdk';
 
-// QA 히스토리 컨텍스트 생성
+// QA 히스토리를 공유할 컨텍스트 생성
 const QAHistoryContext = createContext();
 
-// Firestore에 저장하기 전에 undefined 값을 제거하는 유틸리티 함수
+// Firestore에 저장하기 전에 undefined 값 제거
 const cleanDataForFirestore = (data) => {
     if (data === null || data === undefined) {
         return null;
@@ -52,7 +41,7 @@ export function QAHistoryProvider({ children }) {
             const storedQAHistory = localStorage.getItem('qaHistory');
             if (storedQAHistory) {
                 const parsedHistory = JSON.parse(storedQAHistory);
-                // 타임스탬프 기준으로 내림차순 정렬
+                // 최신 순으로 정렬
                 const sortedHistory = parsedHistory.sort((a, b) => 
                     new Date(b.timestamp) - new Date(a.timestamp)
                 );
@@ -80,18 +69,16 @@ export function QAHistoryProvider({ children }) {
         try {
             // QA 히스토리 컬렉션 참조
             const qaHistoryRef = collection(db, 'qaHistory');
-            
-            // 타임스탬프 기준으로 내림차순 정렬하여 쿼리
             const q = query(qaHistoryRef, orderBy('timestamp', 'desc'));
             
-            // 실시간 리스너 설정
+            // 실시간으로 데이터 가져오기
             const unsubscribe = onSnapshot(q, 
                 (snapshot) => {
                     const qaList = [];
                     snapshot.forEach((doc) => {
                         qaList.push({
                             id: doc.id,
-                            firestoreId: doc.id, // Firestore 문서 ID 저장
+                            firestoreId: doc.id,
                             ...doc.data()
                         });
                     });
@@ -103,7 +90,6 @@ export function QAHistoryProvider({ children }) {
                     return [];
                 }
             );
-
             return unsubscribe;
         } catch (err) {
             console.error("Firestore QA 히스토리 로드 설정 실패:", err);
@@ -111,7 +97,7 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 컴포넌트 마운트 시 localStorage에서 로드
+    // 초기 로딩 시 localStorage에서 기록 가져오기
     useEffect(() => {
         const localHistory = loadFromLocalStorage();
         setQaHistory(localHistory);
@@ -128,7 +114,7 @@ export function QAHistoryProvider({ children }) {
             
             let updatedHistory;
             if (existingIndex !== -1) {
-                // 기존 항목 업데이트 (정확도와 관련 질문 포함)
+                // 기존 기록 업데이트
                 updatedHistory = [...currentHistory];
                 updatedHistory[existingIndex] = {
                     ...updatedHistory[existingIndex],
@@ -139,11 +125,13 @@ export function QAHistoryProvider({ children }) {
                         confidence: conversation.confidence || 0.0,
                         localConfidence: conversation.localConfidence || 0.0,
                         globalConfidence: conversation.globalConfidence || 0.0,
+
                         // 관련 질문 기본값
                         relatedQuestions: conversation.relatedQuestions || [],
                         relatedQuestionsVisible: conversation.relatedQuestionsVisible !== undefined 
                             ? conversation.relatedQuestionsVisible 
                             : false,
+
                         // 기타 필드 기본값
                         headlines: conversation.headlines || [],
                         sources: conversation.sources || [],
@@ -155,7 +143,7 @@ export function QAHistoryProvider({ children }) {
                 };
                 console.log("localStorage QA 항목 업데이트 완료:", newQA.id);
             } else {
-                // 새 항목 추가 (정확도와 관련 질문 포함)
+                // 새 항목 추가 
                 const newQAWithTimestamp = {
                     ...newQA,
                     conversations: (newQA.conversations || []).map(conversation => ({
@@ -164,11 +152,13 @@ export function QAHistoryProvider({ children }) {
                         confidence: conversation.confidence || 0.0,
                         localConfidence: conversation.localConfidence || 0.0,
                         globalConfidence: conversation.globalConfidence || 0.0,
+
                         // 관련 질문 기본값
                         relatedQuestions: conversation.relatedQuestions || [],
                         relatedQuestionsVisible: conversation.relatedQuestionsVisible !== undefined 
                             ? conversation.relatedQuestionsVisible 
                             : false,
+
                         // 기타 필드 기본값
                         headlines: conversation.headlines || [],
                         sources: conversation.sources || [],
@@ -196,12 +186,12 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // Firebase에 QA 항목 추가 또는 업데이트 (관리자용)
+    // Firebase에 QA 항목 추가, 업데이트 (관리자용)
     const addQAToFirestore = async (newQA) => {
         try {
             const qaHistoryRef = collection(db, 'qaHistory');
             
-            // undefined 값 제거 및 기본값 설정 (정확도와 관련 질문 포함)
+            // undefined 값 제거 및 기본값 설정
             const cleanedQA = cleanDataForFirestore({
                 ...newQA,
                 // 필수 필드들에 대한 기본값 설정
@@ -210,17 +200,20 @@ export function QAHistoryProvider({ children }) {
                 question: newQA.question || '',
                 answer: newQA.answer || '',
                 timestamp: newQA.timestamp || new Date().toISOString(),
+
                 conversations: (newQA.conversations || []).map(conversation => ({
                     ...conversation,
                     // 정확도 기본값
                     confidence: conversation.confidence || 0.0,
                     localConfidence: conversation.localConfidence || 0.0,
                     globalConfidence: conversation.globalConfidence || 0.0,
+
                     // 관련 질문 기본값
                     relatedQuestions: conversation.relatedQuestions || [],
                     relatedQuestionsVisible: conversation.relatedQuestionsVisible !== undefined 
                         ? conversation.relatedQuestionsVisible 
                         : false,
+
                     // 기타 필드 기본값
                     headlines: conversation.headlines || [],
                     sources: conversation.sources || [],
@@ -286,7 +279,7 @@ export function QAHistoryProvider({ children }) {
                         console.log("localStorage에 firestoreId 저장 완료:", newQA.id, "->", firestoreId);
                     }
                     
-                    // 메모리 상태 즉시 업데이트 (중요!)
+                    // 메모리 상태 즉시 업데이트
                     setQaHistory(prevHistory => {
                         const updatedHistory = [...prevHistory];
                         const memoryQaIndex = updatedHistory.findIndex(qa => qa.id === newQA.id);
@@ -500,10 +493,10 @@ export function QAHistoryProvider({ children }) {
 
     // 통합 선택된 headline 업데이트 함수
     const updateSelectedHeadline = async (qaId, conversationIndex, headline, updateFirestore = false) => {
-        // localStorage는 항상 업데이트
+        // localStorage 업데이트
         updateSelectedHeadlineInLocalStorage(qaId, conversationIndex, headline);
         
-        // Firebase는 필요시에만 업데이트
+        // Firebase 업데이트
         if (updateFirestore) {
             await updateSelectedHeadlineInFirestore(qaId, conversationIndex, headline);
         }
@@ -577,10 +570,10 @@ export function QAHistoryProvider({ children }) {
 
     // 통합 소스 URL 업데이트 함수
     const updateQASources = async (qaId, conversationIndex, sources, updateFirestore = false) => {
-        // localStorage는 항상 업데이트
+        // localStorage 업데이트
         updateQASourcesInLocalStorage(qaId, conversationIndex, sources);
         
-        // Firebase는 필요시에만 업데이트
+        // Firebase 업데이트
         if (updateFirestore) {
             await updateQASourcesInFirestore(qaId, conversationIndex, sources);
         }
@@ -641,10 +634,6 @@ export function QAHistoryProvider({ children }) {
         try {
             setLoading(true);
             const unsubscribe = loadFromFirestore();
-            
-            // 실시간 리스너가 데이터를 받아오면 상태 업데이트
-            // 이 부분은 실제 구현에서 onSnapshot 콜백 내에서 처리됩니다
-            
             return unsubscribe;
         } catch (err) {
             console.error("Firebase QA 히스토리 로드 실패:", err);
@@ -654,7 +643,7 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 4. 정확도 업데이트 함수 추가 (localStorage용)
+    // 정확도 업데이트 함수 추가 (localStorage용)
     const updateQAConfidenceInLocalStorage = (qaId, conversationIndex, confidenceData) => {
         try {
             const currentHistory = loadFromLocalStorage();
@@ -691,7 +680,7 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 5. 정확도 업데이트 함수 추가 (Firebase용)
+    // 정확도 업데이트 함수 추가 (Firebase용)
     const updateQAConfidenceInFirestore = async (qaId, conversationIndex, confidenceData) => {
         try {
             const qaItem = qaHistory.find(qa => qa.id === qaId);
@@ -724,18 +713,18 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 6. 통합 정확도 업데이트 함수
+    // 통합 정확도 업데이트 함수
     const updateQAConfidence = async (qaId, conversationIndex, confidenceData, updateFirestore = false) => {
-        // localStorage는 항상 업데이트
+        // localStorage업데이트
         updateQAConfidenceInLocalStorage(qaId, conversationIndex, confidenceData);
         
-        // Firebase는 필요시에만 업데이트
+        // Firebase 업데이트
         if (updateFirestore) {
             await updateQAConfidenceInFirestore(qaId, conversationIndex, confidenceData);
         }
     };
 
-    // 7. 관련 질문 업데이트 함수 추가 (localStorage용)
+    // 관련 질문 업데이트 함수 추가 (localStorage용)
     const updateQARelatedQuestionsInLocalStorage = (qaId, conversationIndex, relatedQuestions) => {
         try {
             const currentHistory = loadFromLocalStorage();
@@ -771,7 +760,7 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 8. 관련 질문 업데이트 함수 추가 (Firebase용)
+    // 관련 질문 업데이트 함수 추가 (Firebase용)
     const updateQARelatedQuestionsInFirestore = async (qaId, conversationIndex, relatedQuestions) => {
         try {
             const qaItem = qaHistory.find(qa => qa.id === qaId);
@@ -803,18 +792,18 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 9. 통합 관련 질문 업데이트 함수
+    // 통합 관련 질문 업데이트 함수
     const updateQARelatedQuestions = async (qaId, conversationIndex, relatedQuestions, updateFirestore = false) => {
-        // localStorage는 항상 업데이트
+        // localStorage 업데이트
         updateQARelatedQuestionsInLocalStorage(qaId, conversationIndex, relatedQuestions);
         
-        // Firebase는 필요시에만 업데이트
+        // Firebase 업데이트
         if (updateFirestore) {
             await updateQARelatedQuestionsInFirestore(qaId, conversationIndex, relatedQuestions);
         }
     };
 
-    // 10. 만족도 업데이트 함수 추가 (localStorage용)
+    // 만족도 업데이트 함수 추가 (localStorage용)
     const updateQASatisfactionInLocalStorage = (qaId, conversationIndex, satisfaction) => {
         try {
             const currentHistory = loadFromLocalStorage();
@@ -849,7 +838,7 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 11. 만족도 업데이트 함수 추가 (Firebase용)
+    // 만족도 업데이트 함수 추가 (Firebase용)
     const updateQASatisfactionInFirestore = async (qaId, conversationIndex, satisfaction) => {
         try {
             // 먼저 메모리에서 찾기
@@ -907,13 +896,13 @@ export function QAHistoryProvider({ children }) {
         }
     };
 
-    // 12. 통합 만족도 업데이트 함수
+    // 통합 만족도 업데이트 함수
     const updateQASatisfaction = async (qaId, conversationIndex, satisfaction, updateFirestore = false) => {
         try {
-            // localStorage는 항상 업데이트
+            // localStorage 업데이트
             updateQASatisfactionInLocalStorage(qaId, conversationIndex, satisfaction);
             
-            // Firebase는 필요시에만 업데이트
+            // Firebase 업데이트
             if (updateFirestore) {
                 await updateQASatisfactionInFirestore(qaId, conversationIndex, satisfaction);
             }
@@ -937,19 +926,19 @@ export function QAHistoryProvider({ children }) {
         updateQARelatedQuestions, // (qaId, conversationIndex, relatedQuestions, updateFirestore = false)
         updateQASatisfaction, // (qaId, conversationIndex, satisfaction, updateFirestore = false) - 새로 추가
         getQAHistoryByPageId, // (pageId, fromFirestore = false)
-        loadAllFromFirestore, // 관리자 페이지용
+        loadAllFromFirestore,
         // localStorage 전용 함수들
         addQAToLocalStorage,
         deleteQAFromLocalStorage,
         updateQAConfidenceInLocalStorage,
         updateQARelatedQuestionsInLocalStorage,
-        updateQASatisfactionInLocalStorage, // 새로 추가
+        updateQASatisfactionInLocalStorage,
         // Firebase 전용 함수들 (관리자 페이지용)
         addQAToFirestore,
         deleteQAFromFirestore,
         updateQAConfidenceInFirestore,
         updateQARelatedQuestionsInFirestore,
-        updateQASatisfactionInFirestore, // 새로 추가
+        updateQASatisfactionInFirestore,
         loadFromLocalStorage,
         saveToLocalStorage
     };

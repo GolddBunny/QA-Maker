@@ -199,11 +199,37 @@ QA Maker는 사용자가 도메인 URL 하나만 입력하면 해다 도메인�
 **⑤	 문서 계층 구조 보존을 통한 정확한 문맥 이해**  <br>
 QA Maker는 문서 간의 연관관계와 문서 내부의 상하 관계를 그대로 반영해 계층 구조를 보존함으로써, 문서 구조와 문맥을 정확하게 이해할 수 있다. 
 
-**⑥	 로그 분석 기능 제공 **  <br>
+**⑥	 로그 분석 기능 제공**  <br>
 관리자는 Log Analyzer에서 Q&A 시스템의 생성 과정의 세부 데이터를 확인할 수 있다. 지식 그래프를 생성하는 각 단계별 처리 시간과 생성된 노드와 엣지 수, 총 URL 및 문서 수, 시각화된 지식그래프까지 확인 가능하다. 이 기능을 통해 별도의 분석 도구 없이도 시스템 품질을 상시 점검하고 개선할 수 있다. 
 
 **⑦	 자동화된 시스템으로 구축 시간 및 비용 절감** <br>
 자체 개발한 크롤링 로직과 다양한 문서의 구조화, GraphRAG 기반 지식그래프 생성 엔진을 자동화하여 기존 수개월 이상 걸리던 도메인별 Q&A 시스템 구축 기간을 대폭 단축하였다. 또한 Flask와 React기반의 경량 구조로 구현하여 구축 및 운영 비용을 절감하고 유지보수와 확장이 용이하다. 
+
+---
+## ⚙️ 개발 환경
+
+![MacOS](https://img.shields.io/badge/MacOS-AAAAAA?style=for-the-badge&logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+
+## ⚙️ 개발 언어
+
+![Python](https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+
+## ⚙️ 개발 도구 / 라이브러리
+
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![BeautifulSoup4](https://img.shields.io/badge/BeautifulSoup4-4.13.3-orange?style=for-the-badge)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-1.25.5-red?style=for-the-badge)
+![Olefile](https://img.shields.io/badge/Olefile-0.46-lightgrey?style=for-the-badge)
+![GraphRAG](https://img.shields.io/badge/GraphRAG-2.1.0-lightblue?style=for-the-badge)
+![D3.js](https://img.shields.io/badge/D3.js-orange?style=for-the-badge&logo=d3.js&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.1.0-black?style=for-the-badge&logo=flask&logoColor=white)
+![Selenium](https://img.shields.io/badge/Selenium-4.12.0-green?style=for-the-badge&logo=selenium&logoColor=white)
+![LanceDB](https://img.shields.io/badge/LanceDB-0.17.0-purple?style=for-the-badge)
+![Firebase](https://img.shields.io/badge/Firebase-6.8.0-yellow?style=for-the-badge&logo=firebase&logoColor=black)
+![OpenAI API](https://img.shields.io/badge/OpenAI-API-blueviolet?style=for-the-badge)
 
 ---
 ## 프로젝트 결과
@@ -244,3 +270,6 @@ QA Maker는 문서 간의 연관관계와 문서 내부의 상하 관계를 그�
 ### 2. 사용자 테스트 방법<br><br>
 <img width="1738" height="1771" alt="사용자테스트방법" src="https://github.com/user-attachments/assets/ed35b8c1-86f2-4b03-8b6f-2a2ba2ac938f" /><br><br>
 
+---
+## 📒 참고 자료
+Microsoft GraphRAG: https://github.com/microsoft/graphrag

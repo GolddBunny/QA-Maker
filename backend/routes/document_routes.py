@@ -4,8 +4,8 @@ import subprocess
 import tempfile
 import time
 from flask import Blueprint, jsonify, request
-from services.document_service.hwp2txt import convert_hwp_file
-from services.document_service.pdf2txt import extract_text_and_tables
+from services.document_service.hwp_to_md_txt import convert_hwp_file
+from services.document_service.pdf_to_md_txt import convert_pdf_file
 from services.document_service.convert2txt import convert2txt, convert_docx
 from firebase_config import bucket
 from werkzeug.utils import secure_filename
@@ -150,7 +150,7 @@ def process_documents(page_id):
         base_path, input_path, _ = ensure_page_directory(page_id)
         firebase_path = f"pages/{page_id}/documents"
 
-        # 🔸 Firestore에서 filename 매핑 가져오기
+        # Firestore에서 filename 매핑 가져오기
         filename_mapping = {}  # {firebase_filename: original_filename}
         docs = db.collection('document_files').where('page_id', '==', page_id).stream()
         for doc in docs:
@@ -210,7 +210,7 @@ def process_document_direct():
 
             elif lower_name.endswith('.pdf'):
                 output_path = os.path.join(temp_dir, "output.txt")
-                extract_text_and_tables(file_path, output_path)
+                convert_pdf_file(file_path, output_path)
                 with open(output_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 

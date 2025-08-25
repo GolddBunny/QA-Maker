@@ -1,10 +1,13 @@
 const BASE_URL = 'http://localhost:5000/flask';
 
+// 특정 페이지에 대해 output 폴더가 존재하는지 확인하는 함수
 export const checkOutputFolder = async (pageId) => {
   try {
+    // 서버에 output 폴더 존재 여부 요청
     const response = await fetch(`${BASE_URL}/has-output/${pageId}`);
     const data = await response.json();
 
+    // 서버가 성공적으로 응답했으면 결과 반환
     if (data.success) {
       return data.has_output;
     } else {

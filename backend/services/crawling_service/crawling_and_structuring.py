@@ -22,7 +22,7 @@ def main(page_id, url_list):
         dict: 크롤링 결과
     """
     try:
-        print(f"🚀 통합 크롤링 시스템 시작 - Page ID: {page_id}")
+        print(f"통합 크롤링 시스템 시작 - Page ID: {page_id}")
         
         if not url_list:
             return {
@@ -34,7 +34,7 @@ def main(page_id, url_list):
         urls = [item['url'] for item in url_list if 'url' in item]
         
         if not urls:
-            print(f"crawling_and_structuring.py: 🔄 유효한 URL이 없습니다.")
+            print(f"crawling_and_structuring.py: 유효한 URL이 없습니다.")
             return {
                 "success": False,
                 "error": "유효한 URL이 없습니다."
@@ -54,9 +54,9 @@ def main(page_id, url_list):
         # 디렉토리 생성
         url_input_path.mkdir(parents=True, exist_ok=True)
         
-        print(f"📁 임시 URL 파일: {temp_url_file}")
-        print(f"💾 저장 경로: {url_input_path}")
-        print(f"🔗 크롤링할 URL 개수: {len(urls)}")
+        print(f"임시 URL 파일: {temp_url_file}")
+        print(f"저장 경로: {url_input_path}")
+        print(f"크롤링할 URL 개수: {len(urls)}")
         
         try:
             # 통합 크롤링 실행
@@ -72,7 +72,7 @@ def main(page_id, url_list):
             
             # 결과 처리
             if "error" not in results:
-                print("✅ 통합 크롤링 성공!")
+                print("통합 크롤링 성공!")
                 return {
                     "success": True,
                     "results": {
@@ -92,13 +92,13 @@ def main(page_id, url_list):
                 }
                 
         except Exception as e:
-            # 임시 파일 삭제 (오류 발생 시에도)
+            # 임시 파일 삭제
             if os.path.exists(temp_url_file):
                 os.unlink(temp_url_file)
             raise e
             
     except Exception as e:
-        print(f"💥 예외 발생: {e}")
+        print(f"예외 발생: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -108,7 +108,7 @@ def main(page_id, url_list):
 
 # def test_integrated_crawling():
 #     """통합 크롤링 테스트 함수"""
-#     print("🚀 통합 크롤링 시스템 테스트 시작")
+#     print("통합 크롤링 시스템 테스트 시작")
     
 #     # 테스트용 URL 파일 경로
 #     url_file_path = Path(__file__).parent.parent.parent / "data/crawling/20250526_0412_hansung_ac_kr_sites_hansung/page_urls_20250526_0412.txt"
@@ -117,11 +117,11 @@ def main(page_id, url_list):
 #     custom_output_dir = Path(__file__).parent.parent.parent / "data" / "crawling" / "20250526_0412_hansung_ac_kr_sites_hansung"
     
 #     if not url_file_path.exists():
-#         print(f"❌ URL 파일을 찾을 수 없습니다: {url_file_path}")
+#         print(f"URL 파일을 찾을 수 없습니다: {url_file_path}")
 #         return
     
-#     print(f"📁 URL 파일: {url_file_path}")
-#     print(f"💾 저장 경로: {custom_output_dir}")
+#     print(f"URL 파일: {url_file_path}")
+#     print(f"저장 경로: {custom_output_dir}")
     
 #     try:
 #         # 통합 크롤링 실행
@@ -135,37 +135,37 @@ def main(page_id, url_list):
         
 #         # 결과 출력
 #         if "error" not in results:
-#             print("\n✅ 통합 크롤링 성공!")
-#             print(f"📊 총 성공한 파일: {results.get('total_success_count', 0)}개")
-#             print(f"📁 저장 위치: {results.get('output_base_dir', 'N/A')}")
+#             print("\n통합 크롤링 성공!")
+#             print(f"총 성공한 파일: {results.get('total_success_count', 0)}개")
+#             print(f"저장 위치: {results.get('output_base_dir', 'N/A')}")
             
 #             # artclView 결과
 #             artcl_results = results.get('artcl_results', {})
 #             if artcl_results:
-#                 print(f"🔗 artclView 크롤링: {artcl_results.get('success_count', 0)}개 파일")
-#                 print(f"   📎 첨부파일: {artcl_results.get('attachment_count', 0)}개")
-#                 print(f"   📂 저장 경로: {artcl_results.get('output_dir', 'N/A')}")
+#                 print(f"artclView 크롤링: {artcl_results.get('success_count', 0)}개 파일")
+#                 print(f"첨부파일: {artcl_results.get('attachment_count', 0)}개")
+#                 print(f"저장 경로: {artcl_results.get('output_dir', 'N/A')}")
             
 #             # Jina 결과
 #             jina_results = results.get('jina_results', {})
 #             if jina_results:
-#                 print(f"🤖 Jina 크롤링: {jina_results.get('success_count', 0)}개 파일")
-#                 print(f"   📂 저장 경로: {jina_results.get('output_dir', 'N/A')}")
+#                 print(f"Jina 크롤링: {jina_results.get('success_count', 0)}개 파일")
+#                 print(f"저장 경로: {jina_results.get('output_dir', 'N/A')}")
             
 #             # 오류 정보
 #             errors = results.get('errors', [])
 #             if errors:
-#                 print(f"⚠️  발생한 오류: {len(errors)}개")
+#                 print(f"발생한 오류: {len(errors)}개")
 #                 for error in errors:
 #                     print(f"   - {error}")
             
-#             print(f"⏱️  실행 시간: {results.get('execution_time', 'N/A')}")
+#             print(f"실행 시간: {results.get('execution_time', 'N/A')}")
             
 #         else:
-#             print(f"❌ 크롤링 실패: {results.get('error', '알 수 없는 오류')}")
+#             print(f"크롤링 실패: {results.get('error', '알 수 없는 오류')}")
             
 #     except Exception as e:
-#         print(f"💥 예외 발생: {e}")
+#         print(f"예외 발생: {e}")
 #         import traceback
 #         traceback.print_exc()
 

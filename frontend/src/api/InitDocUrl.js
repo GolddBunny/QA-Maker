@@ -1,4 +1,6 @@
 const BASE_URL = 'http://localhost:5000/flask';
+
+// 특정 페이지의 문서 URL 초기화를 요청하는 함수
 export const initDocUrl = async (pageId) => {
   try {
     const response = await fetch(`${BASE_URL}/init_doc_url/${pageId}`, {
