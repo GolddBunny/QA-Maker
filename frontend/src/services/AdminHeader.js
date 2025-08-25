@@ -10,9 +10,12 @@ const AdminHeader = ({ isSidebarOpen, toggleSidebar }) => {
     const handleQuickAddPage = () => {
         handleAddPage(); // 이름은 내부에서 자동으로 생성됨
     };
+
   return (
     <header className="main-header">
+      {/* 좌측 헤더 영역 */}
       <div className="left-header">
+        {/* 사이드바 토글 버튼 */}
         <div className="sidebar-toggle-button" onClick={toggleSidebar}>
           {!isSidebarOpen ? (
             <div className="hamburger-icon">
@@ -24,6 +27,8 @@ const AdminHeader = ({ isSidebarOpen, toggleSidebar }) => {
             <div className="sidebar-close-icon">×</div>
           )}
         </div>
+        
+        {/* 로고 영역 */}
         <div className="logo">QA Maker</div>
       </div>
 
