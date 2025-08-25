@@ -4,8 +4,8 @@ import subprocess
 import tempfile
 import time
 from flask import Blueprint, jsonify, request
-from services.document_service.hwp2txt import convert_hwp_file
-from services.document_service.pdf2txt import extract_text_and_tables
+from services.document_service.hwp_to_md_txt import convert_hwp_file
+from services.document_service.pdf_to_md_txt import convert_pdf_file
 from services.document_service.convert2txt import convert2txt, convert_docx
 from firebase_config import bucket
 from werkzeug.utils import secure_filename
