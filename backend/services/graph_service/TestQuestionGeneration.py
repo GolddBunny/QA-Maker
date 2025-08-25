@@ -27,20 +27,25 @@ api_key = os.getenv("GRAPHRAG_API_KEY")
 llm_model = "gpt-4o-mini"
 embedding_model = "text-embedding-3-small"
 
+# Chat 모델 구성
 chat_config = LanguageModelConfig(
     api_key=api_key,
     type=ModelType.OpenAIChat,
     model=llm_model,
     max_retries=20,
 )
+
+# 실제 Chat 모델 생성
 chat_model = ModelManager().get_or_create_chat_model(
     name="local_search",
     model_type=ModelType.OpenAIChat,
     config=chat_config,
 )
 
+# 토큰 인코더 생성 (텍스트 토큰 수 계산용)
 token_encoder = tiktoken.encoding_for_model(llm_model)
 
+# 임베딩 모델 구성
 embedding_config = LanguageModelConfig(
     api_key=api_key,
     type=ModelType.OpenAIEmbedding,
@@ -48,19 +53,24 @@ embedding_config = LanguageModelConfig(
     max_retries=20,
 )
 
+# 임베딩 모델 생성
 text_embedder = ModelManager().get_or_create_embedding_model(
     name="local_search_embedding",
     model_type=ModelType.OpenAIEmbedding,
     config=embedding_config,
 )
 
+# 입력 데이터 경로 설정
 INPUT_DIR = "../data/input/1743412670027/output"
 ENTITY_TABLE = "entities"
 COMMUNITY_TABLE = "communities"
 
+# parquet 파일에서 데이터 읽기
 entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
 community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
 community_level = 0
+
+# DataFrame을 인덱서용 객체로 변환
 entities = read_indexer_entities(entity_df, community_df, community_level )
 relationship_df = pd.read_parquet(f"{INPUT_DIR}/relationships.parquet")
 relationships = read_indexer_relationships(relationship_df)
@@ -69,17 +79,21 @@ reports = read_indexer_reports(report_df, community_df, community_level)
 text_unit_df = pd.read_parquet(f"{INPUT_DIR}/text_units.parquet")
 text_units = read_indexer_text_units(text_unit_df)
 
+# LanceDB 벡터 스토어를 커스텀화
 class CustomLanceDBVectorStore(LanceDBVectorStore):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # 경로에서 DB 디렉토리 추출 후 연결
         db_uri = kwargs.get("db_dir").replace('/default-entity-description.lance', '')
         self.connect(db_uri=db_uri)
 
+# 엔티티 설명용 임베딩 스토어 생성
 description_embedding_store = CustomLanceDBVectorStore(
     collection_name="default-entity-description",
     db_dir="../data/input/1743412670027/output/lancedb/default-entity-description.lance",
 )
 
+# 문맥 빌더 생성 (혼합 컨텍스트: 커뮤니티, 텍스트, 엔티티, 관계)
 context_builder = LocalSearchMixedContext(
     community_reports=reports,
     text_units=text_units,
@@ -92,13 +106,14 @@ context_builder = LocalSearchMixedContext(
     token_encoder=token_encoder,
 )
 
+# 로컬 문맥 생성기 파라미터
 local_context_params = {
-    "text_unit_prop": 0.5,
-    "community_prop": 0.1,
+    "text_unit_prop": 0.5,  # 텍스트 유닛 비중
+    "community_prop": 0.1,  # 커뮤니티 비중
     "conversation_history_max_turns": 5,
     "conversation_history_user_turns_only": True,
-    "top_k_mapped_entities": 10,
-    "top_k_relationships": 10,
+    "top_k_mapped_entities": 10,    # 상위 N 엔티티
+    "top_k_relationships": 10,  # 상위 N 관계
     "include_entity_rank": True,
     "include_relationship_weight": True,
     "include_community_rank": False,
@@ -108,6 +123,7 @@ local_context_params = {
     "temperature": 0.5,
 }
 
+# 질문 생성용 시스템 프롬프트
 custom_system_prompt = """
 ---Role---
 
@@ -135,6 +151,7 @@ Your responses must be in Korean.
 ---Example questions---
 """
 
+# 실제 질문 생성기 객체
 question_generator = LocalQuestionGen(
     model=chat_model,
     context_builder=context_builder,
@@ -143,10 +160,12 @@ question_generator = LocalQuestionGen(
     system_prompt=custom_system_prompt,
 )
 
+# 비동기 함수로 실제 질문 생성
 async def generate_questions():
     question_history = [
         "브리지 관련 내용은 몇 페이지에 있어?"
     ]
+    # 후보 질문 생성
     candidate_questions = await question_generator.agenerate(
         question_history=question_history, context_data=None, question_count=5
     )
