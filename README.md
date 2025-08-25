@@ -206,27 +206,30 @@ QA Maker는 문서 간의 연관관계와 문서 내부의 상하 관계를 그�
 자체 개발한 크롤링 로직과 다양한 문서의 구조화, GraphRAG 기반 지식그래프 생성 엔진을 자동화하여 기존 수개월 이상 걸리던 도메인별 Q&A 시스템 구축 기간을 대폭 단축하였다. 또한 Flask와 React기반의 경량 구조로 구현하여 구축 및 운영 비용을 절감하고 유지보수와 확장이 용이하다. 
 
 ---
-<h3> ⚙️ 개발 환경 </h3>
-![MacOS](https://img.shields.io/badge/OS-MacOS-lightgrey)
-![Linux](https://img.shields.io/badge/OS-Linux-green)
+## ⚙️ 개발 환경
 
-<h3> ⚙️ 개발 언어 </h3>
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
-![CSS](https://img.shields.io/badge/CSS-3-blueviolet)
+![MacOS](https://img.shields.io/badge/MacOS-AAAAAA?style=for-the-badge&logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 
-<h3> ⚙️ 개발 도구 / 라이브러리 </h3>
-![React](https://img.shields.io/badge/React-18-blue)
-![BeautifulSoup4](https://img.shields.io/badge/BeautifulSoup4-4.12.0-orange)
-![PyMuPDF](https://img.shields.io/badge/PyMuPDF-1.22.3-red)
-![Olefile](https://img.shields.io/badge/Olefile-0.46-lightgrey)
-![GraphRAG](https://img.shields.io/badge/GraphRAG-1.0-lightblue)
-![D3.js](https://img.shields.io/badge/D3.js-7.9.1-orange)
-![Flask](https://img.shields.io/badge/Flask-2.3.3-blue)
-![Selenium](https://img.shields.io/badge/Selenium-4.12.0-green)
-![LanceDB](https://img.shields.io/badge/LanceDB-0.5.0-purple)
-![Firebase](https://img.shields.io/badge/Firebase-9.23.0-yellow)
-![OpenAI API](https://img.shields.io/badge/OpenAI-API-blueviolet)
+## ⚙️ 개발 언어
+
+![Python](https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+
+## ⚙️ 개발 도구 / 라이브러리
+
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![BeautifulSoup4](https://img.shields.io/badge/BeautifulSoup4-4.13.3-orange?style=for-the-badge)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-1.25.5-red?style=for-the-badge)
+![Olefile](https://img.shields.io/badge/Olefile-0.46-lightgrey?style=for-the-badge)
+![GraphRAG](https://img.shields.io/badge/GraphRAG-2.1.0-lightblue?style=for-the-badge)
+![D3.js](https://img.shields.io/badge/D3.js-orange?style=for-the-badge&logo=d3.js&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.1.0-black?style=for-the-badge&logo=flask&logoColor=white)
+![Selenium](https://img.shields.io/badge/Selenium-4.12.0-green?style=for-the-badge&logo=selenium&logoColor=white)
+![LanceDB](https://img.shields.io/badge/LanceDB-0.17.0-purple?style=for-the-badge)
+![Firebase](https://img.shields.io/badge/Firebase-6.8.0-yellow?style=for-the-badge&logo=firebase&logoColor=black)
+![OpenAI API](https://img.shields.io/badge/OpenAI-API-blueviolet?style=for-the-badge)
 
 ---
 ## 프로젝트 결과
