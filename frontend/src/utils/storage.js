@@ -27,7 +27,7 @@ export const getPages = async () => {
   }
 };
 
-// 페이지 목록 저장하기 (여러 페이지 일괄 저장)
+// 페이지 목록 저장하기
 export const savePages = async (pages) => {
   try {
     const promises = pages.map(page => 
@@ -41,13 +41,13 @@ export const savePages = async (pages) => {
   }
 };
 
-// 현재 페이지 ID 가져오기 (임시 메모리 저장)
+// 현재 페이지 ID 가져오기
 let currentPageId = null;
 export const getCurrentPageId = () => {
   return currentPageId;
 };
 
-// 현재 페이지 ID 설정하기 (임시 메모리 저장)
+// 현재 페이지 ID 설정하기
 export const setCurrentPageId = (pageId) => {
   currentPageId = pageId;
 };
@@ -202,6 +202,7 @@ export const savePage = async (page) => {
     console.error('페이지 저장 실패:', error);
     return false;
   }
+
 // export const savePage = (page) => {
 //   let pages = getPages();
 //   const index = pages.findIndex(p => p.id === page.id);
@@ -301,6 +302,3 @@ export const updatePageSysName = async (pageId, newSysName) => {
     return { success: false, error: error.message };
   }
 };
-  
-//   return savePages(filteredPages);
-// }; 
