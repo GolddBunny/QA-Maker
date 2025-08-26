@@ -83,8 +83,6 @@ huggingface-hub==0.32.0
 hyppo==0.4.0
 idna==3.10
 ipykernel==6.29.5
-ipython==9.2.0
-ipython_pygments_lexers==1.1.1
 ipywidgets==8.1.6
 isodate==0.7.2
 isoduration==20.11.0
