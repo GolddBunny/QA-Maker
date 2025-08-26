@@ -1,130 +1,53 @@
-# Project Installation and Execution Guide
+# QA Maker 기여 가이드
+&nbsp;issue 또는 PR 하기 전에 이 가이드를 읽어주세요
 
-## Checklist
+---
+## 기여 방법
+&nbsp;&nbsp;1) 저장소를 fork하고 로컬에 clone 해주세요 <br>
+&nbsp;&nbsp;2) 변경사항을 위한 새 feature 브랜치를 생성해주세요: <br>
+&nbsp;&nbsp;&nbsp;&nbsp; ```git checkout -b feature/your-branch``` <br>
+&nbsp;&nbsp;3) 변경사항을 적용하고 명확한 커밋 메시지로 커밋해주세요 <br>
+&nbsp;&nbsp;&nbsp;&nbsp;4) 브랜치를 자신의 fork에 push 해주세요 <br>
+```git push origin feature/your-branch``` <br>
+&nbsp;&nbsp;5)원본 저장소의 main 브랜치로 PR을 생성합니다 <br>
 
-- [ ] Create and activate a virtual environment
-- [ ] Install backend dependencies
-- [ ] Install frontend dependencies
-- [ ] Configure `.env` files
-- [ ] Place Firebase service account JSON
-- [ ] Update `config.py` to match Firebase JSON file name
-- [ ] Place `output` folders under `data/input`    
-- [ ] Create `.env` in each `data/input/{page_id}` folder  
+---
+## 테스트
+- PR 제출 전 테스트 실행하여 기존 기능이 깨지지 않도록 확인해주세요
+```
+cd backend
+pytest
+```
+---
+<br>
+<br>
+<br>
+<br>
+<h2>IN ENGLISH </h2>
+<br>
+<br>
+<br>
+<br>
+
+# QA Maker Contribution Guide
+Please read this guide before opening an issue or submitting a PR.
+
+---
+## How to Contribute
+
+&nbsp;&nbsp;1) Fork the repository and clone it to your local machine. <br>
+&nbsp;&nbsp;2) Create a new feature branch for your changes: <br>
+&nbsp;&nbsp;&nbsp;&nbsp;```git checkout -b feature/your-branch```<br>
+&nbsp;&nbsp;3) Make your changes and commit them with clear commit messages. <br>
+&nbsp;&nbsp;4) Push your branch to your fork: <br>
+&nbsp;&nbsp;&nbsp;&nbsp;```git push origin feature/your-branch``` <br>
+&nbsp;&nbsp;5) Open a Pull Request to the main branch of the original repository. <br>
 
 ---
 
-## Environment Setup
-
-1. Fork the repository and clone your fork
-2. Create a new virtual environment and activate it
-  
-  ```
-  python -m venv qamaker
-  
-  # Windows
-  qamaker\Scripts\activate
-  
-  # Mac/Linux
-  source qamaker/bin/activate
-  
-  ```
-3. Install the dependencies
-
-  ```
-  cd backend
-  pip install -r requirements.txt
-  
-  cd ../frontend
-  npm install
-  ```
-
----
-# API Key and Configuration Files
-
-## 1. OpenAI API Key
-
-Create a `.env` file in the following locations and set your key:
-
-- `data/parquet/.env`:
-    ```
-    GRAPHRAG_API_KEY=sk-your-openai-api-key-here
-    ```
-- `backend/accuracy_service/.env`:
-    ```
-    GRAPHRAG_API_KEY=sk-your-openai-api-key-here
-    ```
-
-## 2. Firebase Setup
-
-- `frontend/src/.env`  
-  Set your Firebase configuration here (replace with actual values):
-    ```
-    REACT_APP_FIREBASE_API_KEY=your-api-key
-    REACT_APP_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
-    REACT_APP_FIREBASE_PROJECT_ID=your-project-id
-    REACT_APP_FIREBASE_STORAGE_BUCKET=your-app.appspot.com
-    REACT_APP_FIREBASE_MESSAGING_SENDER_ID=xxxx
-    REACT_APP_FIREBASE_APP_ID=xxxx
-    REACT_APP_FIREBASE_MEASUREMENT_ID=G-xxxx
-    ```
-
-- `backend/services/firebase/`  
-  Place the Firebase service account key file (`key.json`) in this directory.  
-  **Make sure that backend/services/firebase/config.py uses the same file name as your JSON key.**
-
----
-
-## 3. Input Data Setup
-- Place the `output` folders (e.g., SNU CSE, Hansung Univ., company pages) inside `data/input`.
-  Example:
-    ```
-    /data/input/{sun_cse_page_id}/output
-    /data/input/{hansung_uni_page_id}/output
-    /data/input/{company_page_id}/output
-    ```
-    
-- Each `data/input/{page_id}` folder must contain its own `.env` file with your OpenAI API key:
-    ```
-    GRAPHRAG_API_KEY=sk-your-openai-api-key-here
-    ```
-    Example:
-    ```
-    data/input/{snu_cse_page_id}/.env
-    ```
-
-  ---
-
-## Execution
-### Backend
-  
-  ```
-  cd backend
-  python app.py
-  ```
-
-### Frontend
-  
-  ```
-  cd frontend
-  npm start
-  ```
-
----
-
-## Notes
-
-- This project will **not run without OpenAI API key and Firebase configuration**.
-- Do **not share API keys or JSON files**; keep them local.
-
----
-
-## Common Issues
-
-- **Blank page in the frontend**  
-  This usually indicates a Firebase configuration error. Check your `.env` file and restart the app.
-
-- **"Failed to get a response"**  
-  This usually indicates an OpenAI API key issue. Check your `.env` key values.
-
-- **Input data not recognized**  
-  Make sure your `output` folders are inside `data/input/{page_id}` and that each has a `.env` file.
+## Testing
+- Before submitting a PR, run tests to ensure existing functionality is not broken:
+```
+cd backend
+pytest
+```
