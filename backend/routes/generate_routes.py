@@ -18,7 +18,7 @@ def apply_documents(page_id):
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         
-        # 프롬프트 폴더 복사 (GraphRAG 인덱싱 전에 필요)
+        # 프롬프트 폴더 복사
         prompt_src = '../data/parquet/prompts'
         prompt_dest = os.path.join(base_path, 'prompts')
         
@@ -126,7 +126,7 @@ def update(page_id):
 
         downloaded = download_output_files_from_firebase(page_id, output_path)
         if not downloaded:
-            print("⚠ 기존 결과 파일이 Firebase에 존재하지 않습니다.")
+            print("기존 결과 파일이 Firebase에 존재하지 않습니다.")
 
         # input 폴더와 prompts 폴더 _url에서 복사해오기
         url_page_id = f"{page_id}_url"
@@ -135,7 +135,7 @@ def update(page_id):
         # input 폴더 복사
         url_input_path = os.path.join(url_base_path, 'input')
         if os.path.exists(url_input_path):
-            # 📌 .txt 파일이 하나라도 없으면 종료
+            # .txt 파일이 하나라도 없으면 종료
             txt_files = [
                 os.path.join(root, f)
                 for root, _, files in os.walk(url_input_path)
@@ -171,10 +171,10 @@ def update(page_id):
         
         start_time = time.time()
         if not downloaded:
-            print("🔄 'graphrag index' 명령어 실행 중...")
+            print("'graphrag index' 명령어 실행 중...")
             process = subprocess.run(['graphrag', 'index', '--root', base_path])
         else:
-            print("🔁 'graphrag update' 명령어 실행 중...")
+            print("'graphrag update' 명령어 실행 중...")
             process = subprocess.run(['graphrag', 'update', '--root', base_path])
             
         end_time = time.time()

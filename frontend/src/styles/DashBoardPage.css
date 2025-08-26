@@ -11,6 +11,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* 대시보드 헤더 컨텐츠 */
 .dashboard-header-content {
   height: 100%;
   max-width: 100%;
@@ -108,7 +109,7 @@
 .stats-section {
     padding: 15px;
     margin-top: 25px;
-    background-color: #f8f9fa;
+    background-color: #f3f0ff;
 }
 
 .stats-grid {
@@ -865,18 +866,20 @@
     font-size: 1.5rem;
     font-weight: 600;
     color: #1a1a1a;
-    padding: 0;
+    padding: 10px;
+    margin-bottom: 100px;
     text-align: left;
 }
 
 .knowledge-graph-container {
     background-color: white;
     padding: 1rem;
-    min-height: 200px;
+    max-height: 1000px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
+    margin-top: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     border: 1px solid #f0f0f0;
@@ -887,7 +890,7 @@
     text-align: center;
     color: #6b7280;
     font-size: 1rem;
-    padding: 2rem;
+    padding: 1px;
 }
 
 .graph-error-message {

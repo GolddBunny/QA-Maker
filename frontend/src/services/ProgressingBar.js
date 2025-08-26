@@ -6,22 +6,26 @@ const ProgressingBar = ({
   onAnalyzer, 
   isCompleted, 
   stepExecutionTimes = {}, 
-  currentStep = 'crawling' 
+  currentStep = 'crawling',
+  estimatedTime = null
 }) => {
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef(null);
 
+  // 진행률 애니메이션
   useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
 
+    // 완료 시 바로 100%
     if (isCompleted) {
       setProgress(100);
       return;
     }
 
+    // 각 단계별 진행률 증가 한계치, 주기
     const stepConfigs = {
       crawling: { max: 25, interval: 3000 },
       structuring: { max: 50, interval: 5000 },
@@ -141,21 +145,31 @@ const ProgressingBar = ({
     }
   };
 
+  // 예상 완료 시간 표시 텍스트 결정
+  const getEstimatedTimeText = () => {
+    if (estimatedTime && estimatedTime.formattedTime) {
+      return estimatedTime.formattedTime;
+    }
+    return "10분"; // 기본값
+  };
+
   return (
     <div className="progress-wrapper">
+      {/* 완료 시 닫기 버튼 노출 */}
       {isCompleted && (
-      <button className="progress-close-button" onClick={onClose}>×</button>
-    )}
+        <button className="progress-close-button" onClick={onClose}>×</button>
+      )}
       
-      <h2 className="progress-title">한성대 Q&A 시스템 구축 중 ...</h2>
+      <h2 className="progress-title">시스템 구축 중 ...</h2>
       <p className="progress-desc">
         크롤링은 사이트 크기를 사전에 알 수 없기 때문에 시간이 오래 걸릴 수 있습니다.
       </p>
 
+      {/* 진행률 카드 (예상 완료 시간, 현재 진행률) */}
       <div className="progress-cards">
         <div className="progress-card">
           <div className="card-title">예상 완료 시간</div>
-          <div className="card-value">약 10분</div>
+          <div className="card-value">{getEstimatedTimeText()}</div>
         </div>
         <div className="progress-card">
           <div className="card-title">현재 진행률</div>
@@ -165,6 +179,7 @@ const ProgressingBar = ({
         </div>
       </div>
 
+      {/* 단계별 진행 상태 */}
       <div className="progress-steps">
         <div className="step">
           <div className={getCircleClass('crawling')}>1</div>
@@ -203,12 +218,8 @@ const ProgressingBar = ({
           />
         </div>
       </div>
-
-      {/* <div className="progress-stats">
-        <span>수집된 웹 페이지 수: ---</span>
-        <span>수집된 문서 수: ---</span>
-      </div> */}
-
+      
+      {/* 완료 후 이동 버튼 */}
       {isCompleted && (
         <div className="apply-btn-row" style={{ marginTop: '40px' }}>
           <button className="btn-apply-update" onClick={onAnalyzer}>

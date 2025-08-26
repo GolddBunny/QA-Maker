@@ -31,6 +31,7 @@
 .chat-container {
   height: calc(100vh - 130px); /* 필요 시 전체 높이 조절 */
   overflow-y: auto;
+  max-width: 100%;
   max-height: calc(100vh - 147px);
 }
 
@@ -172,7 +173,7 @@
 
 .action-button-container {
   display: flex;
-  width: 100%;
+  width: 70%;
   margin-left: 30px;
 }
 
@@ -431,7 +432,7 @@ p.loading .bouncing-text {
   left: 0;
   right: 0;
   width: 100%;
-  max-width: 700px;
+  max-width: 750px;
   margin: 20px auto;
   border-radius: 20px;
   background-color: white;
@@ -680,6 +681,72 @@ p.loading .bouncing-text {
   background-color: #e0e0e0;
 }
 
+/* 문서 뷰어 컨테이너 */
+.document-viewer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #ffffff;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 문서 뷰어 헤더 */
+.document-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #e9e1f8;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 10;
+}
+
+.document-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.document-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* headline 선택기 */
+.headline-selector {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+/* 닫기 버튼 */
+.close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: #e0e0e0;
+}
+
 /* PDF 뷰어 컨테이너 */
 .pdf-viewer-container {
   flex: 1;
@@ -706,7 +773,7 @@ p.loading .bouncing-text {
 
 /* 근거 문서 버튼 스타일 */
 .source-docs-container {
-  width: 106.5%; /* 부모 컨테이너 너비에 맞춤 */
+  width: 100%; /* 부모 컨테이너 너비에 맞춤 */
   background-color: white;
   border-radius: 4px;
   box-shadow: 0 2px 5px #eae8ed;

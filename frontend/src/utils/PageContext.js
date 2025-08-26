@@ -2,21 +2,22 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { db } from '../firebase/sdk';
 import { collection, doc, getDocs, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 
-// PageContext 생성
+// 페이지 관련 상태를 공유하기 위한 Context 생성
 const PageContext = createContext();
 
 // PageContextProvider 컴포넌트
 export const PageProvider = ({ children }) => {
-  const [currentPageId, setCurrentPageId] = useState("");
-  const [pages, setPages] = useState([]);
-  const [systemName, setSystemName] = useState("");
-  const [domainName, setDomainName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [currentPageId, setCurrentPageId] = useState(""); // 현재 선택된 페이지 ID
+  const [pages, setPages] = useState([]); // 모든 페이지 목록
+  const [systemName, setSystemName] = useState(""); // 현재 페이지 시스템 이름
+  const [domainName, setDomainName] = useState(""); // 현재 페이지 도메인 이름
+  const [loading, setLoading] = useState(true); // 페이지 목록 로딩 상태
 
   // Firebase에서 페이지 목록 실시간 로드
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "pages"), (snapshot) => {
       try {
+        // 각 문서를 객체로 변환
         const pagesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -33,7 +34,7 @@ export const PageProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // 현재 페이지 ID가 변경될 때마다 시스템명, 도메인명 업데이트
+  // 현재 페이지 ID가 변경될 때 시스템 이름과 도메인 이름 업데이트
   useEffect(() => {
     if (!currentPageId) return;
 
@@ -44,7 +45,7 @@ export const PageProvider = ({ children }) => {
     setSystemName(sysname);
   }, [currentPageId, pages]);
 
-  // 페이지 목록 업데이트 함수
+  // 전체 페이지 목록을 Firestore에 업데이트
   const updatePages = async (newPages) => {
     try {
       // Firebase에 각 페이지를 개별적으로 저장
@@ -126,7 +127,7 @@ export const PageProvider = ({ children }) => {
     setSystemName,
     domainName,
     setDomainName,
-    loading, // 로딩 상태 추가
+    loading,
   };
 
   return (
@@ -136,5 +137,4 @@ export const PageProvider = ({ children }) => {
   );
 };
 
-// PageContext를 사용하는 커스텀 훅
 export const usePageContext = () => useContext(PageContext);

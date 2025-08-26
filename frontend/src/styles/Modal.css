@@ -1,4 +1,4 @@
-/* Modal.css */
+/* 화면 전체 오버레이, 중앙 정렬, 반투명 + 블러 */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -13,6 +13,7 @@
     backdrop-filter: blur(2px);
 }
 
+/* 모달 박스 */
 .modal-container {
     background: white;
     border-radius: 12px;
@@ -35,6 +36,7 @@
     }
 }
 
+/* 모달 헤더 */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -61,6 +63,7 @@
     outline-offset: 2px;
 }
 
+/* 본문 */
 .modal-body {
     padding: 0 20px 20px 20px;
 }
@@ -72,6 +75,7 @@
     white-space: pre-line;
 }
 
+/* 푸터 */
 .modal-footer {
     display: flex;
     gap: 10px;
@@ -81,6 +85,7 @@
     background-color: #f9fafb;
 }
 
+/* 버튼 */
 .modal-btn {
     padding: 10px 20px;
     border-radius: 6px;

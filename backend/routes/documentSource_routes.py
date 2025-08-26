@@ -14,6 +14,7 @@ import unicodedata
 import atexit
 import signal
 import psutil
+import fitz
 from firebase_config import bucket
 source_bp = Blueprint('source', __name__)
 from firebase_admin import firestore
@@ -176,7 +177,7 @@ def get_context_sources():
                 
                 if firebase_filename and original_filename:
                     filename_mapping[firebase_filename] = original_filename
-                    print(f"매핑 추가: {firebase_filename} -> {original_filename}")
+                    # print(f"매핑 추가: {firebase_filename} -> {original_filename}")
         
         except Exception as e:
             print(f"Firestore 조회 오류: {e}")
@@ -239,6 +240,123 @@ def extract_headline(text):
     except Exception as e:
         print(f"headline 추출 중 오류: {str(e)}")
         return None
+
+def get_highlight_content_for_file(filename):
+    """특정 파일에 대한 하이라이트할 content 내용들을 CSV에서 가져오기"""
+    if not os.path.exists(CSV_PATH):
+        return []
+    
+    highlight_texts = []
+    base_filename = os.path.splitext(filename)[0]
+    
+    try:
+        with open(CSV_PATH, 'r', encoding='utf-8') as f:
+            csv_reader = csv.DictReader(f)
+            for row in csv_reader:
+                # headline이 파일명과 매치되는 경우
+                headline = None
+                if 'text' in row and row['text']:
+                    headline = extract_headline(row['text'])
+                elif 'headline' in row and row['headline'].strip():
+                    headline = row['headline'].strip()
+                
+                if headline and headline == base_filename:
+                    # content 추출
+                    content = None
+                    if 'text' in row and row['text']:
+                        content = extract_content(row['text'])
+                    elif 'content' in row and row['content'].strip():
+                        content = row['content'].strip()
+                    
+                    if content:
+                        highlight_texts.append(content)
+                        print(f"하이라이트 텍스트 추가: {content[:50]}...")
+    
+    except Exception as e:
+        print(f"하이라이트 텍스트 추출 오류: {str(e)}")
+    
+    return highlight_texts
+
+def extract_content(text):
+    """텍스트에서 content 정보 추출"""
+    if not text or not isinstance(text, str):
+        return None
+    
+    try:
+        # content: 뒤에 오는 텍스트 추출
+        content_patterns = [
+            r'content:\s*([^|\n\r]+?)(?:\s*(?:page:|content:|headline:|\||$))',  # | 또는 다른 필드 전까지
+            r'content:\s*([^|\n\r]+)',  # 줄 끝까지
+        ]
+        
+        for pattern in content_patterns:
+            content_match = re.search(pattern, text, re.IGNORECASE)
+            if content_match and content_match.group(1):
+                content = content_match.group(1).strip()
+                return content
+        
+        return None
+        
+    except Exception as e:
+        print(f"content 추출 중 오류: {str(e)}")
+        return None
+
+def add_highlights_to_pdf(pdf_stream, highlight_texts):
+    """PDF에 하이라이트 추가"""
+    if not highlight_texts:
+        return pdf_stream
+    
+    try:
+        # PDF 문서 열기
+        pdf_document = fitz.open(stream=pdf_stream.getvalue(), filetype="pdf")
+        
+        # 각 페이지에서 텍스트 검색하고 하이라이트 추가
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            
+            for highlight_text in highlight_texts:
+                # 텍스트를 단어별로 분리해서 검색
+                words = highlight_text.split()
+                
+                # 전체 텍스트로 먼저 검색
+                text_instances = page.search_for(highlight_text)
+                if text_instances:
+                    for inst in text_instances:
+                        highlight = page.add_highlight_annot(inst)
+                        highlight.set_colors(stroke=[1, 1, 0])  # 노란색
+                        highlight.update()
+                    # print(f"전체 텍스트 하이라이트 추가: '{highlight_text}' (페이지 {page_num + 1})")
+                    continue
+                
+                # 전체 텍스트가 안되면 부분 텍스트로 검색
+                found_any = False
+                for word in words:
+                    if len(word.strip()) < 5:  # 너무 짧은 단어는 제외
+                        continue
+                        
+                    word_instances = page.search_for(word.strip())
+                    if word_instances:
+                        for inst in word_instances:
+                            highlight = page.add_highlight_annot(inst)
+                            highlight.set_colors(stroke=[1, 1, 0])  # 노란색
+                            highlight.update()
+                        found_any = True
+                
+                if found_any:
+                    # print(f"부분 텍스트 하이라이트 추가: '{highlight_text}' (페이지 {page_num + 1})")
+                    print(f"부분 텍스트 하이라이트 추가: 페이지 {page_num + 1}")
+
+        # 수정된 PDF를 새로운 스트림으로 저장
+        output_stream = io.BytesIO()
+        pdf_document.save(output_stream)
+        pdf_document.close()
+        
+        output_stream.seek(0)
+        return output_stream
+    
+    except Exception as e:
+        print(f"PDF 하이라이트 추가 오류: {str(e)}")
+        return pdf_stream
 
 def check_libreoffice_installation():
     """LibreOffice 설치 여부 및 경로 확인"""
@@ -378,7 +496,7 @@ def convert_to_pdf_fast(input_file):
 
 @source_bp.route('/api/document/<path:filename>')
 def get_document(filename):
-    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외)"""
+    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외) - 하이라이팅 기능 추가"""
     try:
         # page_id 쿼리 파라미터 필수
         page_id = request.args.get('page_id')
@@ -437,19 +555,30 @@ def get_document(filename):
 
         ext = os.path.splitext(firebase_filename)[1].lower()
 
-        # PDF면 바로 반환
+        # PDF면 바로 스트림으로 변환
         if ext == '.pdf':
-            return send_file(temp_path, mimetype='application/pdf')
+            with open(temp_path, 'rb') as f:
+                pdf_stream = io.BytesIO(f.read())
+        else:
+            # PDF로 변환 시도
+            start = time.time()
+            pdf_stream = convert_to_pdf_fast(temp_path)
+            
+            if not pdf_stream:
+                os.remove(temp_path)
+                return jsonify({"error": "문서 변환에 실패했습니다."}), 500
+            
+            print(f"[PDF 변환 완료] 소요 시간: {time.time() - start:.2f}s")
 
-        # PDF로 변환 시도
-        start = time.time()
-        pdf_stream = convert_to_pdf_fast(temp_path)
-        os.remove(temp_path)  # 변환 후 원본 삭제
+        os.remove(temp_path)  # 원본 파일 삭제
 
-        if not pdf_stream:
-            return jsonify({"error": "문서 변환에 실패했습니다."}), 500
-
-        print(f"[PDF 변환 완료] 소요 시간: {time.time() - start:.2f}s")
+        # CSV에서 하이라이트할 텍스트 추출
+        highlight_texts = get_highlight_content_for_file(base_filename)
+        
+        # 하이라이트 추가
+        if highlight_texts:
+            # print(f"[하이라이트 추가] {len(highlight_texts)}개의 텍스트")
+            pdf_stream = add_highlights_to_pdf(pdf_stream, highlight_texts)
 
         return send_file(
             pdf_stream,

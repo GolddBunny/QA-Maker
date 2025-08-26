@@ -1,20 +1,19 @@
-/* ProgressningBar.css */
+/* 진행상황 컨테이너 */
 .progress-wrapper {
   position: fixed; /* or absolute if inside a relative container */
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
   max-width: 1000px;
   padding: 40px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f8f5ff;
   border-radius: 10px;
-
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
 }
 
+/* 타이틀 */
 .progress-title {
   text-align: center;
   font-size: 28px;
@@ -24,6 +23,7 @@
   letter-spacing: -0.5px;
 }
 
+/* 카드들을 가로로 배치 */
 .progress-cards {
   display: flex;
   gap: 40px;
@@ -31,6 +31,7 @@
   margin-bottom: 60px;
 }
 
+/* 카드들 스타일 */
 .progress-card {
   background: white;
   border-radius: 16px;
@@ -40,6 +41,7 @@
   min-width: 180px;
 }
 
+/* 카드 제목 */
 .card-title {
   font-size: 16px;
   color: #666;
@@ -47,12 +49,14 @@
   font-weight: 500;
 }
 
+/* 카드값 */
 .card-value {
   font-size: 32px;
   font-weight: 700;
   color: #333;
 }
 
+/* 단계 */
 .progress-steps {
   display: flex;
   justify-content: space-between;
@@ -136,6 +140,7 @@
   margin-bottom: 8px;
 }
 
+/* 단계 표시 */
 .status-progress {
   display: block;
   font-size: 14px;

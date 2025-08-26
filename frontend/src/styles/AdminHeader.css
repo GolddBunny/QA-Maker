@@ -1,3 +1,4 @@
+/* 헤더 부분 */
 .main-header {
   padding: 18px 40px 18px 20px;
   background: linear-gradient(to top, #cbc4f3 33%, #c7b2f4 100%);
@@ -13,6 +14,7 @@
   z-index: 101;
 }
 
+/* 왼쪽 영역: 로고랑 메뉴 묶어둔 곳 */
 .left-header {
   display: flex;
   align-items: center;
@@ -26,17 +28,22 @@
   color: #ffffff; /* 진한 보라 */
 }
 
+/* 네비게이션 메뉴 (홈, 크롤링, 분석 이런거) */
 .nav-links {
   display: flex;
   gap: 30px;
   align-items: center;
   margin-top: 5px;
 }
+
+/* ‘새 QA 시스템 추가’ 버튼 */
 .add-domain-button {
   color: #3b3054 !important; /* add-domain 전용 진한 보라색 */
   font-weight: 1000;
   cursor: pointer;
 }
+
+/* 네비게이션 기본 스타일 */
 .nav-links a {
   color: #524d5c; 
   font-weight: 600;

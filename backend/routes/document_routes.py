@@ -4,9 +4,10 @@ import subprocess
 import tempfile
 import time
 from flask import Blueprint, jsonify, request
-from services.document_service.hwp2txt import convert_hwp_file
-from services.document_service.pdf2txt import extract_text_and_tables
-from services.document_service.convert2txt import convert2txt, convert_docx
+from services.document_service.hwp_to_md_txt import convert_hwp_file
+from services.document_service.pdf_to_md_txt import convert_pdf_file
+from services.document_service.convert2txt import convert2txt
+from services.document_service.docx_to_md_txt import convert_docx_file
 from firebase_config import bucket
 from werkzeug.utils import secure_filename
 import uuid
@@ -45,7 +46,13 @@ def upload_documents(page_id):
     for file in files:
         if file.filename == '':
             continue
-        
+
+        # 파일 크기 계산 (업로드 전)
+        file.seek(0, 2)  # 파일 끝으로 이동
+        file_size_bytes = file.tell()
+        file.seek(0)  # 파일 시작으로 되돌리기
+        size_mb = file_size_bytes / (1024 * 1024)
+
         original_filename = file.filename
         ext = os.path.splitext(original_filename)[1]
         uuid_name = f"{uuid.uuid4().hex}{ext}"
@@ -75,7 +82,8 @@ def upload_documents(page_id):
             'page_id': page_id,
             'upload_date': today_str,
             'category': "unknown",   
-            'date': today_str  
+            'date': today_str,
+            'size_mb': round(size_mb, 2)  # 크기 정보 추가  
         }
 
         # 문서명을 문서 ID로 사용하면 중복 이슈 있음 → UUID 또는 자동 ID 사용 권장
@@ -101,6 +109,24 @@ def get_uploaded_documents(page_id):
         result = []
         for doc in docs:
             data = doc.to_dict()
+            # Firebase Storage에서 실제 파일 크기 가져오기
+            firebase_filename = data.get('firebase_filename')
+            size_mb = 0
+            
+            if firebase_filename:
+                try:
+                    blob_path = f"pages/{page_id}/documents/{firebase_filename}"
+                    blob = bucket.blob(blob_path)
+                    
+                    # blob이 존재하면 크기 정보 가져오기
+                    if blob.exists():
+                        blob.reload()  # 메타데이터 새로고침
+                        size_bytes = blob.size
+                        size_mb = size_bytes / (1024 * 1024) if size_bytes else 0
+                except Exception as e:
+                    print(f"파일 크기 조회 오류 ({firebase_filename}): {str(e)}")
+                    size_mb = 0
+                    
             result.append({
                 'original_filename': data.get('original_filename'),
                 'category': data.get('category', 'unknown'),
@@ -125,7 +151,7 @@ def process_documents(page_id):
         base_path, input_path, _ = ensure_page_directory(page_id)
         firebase_path = f"pages/{page_id}/documents"
 
-        # 🔸 Firestore에서 filename 매핑 가져오기
+        # Firestore에서 filename 매핑 가져오기
         filename_mapping = {}  # {firebase_filename: original_filename}
         docs = db.collection('document_files').where('page_id', '==', page_id).stream()
         for doc in docs:
@@ -160,7 +186,6 @@ def process_documents(page_id):
 
     
 # 문서 직접 업로드 시 텍스트 추출
-
 @document_bp.route('/process-document-direct', methods=['POST'])
 def process_document_direct():
     if 'file' not in request.files:
@@ -186,13 +211,13 @@ def process_document_direct():
 
             elif lower_name.endswith('.pdf'):
                 output_path = os.path.join(temp_dir, "output.txt")
-                extract_text_and_tables(file_path, output_path)
+                convert_pdf_file(file_path, output_path)
                 with open(output_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 
             elif lower_name.endswith('.docx'):
                 output_path = os.path.join(temp_dir, "output.txt")
-                convert_docx(file_path, output_path)
+                convert_docx_file(file_path, output_path)
                 with open(output_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 

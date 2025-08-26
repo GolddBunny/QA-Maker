@@ -16,11 +16,59 @@ import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore'
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/sdk";
 
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
+
+const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
+  // 기본 시간 (firebase에 저장하는 데 2분)
+  const BASE_TIME = 2;
+  
+  // 각 항목별 평균 처리 시간 (초 단위)
+  const DOC_STRUCTURING_TIME_PER_MB = 50; // 문서 1MB당 구조화 시간 (초)
+  const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
+  const URL_STRUCTURING_TIME = 40;        // URL 1개당 구조화 시간 (초)
+  const URL_INDEXING_TIME = 60;           // URL 1개당 인덱싱 시간 (초)
+  
+  // 총 처리 시간 계산 (초)
+  const totalDocTime = totalDocSizeMB * (DOC_STRUCTURING_TIME_PER_MB + DOC_INDEXING_TIME_PER_MB);
+  const totalUrlTime = urlCount * (URL_STRUCTURING_TIME + URL_INDEXING_TIME);
+  const totalProcessingTime = totalDocTime + totalUrlTime;
+  
+  // 기본 시간 초로 변환 후 더하기
+  const totalTimeInSeconds = totalProcessingTime + (BASE_TIME * 60);
+  
+  // 최종 분 단위로 변환
+  const totalTimeInMinutes = Math.ceil(totalTimeInSeconds / 60);
+  
+  return {
+    totalMinutes: totalTimeInMinutes,
+    formattedTime: formatTime(totalTimeInMinutes),
+    breakdown: {
+      docStructuringTime: Math.ceil((totalDocSizeMB * DOC_STRUCTURING_TIME_PER_MB) / 60),
+      docIndexingTime: Math.ceil((totalDocSizeMB * DOC_INDEXING_TIME_PER_MB) / 60),
+      urlProcessingTime: Math.ceil(totalUrlTime / 60),
+      baseTime: BASE_TIME
+    }
+  };
+};
+
+// 시간 "0시간 0분" 형식으로 변환
+const formatTime = (minutes) => {
+  if (minutes < 60) {
+    return `${minutes}분`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) {
+      return `${hours}시간`;
+    } else {
+      return `${hours}시간 ${remainingMinutes}분`;
+    }
+  }
+};
 
 const AdminPage = () => {
     const navigate = useNavigate();
-    const { pageId } = useParams();  // URL에서 페이지 ID 가져오기
+    const { pageId } = useParams();
     const [urlInput, setUrlInput] = useState("");
     const [uploadedUrls, setUploadedUrls] = useState([]);
     const [isNewPage, setIsNewPage] = useState(false);
@@ -33,18 +81,20 @@ const AdminPage = () => {
     const fileInputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [duplicateFileName, setDuplicateFileName] = useState(null); //중복 파일 검사
+    const [duplicateFileName, setDuplicateFileName] = useState(null);
+    const [uploadedDocs, setUploadedDocs] = useState([]);
 
     const { currentPageId, updatePages, updatePageSysName, updatePageName,
       systemName, setSystemName, domainName, setDomainName
     } = usePageContext();
-    const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
-    // Firebase QA History Context 사용 (pageId 기반, Firebase 사용)
+
+    // QA History 불러오기 (Firebase 기반)
     const { 
         qaHistory, 
         loading: qaLoading, 
         error: qaError 
     } = useQAHistoryContext(pageId, true); // useFirestore = true로 설정
+
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
     const [hasOutput, setHasOutput] = useState(null);
@@ -54,8 +104,9 @@ const AdminPage = () => {
       const saved = localStorage.getItem(`showProgressing_${pageId}`);
       return saved === 'true';
     });
-    const [docCount, setDocCount] = useState(0);  //문서 수
-    const [urlCount, setUrlCount] = useState(0);
+
+    const [docCount, setDocCount] = useState(0); // 문서 수
+    const [urlCount, setUrlCount] = useState(0); // URL 수
     const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
     const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
 
@@ -65,6 +116,7 @@ const AdminPage = () => {
       document: null,
       indexing: null
     });
+    
     const stepTimesRef = useRef(stepExecutionTimes);
     const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
 
@@ -79,7 +131,22 @@ const AdminPage = () => {
       setDocCount
     }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
 
-    // handleCloseProgressing 수정
+    // 전체 문서 용량 합계 (MB)
+    const totalDocSizeMB = useMemo(() => {
+      console.log('uploadedDocs:', uploadedDocs);
+      const total = uploadedDocs.reduce((total, doc) => {
+        console.log(`Document ${doc.original_filename}: size_mb = ${doc.size_mb}`);
+        return total + (doc.size_mb || 0);
+      }, 0);
+      console.log('Total document size (MB):', total);
+      return total;
+    }, [uploadedDocs]);
+
+    // 예상 처리 시간 계산
+    const estimatedTime = useMemo(() => {
+      return calculateEstimatedTime(urlCount, docCount, totalDocSizeMB);
+    }, [urlCount, docCount, totalDocSizeMB]);
+
     const handleCloseProgressing = async () => {
       try {
         // 서버 작업 상태 확인
@@ -108,7 +175,7 @@ const AdminPage = () => {
       }
     };
 
-    // 서버 작업 상태 확인 함수 추가
+    // 서버 작업 상태 확인
     const checkServerProcessingStatus = useCallback(async (pageId) => {
       if (!pageId) return { isProcessing: false };
       
@@ -121,7 +188,6 @@ const AdminPage = () => {
         return { isProcessing: false };
       }
     }, []);
-
 
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
@@ -136,11 +202,13 @@ const AdminPage = () => {
       if (!pageId) return;
       
       try {
-        const res = await fetch(`${BASE_URL}/documents/${pageId}`);  // 문서 목록 api
+        const res = await fetch(`${BASE_URL}/documents/${pageId}`);
         const data = await res.json();
+        console.log('API Response:', data); // 응답 구조 확인
 
         if (data.success) {
             const uploaded = data.uploaded_files;
+            console.log('Uploaded files:', data.uploaded_files);
             setUploadedDocs(data.uploaded_files);
             setHasDocuments(data.uploaded_files.length > 0);
         } else {
@@ -302,7 +370,7 @@ const AdminPage = () => {
       }
     };
 
-    // 문서 처리 함수
+    // 문서 구조화 함수
     const handleProcessDocuments = async () => {
       if (!pageId) {
         alert("먼저 페이지를 생성해주세요.");
@@ -334,14 +402,12 @@ const AdminPage = () => {
       }
     };
 
-    
-
     // 각 단계 완료 시 호출되는 콜백 함수
     const handleStepComplete = async (stepName, durationInSeconds) => {
       setStepExecutionTimes(prev => {
         const updated = { ...prev, [stepName]: durationInSeconds };
         stepTimesRef.current = updated; 
-        console.log("📊 Updated stepExecutionTimes:", updated);
+        console.log("Updated stepExecutionTimes:", updated);
         return updated;
       });
 
@@ -352,7 +418,7 @@ const AdminPage = () => {
       }
 
       if (!pageId) {
-        console.warn("❗ pageId가 없어 Firestore에 저장하지 못함");
+        console.warn("pageId가 없어 Firestore에 저장하지 못함");
         return;
       }
 
@@ -376,7 +442,7 @@ const AdminPage = () => {
       }
     };
 
-    // 인덱싱 버튼
+    // Q&A 시스템 생성 빌드 버튼 (크롤링 -> 구조화 -> 인덱싱)
     const handleApply = async () => {
       if (!pageId) {
         alert("먼저 페이지를 생성해주세요.");
@@ -439,6 +505,7 @@ const AdminPage = () => {
       }
     };
 
+    // 업데이트 버튼 클릭 시
     const handleUpdate = async () => {
       if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
         alert("먼저 문서나 URL을 업로드해주세요.");
@@ -487,20 +554,26 @@ const AdminPage = () => {
       return dateB - dateA; // 최근 날짜가 먼저 오도록 (내림차순)
     });
 
-    
+    // Log Analyzer로 이동 버튼 클릭 시
     const handleAnalyzer = () => {
       const allDone = Object.values(stepExecutionTimes).every(v => v !== null);
 
-      console.log("✅ 최종 stepExecutionTimes로 navigate:", stepExecutionTimes);
+      console.log("최종 stepExecutionTimes로 navigate:", stepExecutionTimes);
       navigate(`/dashboard/${pageId}`, {
         state: { stepExecutionTimes: stepExecutionTimes } // state 직접 사용
       });
     };
 
+    // 사용자 만족도 페이지로 이동 버튼 클릭 시
+    const handleUserDashboard = () => {
+      console.log("UserDashboard로 navigate:", pageId);
+      navigate(`/userDashBoard/${pageId}`);
+    };
+
     return (
       <>
-      {/* {isLoadingPage && <LoadingSpinner />} */}
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+        {/* 헤더 */}
         <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
         {/* 사이드바는 AdminPage 안에서만 조건부 렌더링 */}
@@ -510,11 +583,13 @@ const AdminPage = () => {
             toggleSidebar={toggleSidebar}
           />
         )}
-
+        
+        {/* 본문 */}
         <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
           {/* 상단 입력부 */}
           <div className="input-container" id="name">
             <div className="input-row-horizontal">
+              {/* 시스템 이름/도메인 이름 입력부 */}
               <div className="input-field">
                 <input
                   type="text"
@@ -715,6 +790,13 @@ const AdminPage = () => {
               > 
                 Go to Analyzer
               </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleUserDashboard}
+                disabled={isCheckingOutput}
+              > 
+                Go to UserDashboard
+              </button>
             </>
           ) : (
             <button 
@@ -740,6 +822,7 @@ const AdminPage = () => {
             isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계
+            estimatedTime={estimatedTime} // 새로 추가된 prop
           />
         )}
 

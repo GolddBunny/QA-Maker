@@ -23,6 +23,7 @@ from graphrag.vector_stores.lancedb import LanceDBVectorStore
 from routes.query_routes import run_async
 from firebase_config import bucket
 
+# Flask에서 async 작업을 돌리기 위해 ThreadPool 사용
 thread_pool = ThreadPoolExecutor(max_workers=5)
 question_bp = Blueprint('questionGeneration', __name__)
 
@@ -34,19 +35,20 @@ embedding_model = "text-embedding-3-small"
 
 def read_parquet_from_firebase(bucket_path: str) -> pd.DataFrame:
     """
-    Firebase Storage에서 parquet 파일을 직접 읽어 BytesIO로 처리 후 DataFrame으로 반환
+    Firebase Storage에 있는 parquet 파일을 바로 읽어서
+    DataFrame으로 반환하는 함수
     """
     blob = bucket.blob(bucket_path)
 
     if not blob.exists():
         raise FileNotFoundError(f"Firebase path does not exist: {bucket_path}")
 
-    data = blob.download_as_bytes()  # Blob을 byte stream으로 읽음
+    data = blob.download_as_bytes()  # 바이트 스트림으로 다운로드
     return pd.read_parquet(BytesIO(data))  # 메모리 버퍼로 읽기
     
 @question_bp.route('/generate-related-questions', methods=['POST', 'OPTIONS'])
 def generate_related_questions():
-    # OPTIONS 요청 (CORS preflight) 처리
+    # CORS preflight 요청 처리
     if request.method == 'OPTIONS':
         return jsonify({"message": "CORS preflight"}), 200
         
@@ -55,6 +57,7 @@ def generate_related_questions():
     question = data.get("question")
 
     try:
+        # 로컬 경로 설정
         input_dir = f"../data/input/{page_id}/output"
         db_dir = f"{input_dir}/lancedb/default-entity-description.lance"
 
@@ -65,33 +68,37 @@ def generate_related_questions():
         # relationship_df = read_parquet_from_firebase(f"{firebase_prefix}/relationships.parquet")
         # report_df = read_parquet_from_firebase(f"{firebase_prefix}/community_reports.parquet")
         # text_unit_df = read_parquet_from_firebase(f"{firebase_prefix}/text_units.parquet")
-
+        # Firebase에서 parquet 읽는 부분 주석 처리하고 로컬 파일 사용
         entity_df = pd.read_parquet(f"{input_dir}/entities.parquet")
         community_df = pd.read_parquet(f"{input_dir}/communities.parquet")
         relationship_df = pd.read_parquet(f"{input_dir}/relationships.parquet")
         report_df = pd.read_parquet(f"{input_dir}/community_reports.parquet")
         text_unit_df = pd.read_parquet(f"{input_dir}/text_units.parquet")
 
-        # Preprocess
+        # 데이터 전처리
         entities = read_indexer_entities(entity_df, community_df, 0)
         relationships = read_indexer_relationships(relationship_df)
         reports = read_indexer_reports(report_df, community_df, 0)
         text_units = read_indexer_text_units(text_unit_df)
 
+        # LanceDB 벡터 스토어 커스텀 클래스
         class CustomLanceDBVectorStore(LanceDBVectorStore):
             def __init__(self, **kwargs):
                 super().__init__(**kwargs)
+                # 경로에서 파일 이름 제거 후 connect
                 db_uri = kwargs.get("db_dir").replace('/default-entity-description.lance', '')
                 self.connect(db_uri=db_uri)
 
+        # 설명 벡터를 로드
         description_embedding_store = CustomLanceDBVectorStore(
             collection_name="default-entity-description",
             db_dir=db_dir,
         )
 
-        # 모델 설정
+        # 토큰 인코더 생성
         token_encoder = tiktoken.encoding_for_model(llm_model)
 
+        # 챗 모델 구성
         chat_config = LanguageModelConfig(
             api_key=api_key,
             type=ModelType.OpenAIChat,
@@ -104,6 +111,7 @@ def generate_related_questions():
             config=chat_config,
         )
 
+        # 임베딩 모델 구성
         embedding_config = LanguageModelConfig(
             api_key=api_key,
             type=ModelType.OpenAIEmbedding,
@@ -116,6 +124,7 @@ def generate_related_questions():
             config=embedding_config,
         )
 
+        # 로컬 검색 컨텍스트 빌더 생성
         context_builder = LocalSearchMixedContext(
             community_reports=reports,
             text_units=text_units,
@@ -128,6 +137,7 @@ def generate_related_questions():
             token_encoder=token_encoder,
         )
 
+        # 로컬 검색 관련 파라미터
         local_context_params = {
             "text_unit_prop": 0.5,
             "community_prop": 0.1,
@@ -172,6 +182,7 @@ def generate_related_questions():
         ---Example questions---
         """
 
+        # 질문 생성기 초기화
         question_generator = LocalQuestionGen(
             model=chat_model,
             context_builder=context_builder,
@@ -180,6 +191,7 @@ def generate_related_questions():
             system_prompt=custom_system_prompt,
         )
 
+        # 실제 질문 생성 실행 함수
         def run_generation():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -192,7 +204,7 @@ def generate_related_questions():
             finally:
                 loop.close()
         
-        # 별도 스레드에서 실행
+        # 스레드에서 질문 생성 실행
         result = thread_pool.submit(run_generation).result()
 
         print("Generated questions:", result.response)

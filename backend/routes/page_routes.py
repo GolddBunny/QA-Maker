@@ -6,10 +6,14 @@ from flask import Blueprint, jsonify, request
 
 page_bp = Blueprint('page', __name__)
 
+# 페이지 관련 디렉토리 확인 및 생성
 def ensure_page_directory(page_id):
     """
-    Create necessary directories for a new page
+    페이지별 필요한 폴더 생성
+    - input: 문서 입력 파일 저장
+    - upload: 프론트엔드에서 접근할 수 있는 경로
     """
+
     base_path = f'../data/input/{page_id}'
     input_path = os.path.join(base_path, 'input')
     upload_path = f'../frontend/public/data/{page_id}/input'
@@ -20,11 +24,13 @@ def ensure_page_directory(page_id):
     
     return base_path, input_path, upload_path
 
+# settings.yaml 파일 복사
 def update_settings_yaml(page_id):
     settings_path = f'../data/input/{page_id}/settings.yaml'
     settings_source_path = '../data/parquet/settings.yaml'
     shutil.copy2(settings_source_path, settings_path)
 
+# .env 파일 복사
 def create_env_file(page_id):
     env_source_path = '../data/parquet/.env'
     env_dest_path = f'../data/input/{page_id}/.env'
@@ -35,7 +41,9 @@ def create_env_file(page_id):
     else:
         print("Source .env file not found in ../data/parquet/.env")
 
+# 프롬프트 파일 복사
 def update_prompts(page_id, prompt_type='doc'):
+    # prompt_type: doc / url / change
     if prompt_type == 'doc':
         prompt_src = '../data/parquet/prompts'
         prompt_dest = f'../data/input/{page_id}/prompts'
@@ -49,17 +57,17 @@ def update_prompts(page_id, prompt_type='doc'):
     else:
         raise ValueError(f"지원하지 않는 prompt_type: {prompt_type}")
 
-    print(f"[프롬프트 복사 시도] 타입: {prompt_type}, 소스: {prompt_src}, 대상: {prompt_dest}")
+    print(f"타입: {prompt_type}, 소스: {prompt_src}, 대상: {prompt_dest}")
     
     if not os.path.exists(prompt_src):
-        print(f"[경고] 프롬프트 소스 없음: {prompt_src}")
+        print(f"프롬프트 소스 없음: {prompt_src}")
         return
 
     try:
-        # 폴더가 이미 존재하면 먼저 삭제
+        # 기존 폴더 삭제 후 새로 복사
         if os.path.exists(prompt_dest):
             shutil.rmtree(prompt_dest)
-            print(f"[프롬프트 복사] 기존 폴더 삭제: {prompt_dest}")
+            print(f"기존 폴더 삭제: {prompt_dest}")
 
         # 폴더 전체 복사
         shutil.copytree(prompt_src, prompt_dest)
@@ -68,14 +76,14 @@ def update_prompts(page_id, prompt_type='doc'):
         # 복사 결과 검증
         if os.path.exists(prompt_dest):
             file_count = len(os.listdir(prompt_dest))
-            print(f"[프롬프트 복사 검증] {file_count}개 파일 복사됨")
+            print(f"{file_count}개 파일 복사됨")
         else:
-            print(f"[프롬프트 복사 오류] 대상 폴더가 생성되지 않음: {prompt_dest}")
+            print(f"대상 폴더가 생성되지 않음: {prompt_dest}")
             
     except Exception as e:
-        print(f"[프롬프트 복사 오류] {prompt_type} 복사 실패: {e}")
-        # 오류가 발생해도 계속 진행하도록 함
+        print(f"{prompt_type} 복사 실패: {e}")
 
+# 페이지 초기화 API
 @page_bp.route('/init/<page_id>', methods=['POST'])
 def init_page(page_id):
     try:
@@ -103,7 +111,7 @@ def init_page(page_id):
                 'execution_time': execution_time
             }), 500
         
-        # 초기화 후 설정 파일 업데이트
+        # 초기화 후 설정 파일 및 프롬프트 복사
         update_settings_yaml(page_id)
         create_env_file(page_id)
         update_prompts(page_id)
@@ -118,7 +126,7 @@ def init_page(page_id):
             'error': str(e)
         }), 500
 
-
+# 페이지 삭제 API
 @page_bp.route('/delete-page/<page_id>', methods=['DELETE', 'POST'])
 def delete_page(page_id):
     try:
@@ -142,9 +150,10 @@ def delete_page(page_id):
             'success': False,
             'error': str(e)
         }), 500 
-    
+
+# 안전하게 디렉토리 복사
 def safe_copy_tree(src, dest):
-    """디렉토리 트리 복사 (존재하지 않으면 생성)"""
+    """파일 단위로 존재 여부 확인하며 복사"""
     if os.path.exists(src):
         os.makedirs(dest, exist_ok=True)
         for filename in os.listdir(src):
@@ -153,14 +162,15 @@ def safe_copy_tree(src, dest):
             if os.path.isfile(src_file):
                 shutil.copy2(src_file, dest_file)
     else:
-        print(f"[경고] 디렉토리 없음: {src}")
+        print(f"디렉토리 없음: {src}")
 
+# 문서용 및 URL용 페이지 초기화
 @page_bp.route('/init_doc_url/<page_id>', methods=['POST'])
 def init_doc_url(page_id):
     try:
         print(f"[InitDocUrl 시작] page_id: {page_id}")
         
-        # 1. URL용 디렉토리 생성
+        # URL용 디렉토리 생성
         url_page_id = f"{page_id}_url"
         url_base_path = f'../data/input/{url_page_id}'
         url_input_path = os.path.join(url_base_path, 'input')
@@ -209,7 +219,7 @@ def init_doc_url(page_id):
         except Exception as e:
             print(f"[InitDocUrl 오류] URL 프롬프트 복사 실패: {e}")
 
-        # 2. 문서용 디렉토리 생성
+        # 문서용 디렉토리 생성
         doc_base_path = f'../data/input/{page_id}'
         doc_input_path = os.path.join(doc_base_path, 'input')
         
