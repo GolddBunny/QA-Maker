@@ -5,7 +5,7 @@
 ## Guides
 QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 **Execute**: <a href="EXEC_KO.md">KO</a> | <a href="EXEC_EN.md">EN</a> <br>
-**Contribute**: <a href="CONTRIBUTE.md">Contribute</a>
+**Contribute**: <a href="CONTRIBUTING.md">Contribute</a>
 
 ## 📝 작품 소개
 ### 1. 개발 배경
@@ -265,18 +265,6 @@ QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 
 ### 6. Q&A 시스템의 응답 지식 그래프 시각화 채팅화면<br><br>
 <img width="1384" height="727" alt="깃허브6 지식 그래프" src="https://github.com/user-attachments/assets/f416fbe4-bd1d-43a0-a748-30ae4e56905c" /><br><br>
-
----
-## 🖥️ 프로젝트 테스트 방법
----
-
-### 1. 관리자 테스트 방법<br><br>
-<img width="2099" height="1581" alt="관리자테스트방법" src="https://github.com/user-attachments/assets/7d63ca6c-69c4-4158-bb7a-138e27b2ebaf" /><br><br>
-
-
-
-### 2. 사용자 테스트 방법<br><br>
-<img width="1738" height="1771" alt="사용자테스트방법" src="https://github.com/user-attachments/assets/ed35b8c1-86f2-4b03-8b6f-2a2ba2ac938f" /><br><br>
 
 ---
 ## 📒 참고 자료
