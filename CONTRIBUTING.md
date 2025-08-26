@@ -3,13 +3,13 @@
 
 ---
 ## 기여 방법
-&nbsp;&nbsp;1) 저장소를 fork하고 로컬에 clone 해주세요 <br>
+&nbsp;&nbsp;1) 저장소를 fork하고 로컬에 clone 해주세요 <br><br>
 &nbsp;&nbsp;2) 변경사항을 위한 새 feature 브랜치를 생성해주세요: <br>
-&nbsp;&nbsp;&nbsp;&nbsp; ```git checkout -b feature/your-branch``` <br>
-&nbsp;&nbsp;3) 변경사항을 적용하고 명확한 커밋 메시지로 커밋해주세요 <br>
-&nbsp;&nbsp;4) 브랜치를 자신의 fork에 push 해주세요 <br>
-&nbsp;&nbsp;&nbsp;&nbsp;```git push origin feature/your-branch``` <br>
-&nbsp;&nbsp;5)원본 저장소의 main 브랜치로 PR을 생성합니다 <br>
+&nbsp;&nbsp;&nbsp;&nbsp; ```git checkout -b feature/your-branch``` <br><br>
+&nbsp;&nbsp;3) 변경사항을 적용하고 명확한 커밋 메시지로 커밋해주세요 <br><br>
+&nbsp;&nbsp;4) 브랜치를 자신의 fork에 push 해주세요: <br>
+&nbsp;&nbsp;&nbsp;&nbsp;```git push origin feature/your-branch``` <br><br>
+&nbsp;&nbsp;5)원본 저장소의 main 브랜치로 PR을 생성합니다 <br><br>
 
 ---
 ## 테스트
@@ -35,13 +35,13 @@ Please read this guide before opening an issue or submitting a PR.
 ---
 ## How to Contribute
 
-&nbsp;&nbsp;1) Fork the repository and clone it to your local machine. <br>
+&nbsp;&nbsp;1) Fork the repository and clone it to your local machine. <br><br>
 &nbsp;&nbsp;2) Create a new feature branch for your changes: <br>
-&nbsp;&nbsp;&nbsp;&nbsp;```git checkout -b feature/your-branch```<br>
-&nbsp;&nbsp;3) Make your changes and commit them with clear commit messages. <br>
+&nbsp;&nbsp;&nbsp;&nbsp;```git checkout -b feature/your-branch```<br><br>
+&nbsp;&nbsp;3) Make your changes and commit them with clear commit messages. <br><br>
 &nbsp;&nbsp;4) Push your branch to your fork: <br>
-&nbsp;&nbsp;&nbsp;&nbsp;```git push origin feature/your-branch``` <br>
-&nbsp;&nbsp;5) Open a Pull Request to the main branch of the original repository. <br>
+&nbsp;&nbsp;&nbsp;&nbsp;```git push origin feature/your-branch``` <br><br>
+&nbsp;&nbsp;5) Open a Pull Request to the main branch of the original repository. <br><br>
 
 ---
 
