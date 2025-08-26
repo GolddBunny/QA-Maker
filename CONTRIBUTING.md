@@ -70,6 +70,7 @@ Create a `.env` file in the following locations and set your key:
 
 - `backend/services/firebase/`  
   Place the Firebase service account key file (`key.json`) in this directory.
+
   Make sure that backend/services/firebase/config.py uses the same file name as your JSON key.
 
 ---
@@ -127,4 +128,5 @@ Create a `.env` file in the following locations and set your key:
   This usually indicates an OpenAI API key issue. Check your `.env` key values.
 
 - **Input data not recognized**
+
   Make sure your `output` folders are inside `data/input/{page_id}` and that each has a `.env` file.
