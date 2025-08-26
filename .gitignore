@@ -100,3 +100,4 @@ backend/services/crawling_service/
 # 데이터 폴더 제외
 data/temp_download/
 
+data/input/1755172386846/.env
