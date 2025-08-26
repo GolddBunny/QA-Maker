@@ -88,6 +88,7 @@ data/input/*/input
 /frontend/src/json
 /backend/context_data_*.csv
 /frontend/src/json/answer_graphml_data.json
+
 # Frontend json 파일 제외
 frontend/public/json/
 
