@@ -1,4 +1,5 @@
-const BASE_URL = 'http://localhost:5000/flask';
+// API 통신을 담당하는 서비스 모듈
+import BASE_URL from "../config/url";  
 
 // 쿼리 실행 API
 export const runQuery = async (pageId, message, resMethod = 'local', resType = 'text') => {

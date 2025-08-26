@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 // 특정 엔티티 데이터를 서버에서 가져오는 함수
 export const fetchEntities = async (id, setError) => {

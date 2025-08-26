@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 // 특정 페이지에 대해 output 폴더가 존재하는지 확인하는 함수
 export const checkOutputFolder = async (pageId) => {

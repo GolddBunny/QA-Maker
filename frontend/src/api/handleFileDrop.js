@@ -1,5 +1,5 @@
 import { useState } from 'react';
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 const UPLOAD_URL = `${BASE_URL}/upload-documents`;
 
 // 파일 드롭하고 업로드 처리
