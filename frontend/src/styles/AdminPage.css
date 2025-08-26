@@ -1,3 +1,4 @@
+/* 관리자 페이지 전체 컨테이너 */
 .admin-container {
   display: flex;
   flex-direction: column; 
@@ -5,6 +6,7 @@
   height: 100vh;
 }
 
+/* 메인 콘텐츠 영역 */
 .admin-content {
   margin-top: 30px; /* header height */
   margin-left: 0;
@@ -13,16 +15,20 @@
   padding: 0px 250px;  /* 왼쪽, 오른쪽 여백 추가 */
   box-sizing: border-box; /* padding 포함한 크기 계산 */
 }
+
+/* 태블릿 이하에서 패딩 줄이기 */
 @media (max-width: 1024px) {
   .admin-content {
     padding: 0 40px;
   }
 }
 
+/* 사이드바 열렸을 때 콘텐츠 이동 */
 .admin-content.sidebar-open {
   margin-left: 100px;
 }
 
+/* 검색 입력 필드 컨테이너 */
 .input-container {
   position: relative;
   width: 100%;
@@ -61,6 +67,7 @@
   gap: 16px;
 }
 
+/* 입력 필드 전체 */
 .input-field {
   display: flex;
   flex-direction: column;
@@ -75,6 +82,7 @@
   outline: none;
 }
 
+/* 입력 포커스 시 효과 */
 .input-field input:focus {
   border-bottom: 1px solid #f4e4c7; /* 보라색 밑줄 */
   animation: blinkBorder 1.2s infinite;
@@ -105,6 +113,7 @@
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* 적용 버튼 기본 스타일 */
 .apply-button-admin:hover {
   background-color: #efe5ff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
@@ -139,6 +148,7 @@ background-color: #e2dbf0;
   margin-bottom: 9px;
 }
 
+/* 통계 카드 영역 */
 .stat-cards {
   display: flex;
   justify-content: space-between;
@@ -146,6 +156,7 @@ background-color: #e2dbf0;
   margin-bottom: 2rem;
 }
 
+/* 각 카드 */
 .card {
   flex: 1;
   background-color: #f3f0ff;
@@ -199,6 +210,7 @@ background-color: #e2dbf0;
   transition: transform 0.3s ease, font-size 0.3s ease;
 }
 
+/* 카드 빛나는 효과 */
 .card::before {
   content: '';
   position: absolute;

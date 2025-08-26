@@ -190,7 +190,7 @@ function ChatPage() {
             }
             
             // 1. 우선 CSV에서 모든 URL 소스 추출 시도
-            console.log("1. CSV에서 소스 추출 시도");
+            console.log("4.1. CSV에서 소스 추출 시도");
             const csvSources = await extractSourcesFromCSV();
             if (csvSources.length > 0) {
                 console.log("CSV에서 소스 추출 성공:", csvSources);
@@ -198,7 +198,7 @@ function ChatPage() {
             }
             
             // 2. CSV에서 추출 실패시 기존 방식(Sources 패턴) 시도
-            console.log("2. 기존 Sources 패턴 방식으로 시도");
+            console.log("4.2. 기존 Sources 패턴 방식으로 시도");
             if (!answerText.includes("Sources")) {
                 console.log("Sources 표기가 없어 소스 추출을 건너뜁니다.");
                 return [];
@@ -526,7 +526,7 @@ function ChatPage() {
                     console.error(`3. 근거 문서 목록 요청 실패 (${(headlinesEndTime - headlinesStartTime).toFixed(2)}ms):`, headlinesError);
                 }
 
-                // 4. 그래프 버튼 표시 (소스 URL 추출)
+                // 4. 근거 URL 버튼 생성
                 console.log("4. 소스 URL 추출 시작");
                 const sourcesStartTime = performance.now();
                 let sourcesData = [];
@@ -707,6 +707,7 @@ function ChatPage() {
         });
     };
 
+    // 지식 그래프 보기 버튼 클릭 시
     const handleShowGraph = async () => {
         if (isLoading) {
             console.log("이미 그래프를 로딩 중입니다.");
@@ -810,6 +811,7 @@ function ChatPage() {
         setShowUrlInput(true); // 입력창 보이게
     };
 
+    // URL 입력 버튼 클릭 시
     const handleAddUrl = () => {
         const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/;
         if (!urlPattern.test(urlInput.trim())) {
@@ -1074,6 +1076,7 @@ function ChatPage() {
         }
     };
     
+    // 문서 다운 버튼 클릭 시
     const handleDownloadDocument = async (headline) => {
         if (!headline) return;
         
@@ -1109,14 +1112,13 @@ function ChatPage() {
                 }
             }
             
-            // Blob으로 파일 데이터 처리
             const blob = await response.blob();
             
             // 다운로드 링크 생성
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = actualFilename; // 서버에서 제공한 실제 파일명 사용
+            link.download = actualFilename;
             link.target = '_blank';
             
             // 다운로드 실행
@@ -1135,7 +1137,7 @@ function ChatPage() {
         }
     };
 
-    //정확도 계산
+    // 정확도 계산
     const calculateAccuracy = async (question, answer, answerType = 'local') => {
         try {
             const pageId = localStorage.getItem("currentPageId") || currentPageId;
@@ -1181,7 +1183,7 @@ function ChatPage() {
                 isSidebarOpen={isSidebarOpen} 
                 toggleSidebar={toggleSidebar} 
             />
-            {/* 모달 컴포넌트 추가 */}
+            {/* 모달 컴포넌트 */}
             <Modal
                 isOpen={modalState.isOpen}
                 onClose={closeModal}
@@ -1214,6 +1216,7 @@ function ChatPage() {
                     <div ref={chatEndRef} />
                 </div>
 
+                {/* 채팅 입력창 */}
                 <ChatInput
                     newQuestion={newQuestion}
                     setNewQuestion={setNewQuestion}
@@ -1238,13 +1241,15 @@ function ChatPage() {
                     style={{ display: 'none' }}
                     accept=".pdf,.doc,.docx,.txt"
                 />
+                {/* 숨겨진 파일 입력 필드 */}
                 {showGraph && graphData && (
                     <div className="graph-container">
                         <button className="close-graph" onClick={handleCloseGraph}>닫기</button>
                         <NetworkChart data={graphData} />
                     </div>
                 )}
-                
+                               
+                {/* 근거 문서 보기 */}
                 {showDocument && (
                     <div className="document-viewer">
                         <div className="document-viewer-header">

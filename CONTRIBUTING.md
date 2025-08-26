@@ -7,6 +7,9 @@
 - [ ] Install frontend dependencies
 - [ ] Configure `.env` files
 - [ ] Place Firebase service account JSON
+- [ ] Update `config.py` to match Firebase JSON file name
+- [ ] Place `output` folders under `data/input`    
+- [ ] Create `.env` in each `data/input/{page_id}` folder  
 
 ---
 
@@ -66,9 +69,30 @@ Create a `.env` file in the following locations and set your key:
     ```
 
 - `backend/services/firebase/`  
-  Place the Firebase service account key file (`key.json`) in this directory.
+  Place the Firebase service account key file (`key.json`) in this directory.  
+  **Make sure that backend/services/firebase/config.py uses the same file name as your JSON key.**
 
 ---
+
+## 3. Input Data Setup
+- Place the `output` folders (e.g., SNU CSE, Hansung Univ., company pages) inside `data/input`.
+  Example:
+    ```
+    /data/input/{sun_cse_page_id}/output
+    /data/input/{hansung_uni_page_id}/output
+    /data/input/{company_page_id}/output
+    ```
+    
+- Each `data/input/{page_id}` folder must contain its own `.env` file with your OpenAI API key:
+    ```
+    GRAPHRAG_API_KEY=sk-your-openai-api-key-here
+    ```
+    Example:
+    ```
+    data/input/{snu_cse_page_id}/.env
+    ```
+
+  ---
 
 ## Execution
 ### Backend
@@ -101,3 +125,6 @@ Create a `.env` file in the following locations and set your key:
 
 - **"Failed to get a response"**  
   This usually indicates an OpenAI API key issue. Check your `.env` key values.
+
+- **Input data not recognized**  
+  Make sure your `output` folders are inside `data/input/{page_id}` and that each has a `.env` file.
