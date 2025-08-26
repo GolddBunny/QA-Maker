@@ -9,7 +9,7 @@ import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
 import Modal from '../components/modal/Modal';
 import answerGraphData from '../json/answer_graphml_data.json';
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 function ChatPage() {
     const { currentPageId, setCurrentPageId } = usePageContext();

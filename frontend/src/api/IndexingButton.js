@@ -1,7 +1,7 @@
 import { startUrlCrawling, crawlAndStructure, line1, documentDownloader } from './UrlApi';
 import { processDocuments } from './DocumentApi';
 
-const BASE_URL = 'http://localhost:5000';
+import BASE_URL from "../config/url";  
 const UPDATE_URL = `${BASE_URL}/flask/update`;
 const APPLY_URL = `${BASE_URL}/flask/apply`;
 

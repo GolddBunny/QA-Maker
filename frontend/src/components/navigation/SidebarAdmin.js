@@ -8,7 +8,7 @@ import { findMainPage } from '../../utils/storage';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/sdk';
 
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../../config/url";  
 
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const navigate = useNavigate();

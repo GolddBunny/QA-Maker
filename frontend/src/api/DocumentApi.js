@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 // 특정 페이지의 문서를 서버에서 구조화 처리하는 함수
 export const processDocuments = async (pageId) => {
