@@ -8,7 +8,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp; ```git checkout -b feature/your-branch``` <br>
 &nbsp;&nbsp;3) 변경사항을 적용하고 명확한 커밋 메시지로 커밋해주세요 <br>
 &nbsp;&nbsp4) 브랜치를 자신의 fork에 push 해주세요 <br>
-;&nbsp;&nbsp;;&nbsp;&nbsp;```git push origin feature/your-branch``` <br>
+&nbsp;&nbsp;&nbsp;&nbsp;```git push origin feature/your-branch``` <br>
 &nbsp;&nbsp;5)원본 저장소의 main 브랜치로 PR을 생성합니다 <br>
 
 ---
