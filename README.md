@@ -2,6 +2,10 @@
 > 도메인에 특화된 Q&A 시스템을 자동으로 생성하는 웹 프레임워크<br>
 
 ---
+## Guides
+QA Maker 실행하기 위해서는 아래 문서를 참고해주세요:
+Execute: <a href="EXEC_KO.md">KO</a> | <a href="EXEC_EN.md">EN</a>
+Contribute: <a href="CONTRIBUTE.md">Contribute</a>
 
 ## 📝 작품 소개
 ### 1. 개발 배경
