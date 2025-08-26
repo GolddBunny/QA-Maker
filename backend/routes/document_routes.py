@@ -6,7 +6,8 @@ import time
 from flask import Blueprint, jsonify, request
 from services.document_service.hwp_to_md_txt import convert_hwp_file
 from services.document_service.pdf_to_md_txt import convert_pdf_file
-from services.document_service.convert2txt import convert2txt, convert_docx
+from services.document_service.convert2txt import convert2txt
+from services.document_service.docx_to_md_txt import convert_docx_file
 from firebase_config import bucket
 from werkzeug.utils import secure_filename
 import uuid
@@ -216,7 +217,7 @@ def process_document_direct():
 
             elif lower_name.endswith('.docx'):
                 output_path = os.path.join(temp_dir, "output.txt")
-                convert_docx(file_path, output_path)
+                convert_docx_file(file_path, output_path)
                 with open(output_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 
