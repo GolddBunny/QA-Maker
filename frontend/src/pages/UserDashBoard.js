@@ -12,7 +12,6 @@ const UserDashboard = () => {
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [averageSatisfaction, setAverageSatisfaction] = useState(0);
 
-  // Firebase QA History Context 사용 (pageId 기반)
   const { 
     qaHistory, 
     loading: qaLoading, 
@@ -29,7 +28,7 @@ const UserDashboard = () => {
     console.log("QA History:", qaHistory);
 
     if (qaHistory && qaHistory.length > 0) {
-      // 특정 pageId의 데이터만 필터링 (혹시 Firebase에서 필터링이 안 되었을 경우를 대비)
+      // 특정 pageId의 데이터만 필터링 (Firebase에서 필터링이 안 되었을 경우 대비)
       const filteredQAHistory = qaHistory.filter(qa => 
         qa.pageId === pageId || qa.pageId === String(pageId)
       );
@@ -110,10 +109,10 @@ const UserDashboard = () => {
     let percentage;
     
     if (confidence <= 1) {
-      // 0-1 사이의 소수점 값인 경우 (예: 0.899)
+      // 0-1 사이의 소수점 값인 경우
       percentage = Math.round(confidence * 100);
     } else if (confidence <= 100) {
-      // 이미 0-100 사이의 값인 경우 (예: 89.9)
+      // 이미 0-100 사이의 값인 경우
       percentage = Math.round(confidence);
     } else {
       // 100보다 큰 값인 경우 (잘못된 데이터)
