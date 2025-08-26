@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 // 저장된 URL 목록 가져오기
 export const fetchSavedUrls = async (pageId) => {

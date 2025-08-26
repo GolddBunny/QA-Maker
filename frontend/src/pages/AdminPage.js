@@ -16,7 +16,7 @@ import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore'
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/sdk";
 
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
   // 기본 시간 - firebase에 저장하는 데 걸림 (분 단위)

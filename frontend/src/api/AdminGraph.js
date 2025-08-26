@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 // 그래프 데이터를 가져오는 함수
 export const fetchGraphData = async ({
