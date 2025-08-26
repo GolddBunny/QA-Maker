@@ -88,6 +88,15 @@ data/input/*/input
 /frontend/src/json
 /backend/context_data_*.csv
 /frontend/src/json/answer_graphml_data.json
+# Frontend json 파일 제외
+frontend/public/json/
 
 # firebase
 /backend/services/firebase/qamaker-e32d7-firebase-adminsdk-fbsvc-0408d84c8c.json
+/backend/services/firebase/qamaker-e32d7-firebase-adminsdk-fbsvc-9c8756c5bc.json
+
+backend/services/crawling_service/
+
+# 데이터 폴더 제외
+data/temp_download/
+
