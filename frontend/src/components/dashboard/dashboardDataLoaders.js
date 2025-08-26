@@ -1,5 +1,5 @@
 import { getStorage, ref, listAll, getMetadata } from 'firebase/storage';
-import BASE_URL from "../config/url";  
+import BASE_URL from "../../config/url";  
 
 export const fetchKnowledgeGraphStats = async (pageId, setKnowledgeGraphStats) => {
     try {

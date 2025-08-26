@@ -8,7 +8,7 @@ import { findMainPage } from '../../utils/storage';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/sdk';
 
-import BASE_URL from "../config/url";  
+import BASE_URL from "../../config/url";  
 
 function SidebarAdmin({ isSidebarOpen, toggleSidebar }) {
     const navigate = useNavigate();
