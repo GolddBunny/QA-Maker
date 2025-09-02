@@ -3,8 +3,10 @@ import shutil
 import subprocess
 import time
 from flask import Blueprint, jsonify, request
-
+from firebase_config import bucket
+from firebase_admin import firestore
 page_bp = Blueprint('page', __name__)
+db = firestore.client()
 
 # 페이지 관련 디렉토리 확인 및 생성
 def ensure_page_directory(page_id):
@@ -130,6 +132,9 @@ def init_page(page_id):
 @page_bp.route('/delete-page/<page_id>', methods=['DELETE', 'POST'])
 def delete_page(page_id):
     try:
+        # ----------------
+        # 1) 로컬 폴더 삭제
+        # ----------------
         base_path = f'../data/input/{page_id}'
         public_path = f'../frontend/public/data/{page_id}'
         
@@ -143,7 +148,40 @@ def delete_page(page_id):
             shutil.rmtree(public_path)
             print(f"Deleted {public_path}")
             
+        # ----------------
+        # 2) Firebase Storage 삭제
+        # ----------------
+        blobs = bucket.list_blobs(prefix=f'pages/{page_id}/')
+        for blob in blobs:
+            blob.delete()
+            print(f"Deleted storage file: {blob.name}")
+        
+        # ----------------
+        # 3) Firestore Database 삭제
+        # ----------------
+        
+        # (1) dashboard/<page_id> 문서 삭제
+        db.collection("dashboard").document(page_id).delete()
+        print(f"Deleted dashboard/{page_id}")
+        
+        # (2) document_files 컬렉션에서 page_id == page_id 인 문서들 삭제
+        docs = db.collection("document_files").where("page_id", "==", page_id).stream()
+        for doc in docs:
+            db.collection("document_files").document(doc.id).delete()
+            print(f"Deleted document_files/{doc.id}")
+        
+        # (3) pages/<page_id> 문서 삭제
+        db.collection("pages").document(page_id).delete()
+        print(f"Deleted pages/{page_id}")
+        
+        # (4) urls 컬렉션에서 page_id == page_id 인 문서들 삭제
+        docs = db.collection("urls").where("page_id", "==", page_id).stream()
+        for doc in docs:
+            db.collection("urls").document(doc.id).delete()
+            print(f"Deleted urls/{doc.id}")
+        
         return jsonify({'success': True})
+    
     except Exception as e:
         print(f"Error deleting page {page_id}: {str(e)}")
         return jsonify({

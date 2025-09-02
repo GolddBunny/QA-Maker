@@ -4,9 +4,9 @@ import time
 from flask import Blueprint, jsonify, request
 from firebase_config import bucket
 from datetime import datetime
-from firebase_admin import storage
-from datetime import datetime
+from firebase_admin import firestore, storage
 import uuid
+db = firestore.client()
 
 url_load_bp = Blueprint('url_load', __name__)
 
@@ -96,6 +96,9 @@ def save_url_to_firebase(page_id, url):
         print(f"URL 중복으로 저장 생략: {url}")
         return False
     
+    # -------------------------
+    # 2) Storage에 저장
+    # -------------------------
     bucket = storage.bucket()
     today_str = datetime.now().strftime('%Y-%m-%d')
     uuid_name = f"{uuid.uuid4().hex}.txt"
@@ -111,6 +114,21 @@ def save_url_to_firebase(page_id, url):
     blob.upload_from_string(url, content_type='text/plain')
     blob.make_public()
     print(f"URL 저장 완료: {url} → {upload_path}")
+
+    # -------------------------
+    # 3) Firestore 서브컬렉션에도 저장
+    # -------------------------
+    try:
+        doc_ref = db.collection("url_list").document(page_id).collection("list").document()
+        doc_ref.set({
+            "url": url,
+            "date": today_str,
+            "root": True,
+            "type": "general"
+        })
+        print(f"URL Firestore 저장 완료: {url} → url_list/{page_id}/list")
+    except Exception as e:
+        print(f"[Firestore 저장 오류] {url}: {e}")
     return True
 
 # 크롤링해온 문서 url 저장 (문서 URL 구분)
@@ -165,22 +183,19 @@ def save_crawling_url_to_firebase(page_id, url):
 
 #url 모든 목록 가져오기
 def get_urls_from_firebase(page_id):
-    prefix = f"pages/{page_id}/urls/"
-    blobs = bucket.list_blobs(prefix=prefix)
     urls = []
-
-    for blob in blobs:
-        blob.reload()  # 메타데이터 최신화
-        metadata = blob.metadata or {}
-        url = metadata.get('url')
-        date = metadata.get('date', blob.time_created.strftime('%Y-%m-%d'))
-
-        if url:
+    try:
+        docs = db.collection("url_list").document(page_id).collection("list") \
+                 .order_by("date", direction=firestore.Query.DESCENDING).stream()
+        for doc in docs:
+            data = doc.to_dict()
             urls.append({
-                'url': url,
-                'date': date
+                'url': data.get('url'),
+                'date': data.get('date')
             })
-    urls.sort(key=lambda x: x['date'], reverse=True)
+    except Exception as e:
+        print(f"[get_urls_from_firebase] 오류: {e}")
+    
     return urls
 
 # 문서 url 목록 가져오기
@@ -260,7 +275,7 @@ def add_url(page_id):
 def get_saved_urls(page_id):
     urls = get_urls_from_firebase(page_id)
     if urls:
-        print(f"Firebase에서 가져온 URL 목록 ({page_id}): {urls}")
+        print(f"Firestore에서 가져온 URL 목록 ({page_id}): {len(urls)}개")
         return jsonify({"success": True, "urls": urls}), 200
     else:
         return jsonify({"success": False, "error": "URL 조회 중 오류 발생"}), 500
