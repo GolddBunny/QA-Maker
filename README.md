@@ -1,7 +1,15 @@
 # QA Maker
 > 도메인에 특화된 Q&A 시스템을 자동으로 생성하는 웹 프레임워크<br>
-
 ---
+## 🎥 Video
+
+<a href="https://www.youtube.com/watch?v=2AHZiCwgLk4">
+  <img src="https://img.youtube.com/vi/2AHZiCwgLk4/0.jpg" width="600px" />
+</a>
+
+#### 👉 <span style="color:orange">[시연영상 보러가기](https://www.youtube.com/watch?v=2AHZiCwgLk4)</span>
+---
+<br><br>
 ## Guides
 QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 **Execute**: <a href="EXEC_KO.md">KO</a> | <a href="EXEC_EN.md">EN</a> <br>
