@@ -9,8 +9,7 @@
 
 #### 👉 <span style="color:orange">[시연영상 보러가기](https://www.youtube.com/watch?v=2AHZiCwgLk4)</span>
 ---
-<br><br>
-## Guides
+## 🔑 Guides
 QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 **Execute**: <a href="EXEC_KO.md">KO</a> | <a href="EXEC_EN.md">EN</a> <br>
 **Contribute**: <a href="CONTRIBUTING.md">Contribute</a>
