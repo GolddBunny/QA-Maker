@@ -263,7 +263,7 @@ QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 
 
 ### 4. Q&A 시스템의 질의응답 채팅화면<br><br>
-<img width="426" height="292" alt="깃허브4질의응답" src="https://github.com/user-attachments/assets/1ab70c10-4472-4dbf-a949-7b79ab3ecc49" /><br><br>
+<img width="1546" height="923" alt="깃허브4질의응답" src="https://github.com/user-attachments/assets/1ab70c10-4472-4dbf-a949-7b79ab3ecc49" /><br><br>
 
 
 ### 5. Q&A 시스템의 근거 문서 시각화 채팅화면<br><br>
