@@ -46,8 +46,7 @@ QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 ### 3. 작품 개요
   QA Maker는 사용자가 특정 도메인의 URL을 입력하면, 해당 웹사이트를 크롤링하고 수집된 데이터를 구조화하여 지식 그래프를 자동으로 생성한다. 이후 이 지식 그래프를 기반으로 사용자가 질의응답할 수 있는 Q&A 시스템이 구축되며, 추가적으로 구축된 지식 그래프의 세부 정보를 확인할 수 있는 Log Analyzer가 생성된다. 
 <br><br>
-
-<img width="2971" height="1740" alt="Group 706 (2)" src="https://github.com/user-attachments/assets/a6063209-cee3-408a-9ed0-9e53b0a50892" /> <br><br>
+<img width="2971" height="1740" alt="Group 706" src="https://github.com/user-attachments/assets/65e73288-ceb0-401a-80c1-b0236d1e2890" /><br><br>
 
 ## 📍 QA Maker의 주요기능
 <b>QA Maker의 주요 기능</b> <br>
