@@ -476,7 +476,6 @@ const DashboardPage = () => {
                                 <thead>
                                     <tr>
                                         <th>URL</th>
-                                        <th>카테고리</th>
                                         <th>수집일</th>
                                     </tr>
                                 </thead>
@@ -488,11 +487,6 @@ const DashboardPage = () => {
                                                     <a href={item.url} className="url-link" target="_blank" rel="noopener noreferrer">
                                                         {item.url}
                                                     </a>
-                                                </td>
-                                                <td>
-                                                    <div className="url-summary">
-                                                        {item.description || ""}
-                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className="date-text">{item.date}</span>
