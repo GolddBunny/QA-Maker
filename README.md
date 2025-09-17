@@ -1,8 +1,15 @@
 # QA Maker
 > 도메인에 특화된 Q&A 시스템을 자동으로 생성하는 웹 프레임워크<br>
-
 ---
-## Guides
+## 🎥 Video
+
+<a href="https://www.youtube.com/watch?v=2AHZiCwgLk4">
+  <img src="https://img.youtube.com/vi/2AHZiCwgLk4/0.jpg" width="600px" />
+</a>
+
+#### 👉 <span style="color:orange">[시연영상 보러가기](https://www.youtube.com/watch?v=2AHZiCwgLk4)</span>
+---
+## 🔑 Guides
 QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 **Execute**: <a href="EXEC_KO.md">KO</a> | <a href="EXEC_EN.md">EN</a> <br>
 **Contribute**: <a href="CONTRIBUTING.md">Contribute</a>
@@ -39,8 +46,7 @@ QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 ### 3. 작품 개요
   QA Maker는 사용자가 특정 도메인의 URL을 입력하면, 해당 웹사이트를 크롤링하고 수집된 데이터를 구조화하여 지식 그래프를 자동으로 생성한다. 이후 이 지식 그래프를 기반으로 사용자가 질의응답할 수 있는 Q&A 시스템이 구축되며, 추가적으로 구축된 지식 그래프의 세부 정보를 확인할 수 있는 Log Analyzer가 생성된다. 
 <br><br>
-
-<img width="2971" height="1740" alt="Group 706 (2)" src="https://github.com/user-attachments/assets/a6063209-cee3-408a-9ed0-9e53b0a50892" /> <br><br>
+<img width="2971" height="1740" alt="Group 706" src="https://github.com/user-attachments/assets/65e73288-ceb0-401a-80c1-b0236d1e2890" /><br><br>
 
 ## 📍 QA Maker의 주요기능
 <b>QA Maker의 주요 기능</b> <br>
@@ -68,7 +74,7 @@ QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 <br/>
 &nbsp;&nbsp;질의하고자 하는 사용자는 웹 브라우저에서 생성된 Q&A 시스템의 URL에 접속하여 Q&A 시스템의 사용자 페이지를 통해 질의응답할 수 있다. 
 <br><br>
-<img width="1384" height="812" alt="깃허브 작품개요ㅗ" src="https://github.com/user-attachments/assets/aca8b153-ac08-4ba1-87a3-221b7d54d5ee" />
+<img width="6723" height="8928" alt="그림1" src="https://github.com/user-attachments/assets/c2698676-a2f9-454b-b75c-be6bf5026b80" />
 
 ### 2. Q&A 생성 서버
 
@@ -256,14 +262,17 @@ QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 
 
 ### 4. Q&A 시스템의 질의응답 채팅화면<br><br>
-<img width="426" height="292" alt="깃허브4질의응답" src="https://github.com/user-attachments/assets/1ab70c10-4472-4dbf-a949-7b79ab3ecc49" /><br><br>
+<img width="1546" height="923" alt="깃허브4질의응답" src="https://github.com/user-attachments/assets/1ab70c10-4472-4dbf-a949-7b79ab3ecc49" /><br><br>
+
+### 5.  Q&A 시스템의 근거 Url 시각화 채팅화면
+<img width="6004" height="1975" alt="근거url" src="https://github.com/user-attachments/assets/b0ba372b-e2b7-4fff-8683-0504d5b50199" /><br><br>
 
 
-### 5. Q&A 시스템의 근거 문서 시각화 채팅화면<br><br>
+### 6. Q&A 시스템의 근거 문서 시각화 채팅화면<br><br>
 <img width="1384" height="730" alt="깃허브5근거문서" src="https://github.com/user-attachments/assets/620427c9-2967-4a81-bb0c-a421dd663da6" /><br><br>
 
 
-### 6. Q&A 시스템의 응답 지식 그래프 시각화 채팅화면<br><br>
+### 7. Q&A 시스템의 응답 지식 그래프 시각화 채팅화면<br><br>
 <img width="1384" height="727" alt="깃허브6 지식 그래프" src="https://github.com/user-attachments/assets/f416fbe4-bd1d-43a0-a748-30ae4e56905c" /><br><br>
 
 ---

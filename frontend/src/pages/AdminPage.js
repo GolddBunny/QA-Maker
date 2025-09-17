@@ -13,7 +13,7 @@ import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
 import { initDocUrl } from '../api/InitDocUrl';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/sdk";
 
 import BASE_URL from "../config/url";  
@@ -249,6 +249,31 @@ const AdminPage = () => {
       console.log("현재 admin pageId:", pageId);
       stepTimesRef.current = stepExecutionTimes;
 
+      // 1. Firestore URL 실시간 구독
+      const urlsRef = collection(db, "url_list", pageId, "list");
+      const urlQuery = query(urlsRef, orderBy("date", "desc"));
+      const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
+        const urlArray = snapshot.docs.map(doc => doc.data());
+        setUploadedUrls(urlArray);
+        setUrlCount(urlArray.length);
+      });
+
+      // 2. Firestore Document 실시간 구독
+      const docsRef = collection(db, "document_files");   // 컬렉션만 지정
+      const docQuery = query(
+        docsRef, 
+        where("page_id", "==", pageId),  // pageId 필터링
+        orderBy("date", "desc")          // 날짜 순 정렬
+      );
+
+      const unsubscribeDocs = onSnapshot(docQuery, (snapshot) => {
+        const docArray = snapshot.docs.map(doc => doc.data());
+        setUploadedDocs(docArray);
+        setDocCount(docArray.length);
+      }, (error) => {
+        console.error("Firestore 구독 에러:", error);
+      });
+
       const initializePage = async () => {
         try {
           // 1. 서버 작업 상태 먼저 확인
@@ -294,7 +319,7 @@ const AdminPage = () => {
           ]);
 
           // 6. 페이지 정보 설정
-          const pages = JSON.parse(localStorage.getItem('pages')) || [];
+          const pages = JSON.parse(localStorage.getItem('pages') || "[]");
           const currentPage = pages.find(page => page.id === pageId);
           if (currentPage) {
             setDomainName(currentPage.name || "");
@@ -309,6 +334,10 @@ const AdminPage = () => {
       };
 
       initializePage();
+      return () => {
+        unsubscribeUrls();
+        unsubscribeDocs(); // 언마운트 시 두 구독 모두 해제
+      };
     }, [pageId, navigate, checkServerProcessingStatus, fetchSavedUrls, checkOutputFolder]);
 
     const toggleSidebar = () => {
