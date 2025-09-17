@@ -193,7 +193,6 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       const urlArray = Array.isArray(urls) ? urls : [];
-      setUploadedUrls(urlArray); // undefined 방지
       setUrlCount(urlArray.length);
     } , []);
 
@@ -336,7 +335,7 @@ const AdminPage = () => {
       initializePage();
       return () => {
         unsubscribeUrls();
-        unsubscribeDocs(); // 언마운트 시 두 구독 모두 해제
+        unsubscribeDocs();
       };
     }, [pageId, navigate, checkServerProcessingStatus, fetchSavedUrls, checkOutputFolder]);
 
@@ -559,7 +558,6 @@ const AdminPage = () => {
           alert("업데이트 완료");
 
           await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);
