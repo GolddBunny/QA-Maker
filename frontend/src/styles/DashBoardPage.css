@@ -1,83 +1,83 @@
 /* 헤더 스타일 */
 .dashboard-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: linear-gradient(to top, #cbc4f3 33%, #c7b2f4 100%);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to top, #cbc4f3 33%, #c7b2f4 100%);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* 대시보드 헤더 컨텐츠 */
 .dashboard-header-content {
-  height: 100%;
-  max-width: 100%;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+    height: 100%;
+    max-width: 100%;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .dashboard-header-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 /* 돌아가기 버튼 스타일 */
 .back-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: white;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .back-button:active {
-  transform: translateY(0);
+    transform: translateY(0);
 }
 
 .dashboard-logo-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .dashboard-title {
-  font-size: 30px;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-  line-height: 1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 30px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-nav-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 15px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
 .dashboard-nav-link:hover {
@@ -89,20 +89,21 @@
 
 /* 대시보드 컨테이너 및 콘텐츠 여백 조정 */
 .dashboard-container {
-  min-height: 100vh;
-  background: #f8fafc;
-  padding-top: 80px; /* 헤더 높이만큼 패딩 추가 */
+    min-height: 100vh;
+    background: #f8fafc;
+    padding-top: 80px;
+    background-color: #f3f0ff;
 }
 
 .dashboard-content {
-  padding: 60px 55px 55px;
-  max-width: 85%;
-  margin: 0 auto;
-  transition: margin-left 0.3s ease;
+    padding: 60px 55px 55px;
+    max-width: 85%;
+    margin: 0 auto;
+    transition: margin-left 0.3s ease;
 }
 
 .dashboard-content.sidebar-open {
-  margin-left: 280px;
+    margin-left: 280px;
 }
 
 /* 통계 섹션 */
@@ -264,7 +265,8 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
-    border: 1px solid #f0f0f0;
+    border: 1px solid #f0f0f0; 
+    max-height: 300px;
 }
 
 .url-table {
@@ -389,6 +391,7 @@
 .graph-section {
     padding: 30px 20px;
     max-width: 1200px;
+    /* max-height: 50px; */
     margin: 0 auto;
     margin-bottom: 40px;
 }
@@ -874,7 +877,7 @@
 .knowledge-graph-container {
     background-color: white;
     padding: 1rem;
-    max-height: 1000px;
+    max-height: 400px;
     display: flex;
     align-items: center;
     justify-content: center;
