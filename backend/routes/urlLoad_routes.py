@@ -78,6 +78,9 @@ def save_urls_batch(page_id, urls, url_type="crawled"):
         blob.upload_from_string(url, content_type='text/plain')
         blob.make_public()
         
+        # Firestore 저장 추가
+        save_url_to_firestore(page_id, url, today_str, root=False, url_type=url_type)
+
         # 메모리 상 기존 URL 목록에도 추가 (같은 배치 내 중복 방지)
         existing_urls.add(url)
         saved_count += 1
@@ -87,6 +90,21 @@ def save_urls_batch(page_id, urls, url_type="crawled"):
     
     print(f"배치 URL 저장 완료: {saved_count}개 저장, {len(urls) - saved_count}개 중복 생략")
     return saved_count
+
+# Firestore 저장 유틸
+def save_url_to_firestore(page_id, url, date, root=False, url_type="general"):
+    """Firestore에 URL 저장"""
+    try:
+        doc_ref = db.collection("url_list").document(page_id).collection("list").document()
+        doc_ref.set({
+            "url": url,
+            "date": date,
+            "root": root,
+            "type": url_type
+        })
+        print(f"[Firestore 저장 완료] {url_type} URL 저장: {url}")
+    except Exception as e:
+        print(f"[Firestore 저장 오류] {url}: {e}")
 
 # root url 저장
 def save_url_to_firebase(page_id, url):
@@ -115,20 +133,8 @@ def save_url_to_firebase(page_id, url):
     blob.make_public()
     print(f"URL 저장 완료: {url} → {upload_path}")
 
-    # -------------------------
-    # 3) Firestore 서브컬렉션에도 저장
-    # -------------------------
-    try:
-        doc_ref = db.collection("url_list").document(page_id).collection("list").document()
-        doc_ref.set({
-            "url": url,
-            "date": today_str,
-            "root": True,
-            "type": "general"
-        })
-        print(f"URL Firestore 저장 완료: {url} → url_list/{page_id}/list")
-    except Exception as e:
-        print(f"[Firestore 저장 오류] {url}: {e}")
+    # Firestore에도 저장 추가
+    save_url_to_firestore(page_id, url, today_str, root=False, url_type="crawled")
     return True
 
 # 크롤링해온 문서 url 저장 (문서 URL 구분)
@@ -178,6 +184,8 @@ def save_crawling_url_to_firebase(page_id, url):
     }
     blob.upload_from_string(url, content_type='text/plain')
     blob.make_public()
+
+    save_url_to_firestore(page_id, url, today_str, root=False, url_type="crawled")
     print(f"크롤링 해온 URL 저장 완료: {url} → {upload_path}")
     return True
 
@@ -273,12 +281,21 @@ def add_url(page_id):
 #url 목록 불러오기
 @url_load_bp.route('/get-urls/<page_id>', methods=['GET'])
 def get_saved_urls(page_id):
-    urls = get_urls_from_firebase(page_id)
-    if urls:
-        print(f"Firestore에서 가져온 URL 목록 ({page_id}): {len(urls)}개")
-        return jsonify({"success": True, "urls": urls}), 200
-    else:
-        return jsonify({"success": False, "error": "URL 조회 중 오류 발생"}), 500
+    urls = []
+    try:
+        docs = db.collection("url_list").document(page_id).collection("list") \
+                 .order_by("date", direction=firestore.Query.DESCENDING).stream()
+        for doc in docs:
+            data = doc.to_dict()
+            urls.append({
+                'url': data.get('url'),
+                'date': data.get('date')
+            })
+    except Exception as e:
+        print(f"[get_urls_from_firebase] 오류: {e}")
+
+    # 빈 배열도 success: true로 반환
+    return jsonify({"success": True, "urls": urls}), 200
 
 #문서 url 목록 불러오기
 @url_load_bp.route('/get-document-urls/<page_id>', methods=['GET'])
