@@ -497,13 +497,6 @@ const AdminPage = () => {
           indexing: null
         });
 
-        const init_result = await initDocUrl(pageId);
-
-        if (init_result.success) {
-          console.log("초기화 성공:", init_result.message);
-        } else {
-          console.error("초기화 실패:", init_result.error);
-        }
 
         // 크롤링 및 구조화
         const final_result = await executeFullPipeline(pageId, handleStepComplete);
