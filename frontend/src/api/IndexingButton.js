@@ -2,8 +2,8 @@ import { startUrlCrawling, crawlAndStructure, line1, documentDownloader } from '
 import { processDocuments } from './DocumentApi';
 
 import BASE_URL from "../config/url";  
-const UPDATE_URL = `${BASE_URL}/flask/update`;
-const APPLY_URL = `${BASE_URL}/flask/apply`;
+const UPDATE_URL = `${BASE_URL}/update`;
+const APPLY_URL = `${BASE_URL}/apply`;
 
 // 전체 플로우 실행 
 // URL 크롤링 → 웹 구조화(웹 크롤링 + 1줄만들기) → 문서 구조화(DocumentApi.py-processDocuments) → 문서 인덱싱(generate_routes.py-apply) -> 웹 증분 인덱싱(generate_routes.py-update)
