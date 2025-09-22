@@ -128,8 +128,9 @@ const AdminPage = () => {
       setHasDocuments,
       isAnyProcessing,
       pageId,
-      setDocCount
-    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
+      setDocCount,
+      setIsDragOver
+    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount, setIsDragOver]);
 
     // 전체 문서 용량 합계 (MB)
     const totalDocSizeMB = useMemo(() => {
