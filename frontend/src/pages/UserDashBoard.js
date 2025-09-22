@@ -185,7 +185,7 @@ const UserDashboard = () => {
             <button className="user-back-button" onClick={handleBack}>
               ← 뒤로가기
             </button>
-            <h1 className="user-main-title">사용자 만족도 (Page ID: {pageId})</h1>
+            <h1 className="user-main-title">사용자 만족도</h1>
           </div>
         </div>
 
