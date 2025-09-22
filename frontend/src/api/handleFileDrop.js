@@ -11,7 +11,8 @@ export const FileDropHandler = ({
   setHasDocuments,
   isAnyProcessing,
   pageId,
-  setDocCount
+  setDocCount,
+  setIsDragOver
 }) => {
 
   // 업로드 허용 파일 타입 정의 (.pdf, .txt, .hwp, .docx, .doc)
@@ -26,6 +27,7 @@ export const FileDropHandler = ({
   // 실제 파일 드롭 또는 선택 시 처리 함수
   const handleFileDrop = async (e) => {
     e.preventDefault();   // 기본 브라우저 동작 방지
+    setIsDragOver(false);
 
     // 다른 처리 중이면 바로 종료
     if (isAnyProcessing) return;
