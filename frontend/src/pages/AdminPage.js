@@ -128,8 +128,9 @@ const AdminPage = () => {
       setHasDocuments,
       isAnyProcessing,
       pageId,
-      setDocCount
-    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
+      setDocCount,
+      setIsDragOver
+    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount, setIsDragOver]);
 
     // 전체 문서 용량 합계 (MB)
     const totalDocSizeMB = useMemo(() => {
@@ -193,7 +194,6 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       const urlArray = Array.isArray(urls) ? urls : [];
-      setUploadedUrls(urlArray); // undefined 방지
       setUrlCount(urlArray.length);
     } , []);
 
@@ -336,7 +336,7 @@ const AdminPage = () => {
       initializePage();
       return () => {
         unsubscribeUrls();
-        unsubscribeDocs(); // 언마운트 시 두 구독 모두 해제
+        unsubscribeDocs();
       };
     }, [pageId, navigate, checkServerProcessingStatus, fetchSavedUrls, checkOutputFolder]);
 
@@ -498,13 +498,6 @@ const AdminPage = () => {
           indexing: null
         });
 
-        const init_result = await initDocUrl(pageId);
-
-        if (init_result.success) {
-          console.log("초기화 성공:", init_result.message);
-        } else {
-          console.error("초기화 실패:", init_result.error);
-        }
 
         // 크롤링 및 구조화
         const final_result = await executeFullPipeline(pageId, handleStepComplete);
@@ -559,7 +552,6 @@ const AdminPage = () => {
           alert("업데이트 완료");
 
           await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);

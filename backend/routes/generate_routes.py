@@ -182,7 +182,7 @@ def update(page_id):
         print(f'GraphRAG 업데이트 실행 시간: {execution_time}초')
         
         # 업데이트 실패 시 오류 반환
-        if process.returncode != 0:
+        if process.returncode != 0 and "Warning" not in process.stderr:
             error_msg = f"GraphRAG 업데이트 실패 (코드: {process.returncode})"
             print(error_msg)
             return jsonify({

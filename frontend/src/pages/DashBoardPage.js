@@ -441,7 +441,7 @@ const DashboardPage = () => {
                     <div className="stat-card url-card">
                         <div className="stat-header">
                             <span className="stat-icon">🌐</span>
-                            <span className="stat-change positive">+1</span>
+                            {/* <span className="stat-change positive">+1</span> */}
                         </div>
                         <div className="stat-number">{urlCount}</div>
                         <div className="stat-label">등록된 URL</div>
@@ -450,7 +450,6 @@ const DashboardPage = () => {
                     <div className="stat-card docs-card">
                         <div className="stat-header">
                             <span className="stat-icon">📄</span>
-                            <span className="stat-change positive">+2</span>
                         </div>
                         <div className="stat-number">{docCount}</div>
                         <div className="stat-label">수집된 문서</div>
@@ -459,7 +458,6 @@ const DashboardPage = () => {
                     <div className="stat-card entities-card">
                         <div className="stat-header">
                             <span className="stat-icon">🔗</span>
-                            <span className="stat-change positive">+108</span>
                         </div>
                         <div className="stat-number">{filteredEntities.length}</div>
                         <div className="stat-label">추출된 엔티티</div>
@@ -468,7 +466,6 @@ const DashboardPage = () => {
                     <div className="stat-card relations-card">
                         <div className="stat-header">
                             <span className="stat-icon">⚡</span>
-                            <span className="stat-change positive">+105</span>
                         </div>
                         <div className="stat-number">{filteredRelationships.length}</div>
                         <div className="stat-label">구축된 관계</div>
@@ -477,7 +474,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">⏰</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">2시간 전</div>
                         <div className="stat-label">마지막 업데이트</div>
@@ -486,7 +482,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">🕷️</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.crawling)}</div>
                         <div className="stat-label">크롤링에 걸린 시간</div>
@@ -495,7 +490,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">🧾</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.structuring)}</div>
                         <div className="stat-label">url 전처리에 걸린 시간</div>
@@ -504,7 +498,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">📑</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.document)}</div>
                         <div className="stat-label">문서 전처리에 걸린 시간</div>
@@ -513,7 +506,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">📍</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.indexing)}</div>
                         <div className="stat-label">인덱싱에 걸린 시간</div>
@@ -549,7 +541,6 @@ const DashboardPage = () => {
                                 <thead>
                                     <tr>
                                         <th>URL</th>
-                                        <th>카테고리</th>
                                         <th>수집일</th>
                                     </tr>
                                 </thead>
@@ -561,11 +552,6 @@ const DashboardPage = () => {
                                                     <a href={item.url} className="url-link" target="_blank" rel="noopener noreferrer">
                                                         {item.url}
                                                     </a>
-                                                </td>
-                                                <td>
-                                                    <div className="url-summary">
-                                                        {item.description || ""}
-                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className="date-text">{item.date}</span>

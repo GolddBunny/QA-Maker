@@ -82,10 +82,18 @@ Desktop.ini
 .git/
 frontend/.git/
 data/input/*/input
+data/input/*_url
+data/input/*/update_output/
+data/input/*/prompts
+data/input/*/output/lancedb/
+data/input/*/cache/
+data/input/*/output/
+data/input/*/logs/
+data/input/*/settings.yaml
 
 # 데이터 폴더 무시
 /frontend/public/data/
-/frontend/src/json
+/frontend/src/json/
 /backend/context_data_*.csv
 /frontend/src/json/answer_graphml_data.json
 
@@ -101,4 +109,3 @@ backend/services/crawling_service/
 # 데이터 폴더 제외
 data/temp_download/
 
-data/input/1755172386846/.env
