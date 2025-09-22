@@ -10,7 +10,9 @@ const ProgressingBar = ({
   estimatedTime = null
 }) => {
   const [progress, setProgress] = useState(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
   const intervalRef = useRef(null);
+  const displayIntervalRef = useRef(null);
 
   // 진행률 애니메이션
   useEffect(() => {
@@ -25,29 +27,55 @@ const ProgressingBar = ({
       return;
     }
 
-    // 각 단계별 진행률 증가 한계치, 주기
+    // 각 단계별 진행률 증가 한계치
     const stepConfigs = {
-      crawling: { max: 25, interval: 3000 },
-      structuring: { max: 50, interval: 5000 },
-      document: { max: 75, interval: 6000 },
-      indexing: { max: 99, interval: 15000 },
+      crawling: { max: 25 },
+      structuring: { max: 50 },
+      document: { max: 75 },
+      indexing: { max: 99 },
     };
 
     const config = stepConfigs[currentStep];
 
     if (config) {
-      intervalRef.current = setInterval(() => {
+      const updateProgress = () => {
         setProgress(prev => {
           if (prev >= config.max) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
             return prev;
           }
 
-          const increment = Math.floor(Math.random() * 4) + 2;
-          return Math.min(prev + increment, config.max);
+          // 랜덤한 동작 패턴 결정
+          const randomAction = Math.random();
+          
+          // 50% 확률로 멈춤 (아무것도 안함)
+          if (randomAction < 0.5) {
+            return prev;
+          }
+          // 10% 확률로 빠른 진행 (큰 폭으로 증가)
+          else if (randomAction < 0.7) {
+            const fastIncrement = Math.floor(Math.random() * 7) + 2; // 2~10% 증가
+            return Math.min(prev + fastIncrement, config.max);
+          }
+          // 35% 확률로 일반 진행
+          else {
+            const normalIncrement = Math.floor(Math.random() * 2) + 1; // 1~3% 증가
+            return Math.min(prev + normalIncrement, config.max);
+          }
         });
-      }, config.interval);
+
+        // 다음 업데이트까지의 랜덤 시간 설정 (2000ms ~ 8000ms)
+        const nextDelay = Math.floor(Math.random() * 6000) + 2000;
+        
+        setTimeout(() => {
+          updateProgress();
+        }, nextDelay);
+      };
+
+      // 첫 업데이트 시작
+      const initialDelay = Math.floor(Math.random() * 2000) + 1000;
+      setTimeout(() => {
+        updateProgress();
+      }, initialDelay);
     }
 
     return () => {
@@ -58,7 +86,37 @@ const ProgressingBar = ({
     };
   }, [currentStep, isCompleted]);
 
-  const displayProgress = `${Math.min(progress, 100)}%`;
+  // 표시되는 진행률을 부드럽게 애니메이션
+  useEffect(() => {
+    if (displayIntervalRef.current) {
+      clearInterval(displayIntervalRef.current);
+    }
+
+    displayIntervalRef.current = setInterval(() => {
+      setDisplayProgress(prev => {
+        if (prev === progress) {
+          clearInterval(displayIntervalRef.current);
+          return prev;
+        }
+        
+        const diff = progress - prev;
+        if (Math.abs(diff) <= 1) {
+          clearInterval(displayIntervalRef.current);
+          return progress;
+        }
+        
+        // 부드러운 증가/감소
+        const increment = diff > 0 ? Math.ceil(diff / 10) : Math.floor(diff / 10);
+        return prev + increment;
+      });
+    }, 50); // 더 부드러운 애니메이션을 위해 짧은 간격
+
+    return () => {
+      if (displayIntervalRef.current) {
+        clearInterval(displayIntervalRef.current);
+      }
+    };
+  }, [progress]);
 
   // 단계별 상태를 결정하는 함수
   const getStepStatus = (stepName) => {
@@ -174,7 +232,7 @@ const ProgressingBar = ({
         <div className="progress-card">
           <div className="card-title">현재 진행률</div>
           <div className="card-value">
-            {displayProgress}
+            {Math.min(displayProgress, 100)}%
           </div>
         </div>
       </div>
@@ -213,7 +271,7 @@ const ProgressingBar = ({
           <div 
             className="step-desc"
             dangerouslySetInnerHTML={{
-              __html: getStepText('indexing', 'build KonwledgeGraph')
+              __html: getStepText('indexing', 'build KnowledgeGraph')
             }}
           />
         </div>

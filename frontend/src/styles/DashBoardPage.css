@@ -30,7 +30,7 @@
 /* 돌아가기 버튼 스타일 */
 .back-button {
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     color: white;
     padding: 10px 16px;
@@ -81,10 +81,10 @@
 }
 
 .dashboard-nav-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-1px);
 }
 
 /* 대시보드 컨테이너 및 콘텐츠 여백 조정 */
@@ -110,7 +110,7 @@
 .stats-section {
     padding: 15px;
     margin-top: 25px;
-    background-color: #f3f0ff;
+    /* background-color: #f3f0ff; */
 }
 
 .stats-grid {
@@ -210,6 +210,7 @@
     padding: 0px 20px;
     max-width: 1200px;
     margin: 0 auto;
+    margin-top: -20px;
 }
 
 .section-header {
@@ -266,7 +267,8 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     border: 1px solid #f0f0f0; 
-    max-height: 300px;
+    max-height: 250px;
+    margin-top: -5px;
 }
 
 .url-table {
@@ -376,7 +378,7 @@
     padding: 30px 20px;
     max-width: 1200px;
     margin: 0 auto;
-    margin-bottom: 40px;
+    margin-bottom: 0px;
 }
 
 /* QA 시스템 정보 보기 섹션 스타일 */
@@ -384,16 +386,16 @@
     padding: 30px 20px;
     max-width: 1200px;
     margin: 0 auto;
-    margin-bottom: 40px;
+    margin-bottom: 0px;
+    margin-top: -20px;
 }
 
 /* 그래프 섹션 스타일 */
 .graph-section {
-    padding: 30px 20px;
+    padding: 0px 20px;
     max-width: 1200px;
     /* max-height: 50px; */
     margin: 0 auto;
-    margin-bottom: 40px;
 }
 
 /* 헤더 컨트롤 영역 */
@@ -861,8 +863,8 @@
 
 /* 지식그래프 섹션 스타일 */
 .knowledge-graph-section {
-    margin-bottom: 120px;
-    margin-top: 120px;
+    margin-bottom: 60px;
+    margin-top: 55px;
 }
 
 .knowledge-graph-title {
