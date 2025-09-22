@@ -19,13 +19,13 @@ import { db } from "../firebase/sdk";
 import BASE_URL from "../config/url";  
 
 const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
-  // 기본 시간 (firebase에 저장하는 데 2분)
-  const BASE_TIME = 2;
+  // 기본 시간 (firebase에 저장하는 데 1분)
+  const BASE_TIME = 1;
   
   // 각 항목별 평균 처리 시간 (초 단위)
-  const DOC_STRUCTURING_TIME_PER_MB = 50; // 문서 1MB당 구조화 시간 (초)
+  const DOC_STRUCTURING_TIME_PER_MB = 15; // 문서 1MB당 구조화 시간 (초)
   const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
-  const URL_STRUCTURING_TIME = 40;        // URL 1개당 구조화 시간 (초)
+  const URL_STRUCTURING_TIME = 15;        // URL 1개당 구조화 시간 (초)
   const URL_INDEXING_TIME = 60;           // URL 1개당 인덱싱 시간 (초)
   
   // 총 처리 시간 계산 (초)
@@ -522,13 +522,13 @@ const AdminPage = () => {
             checkOutputFolder(pageId)
           ]);
         } else {
-          alert(`QA 시스템 구축 실패: ${final_result.error}`);
-          setShowProgressing(false); // 실패 시에만 자동으로 닫기
+          // alert(`QA 시스템 구축 실패: ${final_result.error}`);
+          // setShowProgressing(false); // 실패 시에만 자동으로 닫기
         }
       } catch (error) {
         console.error("QA 시스템 구축 중 오류:", error);
-        alert("QA 시스템 구축 중 오류가 발생했습니다.");
-        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+        // alert("QA 시스템 구축 중 오류가 발생했습니다.");
+        // setShowProgressing(false); // 에러 시에만 자동으로 닫기
       }finally {
         setIsApplyLoading(false);
       }
