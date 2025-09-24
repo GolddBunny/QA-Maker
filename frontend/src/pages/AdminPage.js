@@ -194,6 +194,8 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       const urlArray = Array.isArray(urls) ? urls : [];
+
+      setUploadedUrls(urlArray);
       setUrlCount(urlArray.length);
     } , []);
 
@@ -510,7 +512,7 @@ const AdminPage = () => {
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
+            fetchSavedUrls(pageId),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);
