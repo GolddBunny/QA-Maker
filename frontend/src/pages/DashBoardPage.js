@@ -9,8 +9,8 @@ import { fetchGraphData } from '../api/AdminGraph';
 import { EntityTable, RelationshipTable } from '../components/hooks/ResultTables';
 import { fetchSavedUrls as fetchSavedUrlsApi } from '../api/UrlApi';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
-
 import { loadStepExecutionTimes } from '../services/LoadStepExecutionTimes';
+import { db } from "../firebase/sdk";
 
 import { 
     fetchKnowledgeGraphStats 
@@ -240,47 +240,120 @@ const DashboardPage = () => {
     }, [relationships, relationshipSearchTerm]);
 
     // 페이지 정보 로드 (LocalStorage 기반)
-    const loadPageInfo = useCallback(() => {
-        const pages = JSON.parse(localStorage.getItem('pages')) || [];
+    // const loadPageInfo = useCallback(() => {
+    //     const pages = JSON.parse(localStorage.getItem('pages')) || [];
         
-        // 디버깅 로그
-        console.log("찾는 pageId:", pageId, typeof pageId);
-        console.log("저장된 페이지들:", pages.map(p => ({ id: p.id, type: typeof p.id, name: p.name })));
+    //     // 디버깅 로그
+    //     console.log("찾는 pageId:", pageId, typeof pageId);
+    //     console.log("저장된 페이지들:", pages.map(p => ({ id: p.id, type: typeof p.id, name: p.name })));
         
-        // 정확히 일치하는지 확인
-        let currentPage = pages.find(page => page.id === pageId);
+    //     // 정확히 일치하는지 확인
+    //     let currentPage = pages.find(page => page.id === pageId);
         
-        // 타입 불일치 -> 문자열/숫자 변환해서 재시도
-        if (!currentPage) {
-            currentPage = pages.find(page => 
-                String(page.id) === String(pageId)
-            );
-            console.log("타입 변환 후 찾은 페이지:", currentPage);
-        }
+    //     // 타입 불일치 -> 문자열/숫자 변환해서 재시도
+    //     if (!currentPage) {
+    //         currentPage = pages.find(page => 
+    //             String(page.id) === String(pageId)
+    //         );
+    //         console.log("타입 변환 후 찾은 페이지:", currentPage);
+    //     }
         
-        console.log("최종 현재 페이지 정보:", currentPage);
+    //     console.log("최종 현재 페이지 정보:", currentPage);
         
-        if (currentPage) {
-            setDomainName(currentPage.name || "");
-            setSystemName(currentPage.sysname || "");
+    //     if (currentPage) {
+    //         setDomainName(currentPage.name || "");
+    //         setSystemName(currentPage.sysname || "");
             
-            if (currentPage.createdAt) {
-                try {
-                    const date = new Date(currentPage.createdAt);
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    setCreatedDate(`${year}.${month}.${day}`);
-                } catch (error) {
-                    console.log('날짜 파싱 실패:', error);
-                    setCreatedDate("정보없음");
+    //         if (currentPage.createdAt) {
+    //             try {
+    //                 const date = new Date(currentPage.createdAt);
+    //                 const year = date.getFullYear();
+    //                 const month = String(date.getMonth() + 1).padStart(2, '0');
+    //                 const day = String(date.getDate()).padStart(2, '0');
+    //                 setCreatedDate(`${year}.${month}.${day}`);
+    //             } catch (error) {
+    //                 console.log('날짜 파싱 실패:', error);
+    //                 setCreatedDate("정보없음");
+    //             }
+    //         } else {
+    //             setCreatedDate("정보없음");
+    //         }
+    //     } else {
+    //         console.warn("페이지를 찾을 수 없습니다:", pageId);
+    //         setCreatedDate("정보없음");
+    //     }
+    // }, [pageId, setDomainName, setSystemName]);
+
+    // Firebase에서 페이지 정보 로드
+    const loadPageInfo = useCallback(async () => {
+        try {
+            console.log("Firebase에서 페이지 정보 로드 시작, pageId:", pageId);
+            
+            // Firestore에서 페이지 문서 가져오기
+            const pageDocRef = doc(db, 'pages', pageId);
+            const pageDoc = await getDoc(pageDocRef);
+            
+            if (pageDoc.exists()) {
+                const pageData = pageDoc.data();
+                console.log("Firebase에서 가져온 페이지 데이터:", pageData);
+                
+                // 도메인명과 시스템명 설정
+                setDomainName(pageData.name || "");
+                setSystemName(pageData.sysname || "");
+                
+                // createdAt 날짜 처리
+                if (pageData.createdAt) {
+                    try {
+                        let date;
+                        
+                        // Firestore Timestamp 객체인지 확인
+                        if (pageData.createdAt.toDate && typeof pageData.createdAt.toDate === 'function') {
+                            // Firestore Timestamp인 경우
+                            date = pageData.createdAt.toDate();
+                            console.log("Firestore Timestamp에서 변환된 날짜:", date);
+                        } else if (typeof pageData.createdAt === 'string') {
+                            // 문자열 형태의 날짜인 경우 (ISO 8601 형식 등)
+                            date = new Date(pageData.createdAt);
+                            console.log("문자열에서 변환된 날짜:", date);
+                        } else {
+                            // 그 외의 경우 직접 Date 객체로 변환 시도
+                            date = new Date(pageData.createdAt);
+                            console.log("기타 형태에서 변환된 날짜:", date);
+                        }
+                        
+                        // 날짜가 유효한지 확인
+                        if (date && !isNaN(date.getTime())) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const formattedDate = `${year}.${month}.${day}`;
+                            
+                            console.log("최종 포맷된 날짜:", formattedDate);
+                            setCreatedDate(formattedDate);
+                        } else {
+                            console.error("유효하지 않은 날짜:", pageData.createdAt);
+                            setCreatedDate("날짜 형식 오류");
+                        }
+                        
+                    } catch (dateError) {
+                        console.error("날짜 파싱 실패:", dateError, "원본 데이터:", pageData.createdAt);
+                        setCreatedDate("날짜 파싱 실패");
+                    }
+                } else {
+                    console.warn("createdAt 필드가 없습니다:", pageData);
+                    setCreatedDate("생성일 없음");
                 }
+                
             } else {
-                setCreatedDate("정보없음");
+                console.warn("해당 페이지 문서가 존재하지 않습니다:", pageId);
+                setDomainName("");
+                setSystemName("");
+                setCreatedDate("페이지 없음");
             }
-        } else {
-            console.warn("페이지를 찾을 수 없습니다:", pageId);
-            setCreatedDate("정보없음");
+            
+        } catch (error) {
+            console.error("Firebase에서 페이지 정보 로드 실패:", error);
+            setCreatedDate("로드 실패");
         }
     }, [pageId, setDomainName, setSystemName]);
 
@@ -288,6 +361,7 @@ const DashboardPage = () => {
     useEffect(() => {
         // 중복 실행 방지
         if (loadedRef.current) return;
+        
         if (location.state?.conversionTime) {
             console.log("conversionTime 설정:", location.state.conversionTime);
             setConversionTime(location.state.conversionTime);
@@ -309,41 +383,40 @@ const DashboardPage = () => {
         }
         
         const init = async () => {
-        console.log("Dashboard 초기화 시작:", { pageId });
-        setLoading(true);
-        loadedRef.current = true;
+            console.log("Dashboard 초기화 시작:", { pageId });
+            setLoading(true);
+            loadedRef.current = true;
 
-        // Firebase에서 stepExecutionTimes 불러오기
-        try {
-        console.log("pageid: ", pageId);
-        const times = await loadStepExecutionTimes(pageId);
-        console.log("Firebase로부터 stepExecutionTimes 로딩:", times);
-        setStepExecutionTimes(times); // 상태에 저장
-        } catch (e) {
-        console.error("stepExecutionTimes 불러오기 실패:", e);
-        }
+            // Firebase에서 stepExecutionTimes 불러오기
+            try {
+                console.log("pageid: ", pageId);
+                const times = await loadStepExecutionTimes(pageId);
+                console.log("Firebase로부터 stepExecutionTimes 로딩:", times);
+                setStepExecutionTimes(times); // 상태에 저장
+            } catch (e) {
+                console.error("stepExecutionTimes 불러오기 실패:", e);
+            }
 
-        // 주요 데이터 병렬 로드
-        try {
-        await Promise.all([
-            loadEntities(pageId),
-            loadRelationships(pageId),
-            loadGraphData(pageId),
-            fetchSavedUrls(pageId),
-            fetchDocuments(pageId),
-            fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
-        ]);
-        console.log("모든 데이터 로드 완료");
-        } catch (error) {
-        console.error("데이터 로드 중 오류:", error);
-        } finally {
-        setLoading(false);
-        }
+            // 주요 데이터 병렬 로드 (loadPageInfo 추가)
+            try {
+                await Promise.all([
+                    loadEntities(pageId),
+                    loadRelationships(pageId),
+                    loadGraphData(pageId),
+                    fetchSavedUrls(pageId),
+                    fetchDocuments(pageId),
+                    fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
+                    loadPageInfo() // Firebase에서 페이지 정보 로드 추가
+                ]);
+                console.log("모든 데이터 로드 완료");
+            } catch (error) {
+                console.error("데이터 로드 중 오류:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        loadPageInfo(); // 페이지 정보 불러오기
-    };
-
-    init();
+        init();
 
         // Cleanup function
         return () => {
@@ -368,7 +441,7 @@ const DashboardPage = () => {
                     <div className="stat-card url-card">
                         <div className="stat-header">
                             <span className="stat-icon">🌐</span>
-                            <span className="stat-change positive">+1</span>
+                            {/* <span className="stat-change positive">+1</span> */}
                         </div>
                         <div className="stat-number">{urlCount}</div>
                         <div className="stat-label">등록된 URL</div>
@@ -377,7 +450,6 @@ const DashboardPage = () => {
                     <div className="stat-card docs-card">
                         <div className="stat-header">
                             <span className="stat-icon">📄</span>
-                            <span className="stat-change positive">+2</span>
                         </div>
                         <div className="stat-number">{docCount}</div>
                         <div className="stat-label">수집된 문서</div>
@@ -386,7 +458,6 @@ const DashboardPage = () => {
                     <div className="stat-card entities-card">
                         <div className="stat-header">
                             <span className="stat-icon">🔗</span>
-                            <span className="stat-change positive">+108</span>
                         </div>
                         <div className="stat-number">{filteredEntities.length}</div>
                         <div className="stat-label">추출된 엔티티</div>
@@ -395,7 +466,6 @@ const DashboardPage = () => {
                     <div className="stat-card relations-card">
                         <div className="stat-header">
                             <span className="stat-icon">⚡</span>
-                            <span className="stat-change positive">+105</span>
                         </div>
                         <div className="stat-number">{filteredRelationships.length}</div>
                         <div className="stat-label">구축된 관계</div>
@@ -404,7 +474,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">⏰</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">2시간 전</div>
                         <div className="stat-label">마지막 업데이트</div>
@@ -413,7 +482,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">🕷️</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.crawling)}</div>
                         <div className="stat-label">크롤링에 걸린 시간</div>
@@ -422,7 +490,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">🧾</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.structuring)}</div>
                         <div className="stat-label">url 전처리에 걸린 시간</div>
@@ -431,7 +498,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">📑</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.document)}</div>
                         <div className="stat-label">문서 전처리에 걸린 시간</div>
@@ -440,7 +506,6 @@ const DashboardPage = () => {
                     <div className="stat-card time-card">
                         <div className="stat-header">
                             <span className="stat-icon">📍</span>
-                            <span className="stat-change positive">방금</span>
                         </div>
                         <div className="stat-number">{formatSecondsToMinutes(stepExecutionTimes.indexing)}</div>
                         <div className="stat-label">인덱싱에 걸린 시간</div>
@@ -476,7 +541,6 @@ const DashboardPage = () => {
                                 <thead>
                                     <tr>
                                         <th>URL</th>
-                                        <th>카테고리</th>
                                         <th>수집일</th>
                                     </tr>
                                 </thead>
@@ -488,11 +552,6 @@ const DashboardPage = () => {
                                                     <a href={item.url} className="url-link" target="_blank" rel="noopener noreferrer">
                                                         {item.url}
                                                     </a>
-                                                </td>
-                                                <td>
-                                                    <div className="url-summary">
-                                                        {item.description || ""}
-                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span className="date-text">{item.date}</span>

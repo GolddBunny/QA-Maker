@@ -13,19 +13,19 @@ import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
 import { initDocUrl } from '../api/InitDocUrl';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/sdk";
 
 import BASE_URL from "../config/url";  
 
 const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
-  // 기본 시간 (firebase에 저장하는 데 2분)
-  const BASE_TIME = 2;
+  // 기본 시간 (firebase에 저장하는 데 1분)
+  const BASE_TIME = 1;
   
   // 각 항목별 평균 처리 시간 (초 단위)
-  const DOC_STRUCTURING_TIME_PER_MB = 50; // 문서 1MB당 구조화 시간 (초)
+  const DOC_STRUCTURING_TIME_PER_MB = 15; // 문서 1MB당 구조화 시간 (초)
   const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
-  const URL_STRUCTURING_TIME = 40;        // URL 1개당 구조화 시간 (초)
+  const URL_STRUCTURING_TIME = 15;        // URL 1개당 구조화 시간 (초)
   const URL_INDEXING_TIME = 60;           // URL 1개당 인덱싱 시간 (초)
   
   // 총 처리 시간 계산 (초)
@@ -128,8 +128,9 @@ const AdminPage = () => {
       setHasDocuments,
       isAnyProcessing,
       pageId,
-      setDocCount
-    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
+      setDocCount,
+      setIsDragOver
+    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount, setIsDragOver]);
 
     // 전체 문서 용량 합계 (MB)
     const totalDocSizeMB = useMemo(() => {
@@ -193,7 +194,6 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       const urlArray = Array.isArray(urls) ? urls : [];
-      setUploadedUrls(urlArray); // undefined 방지
       setUrlCount(urlArray.length);
     } , []);
 
@@ -249,6 +249,31 @@ const AdminPage = () => {
       console.log("현재 admin pageId:", pageId);
       stepTimesRef.current = stepExecutionTimes;
 
+      // 1. Firestore URL 실시간 구독
+      const urlsRef = collection(db, "url_list", pageId, "list");
+      const urlQuery = query(urlsRef, orderBy("date", "desc"));
+      const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
+        const urlArray = snapshot.docs.map(doc => doc.data());
+        setUploadedUrls(urlArray);
+        setUrlCount(urlArray.length);
+      });
+
+      // 2. Firestore Document 실시간 구독
+      const docsRef = collection(db, "document_files");   // 컬렉션만 지정
+      const docQuery = query(
+        docsRef, 
+        where("page_id", "==", pageId),  // pageId 필터링
+        orderBy("date", "desc")          // 날짜 순 정렬
+      );
+
+      const unsubscribeDocs = onSnapshot(docQuery, (snapshot) => {
+        const docArray = snapshot.docs.map(doc => doc.data());
+        setUploadedDocs(docArray);
+        setDocCount(docArray.length);
+      }, (error) => {
+        console.error("Firestore 구독 에러:", error);
+      });
+
       const initializePage = async () => {
         try {
           // 1. 서버 작업 상태 먼저 확인
@@ -294,7 +319,7 @@ const AdminPage = () => {
           ]);
 
           // 6. 페이지 정보 설정
-          const pages = JSON.parse(localStorage.getItem('pages')) || [];
+          const pages = JSON.parse(localStorage.getItem('pages') || "[]");
           const currentPage = pages.find(page => page.id === pageId);
           if (currentPage) {
             setDomainName(currentPage.name || "");
@@ -309,6 +334,10 @@ const AdminPage = () => {
       };
 
       initializePage();
+      return () => {
+        unsubscribeUrls();
+        unsubscribeDocs();
+      };
     }, [pageId, navigate, checkServerProcessingStatus, fetchSavedUrls, checkOutputFolder]);
 
     const toggleSidebar = () => {
@@ -469,13 +498,6 @@ const AdminPage = () => {
           indexing: null
         });
 
-        const init_result = await initDocUrl(pageId);
-
-        if (init_result.success) {
-          console.log("초기화 성공:", init_result.message);
-        } else {
-          console.error("초기화 실패:", init_result.error);
-        }
 
         // 크롤링 및 구조화
         const final_result = await executeFullPipeline(pageId, handleStepComplete);
@@ -493,13 +515,13 @@ const AdminPage = () => {
             checkOutputFolder(pageId)
           ]);
         } else {
-          alert(`QA 시스템 구축 실패: ${final_result.error}`);
-          setShowProgressing(false); // 실패 시에만 자동으로 닫기
+          // alert(`QA 시스템 구축 실패: ${final_result.error}`);
+          // setShowProgressing(false); // 실패 시에만 자동으로 닫기
         }
       } catch (error) {
         console.error("QA 시스템 구축 중 오류:", error);
-        alert("QA 시스템 구축 중 오류가 발생했습니다.");
-        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+        // alert("QA 시스템 구축 중 오류가 발생했습니다.");
+        // setShowProgressing(false); // 에러 시에만 자동으로 닫기
       }finally {
         setIsApplyLoading(false);
       }
@@ -530,7 +552,6 @@ const AdminPage = () => {
           alert("업데이트 완료");
 
           await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);

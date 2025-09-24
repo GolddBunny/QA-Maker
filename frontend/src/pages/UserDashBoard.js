@@ -87,15 +87,15 @@ const UserDashboard = () => {
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
-          <span key={i} className="star star-filled">★</span>
+          <span key={i} className="user-star user-star-filled">★</span>
         );
       } else if (i === fullStars && hasHalfStar) {
         stars.push(
-          <span key={i} className="star star-filled">☆</span>
+          <span key={i} className="user-star user-star-filled">☆</span>
         );
       } else {
         stars.push(
-          <span key={i} className="star star-empty">☆</span>
+          <span key={i} className="user-star user-star-empty">☆</span>
         );
       }
     }
@@ -120,14 +120,14 @@ const UserDashboard = () => {
     }
     
     return (
-      <div className="confidence-bar-wrapper">
-        <div className="confidence-bar">
+      <div className="user-confidence-bar-wrapper">
+        <div className="user-confidence-bar">
           <div 
-            className="confidence-progress"
+            className="user-confidence-progress"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
-        <span className="confidence-percentage">{percentage}%</span>
+        <span className="user-confidence-percentage">{percentage}%</span>
       </div>
     );
   };
@@ -137,14 +137,14 @@ const UserDashboard = () => {
   // 로딩 중일 때
   if (qaLoading) {
     return (
-      <div className="dashboard-container">
-        <div className="dashboard-content">
-          <div className="dashboard-header">
-            <div className="header-controls">
-              <button className="back-button" onClick={handleBack}>
+      <div className="user-dashboard-container">
+        <div className="user-dashboard-content">
+          <div className="user-dashboard-header">
+            <div className="user-header-controls">
+              <button className="user-back-button" onClick={handleBack}>
                 ← 뒤로가기
               </button>
-              <h1 className="main-title">사용자 만족도</h1>
+              <h1 className="user-main-title">사용자 만족도</h1>
             </div>
           </div>
           <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -158,14 +158,14 @@ const UserDashboard = () => {
   // 에러가 있을 때
   if (qaError) {
     return (
-      <div className="dashboard-container">
-        <div className="dashboard-content">
-          <div className="dashboard-header">
-            <div className="header-controls">
-              <button className="back-button" onClick={handleBack}>
+      <div className="user-dashboard-container">
+        <div className="user-dashboard-content">
+          <div className="user-dashboard-header">
+            <div className="user-header-controls">
+              <button className="user-back-button" onClick={handleBack}>
                 ← 뒤로가기
               </button>
-              <h1 className="main-title">사용자 만족도</h1>
+              <h1 className="user-main-title">사용자 만족도</h1>
             </div>
           </div>
           <div style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>
@@ -177,59 +177,59 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-content">
+    <div className="user-dashboard-container">
+      <div className="user-dashboard-content">
         {/* 헤더 */}
-        <div className="dashboard-header">
-          <div className="header-controls">
-            <button className="back-button" onClick={handleBack}>
+        <div className="user-dashboard-header">
+          <div className="user-header-controls">
+            <button className="user-back-button" onClick={handleBack}>
               ← 뒤로가기
             </button>
-            <h1 className="main-title">사용자 만족도 (Page ID: {pageId})</h1>
+            <h1 className="user-main-title">사용자 만족도</h1>
           </div>
         </div>
 
         {/* 통계 카드 */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-card-content">
-              <div className="stat-info">
-                <h3 className="stat-title">🧾 사용자 질문 수</h3>
-                <p className="stat-value">{totalQuestions.toLocaleString()}</p>
+        <div className="user-stats-grid">
+          <div className="user-stat-card">
+            <div className="user-stat-card-content">
+              <div className="user-stat-info">
+                <h3 className="user-stat-title">🧾 사용자 질문 수</h3>
+                <p className="user-stat-value">{totalQuestions.toLocaleString()}</p>
               </div>
             </div>
           </div>
 
-          <div className="stat-card">
-            <div className="stat-card-content">
-              <div className="stat-info">
-                <h3 className="stat-title">⭐️ 평균 만족도</h3>
-                <p className="stat-value">{averageSatisfaction} / 5</p>
+          <div className="user-stat-card">
+            <div className="user-stat-card-content">
+              <div className="user-stat-info">
+                <h3 className="user-stat-title">⭐️ 평균 만족도</h3>
+                <p className="user-stat-value">{averageSatisfaction} / 5</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* 유저 질문 및 만족도 분석 */}
-        <div className="analysis-section">
-          <div className="analysis-header">
-            <h2 className="analysis-title">🙋🏻‍♀️ 유저 질문 및 만족도 분석</h2>
-            <p className="analysis-subtitle">*정보 신뢰성: 제공된 정보의 정확성 평가</p>
+        <div className="user-analysis-section">
+          <div className="user-analysis-header">
+            <h2 className="user-analysis-title">🙋🏻‍♀️ 유저 질문 및 만족도 분석</h2>
+            <p className="user-analysis-subtitle">*정보 신뢰성: 제공된 정보의 정확성 평가</p>
           </div>
 
-          <div className="table-container">
+          <div className="user-table-container">
             {/* 테이블 헤더 */}
-            <div className="table-header">
-              <div className="table-cell question-header">질문</div>
-              <div className="table-cell satisfaction-header">만족도</div>
-              <div className="table-cell confidence-header">정보 신뢰성</div>
+            <div className="user-table-header">
+              <div className="user-table-cell user-question-header">질문</div>
+              <div className="user-table-cell user-satisfaction-header">만족도</div>
+              <div className="user-table-cell user-confidence-header">정보 신뢰성</div>
             </div>
 
             {/* 테이블 내용 */}
-            <div className="table-body">
+            <div className="user-table-body">
               {qaData.length === 0 ? (
-                <div className="table-row">
-                  <div className="table-cell" style={{ textAlign: 'center', padding: '2rem', gridColumn: '1 / -1' }}>
+                <div className="user-table-row">
+                  <div className="user-table-cell" style={{ textAlign: 'center', padding: '2rem', gridColumn: '1 / -1' }}>
                     페이지 ID {pageId}에 대한 QA 데이터가 없습니다.
                   </div>
                 </div>
@@ -239,22 +239,22 @@ const UserDashboard = () => {
                   const confidence = qa.confidence || 0;
                   
                   return (
-                    <div key={qa.id || index} className="table-row">
+                    <div key={qa.id || index} className="user-table-row">
                       {/* 질문 */}
-                      <div className="table-cell question-cell">
-                        <p className="question-text">{qa.question || '질문 없음'}</p>
+                      <div className="user-table-cell user-question-cell">
+                        <p className="user-question-text">{qa.question || '질문 없음'}</p>
                       </div>
                       
                       {/* 만족도 */}
-                      <div className="table-cell satisfaction-cell">
-                        <div className="stars-wrapper">
+                      <div className="user-table-cell user-satisfaction-cell">
+                        <div className="user-stars-wrapper">
                           {renderStars(satisfaction)}
                         </div>
-                        <p className="satisfaction-value">({satisfaction})</p>
+                        <p className="user-satisfaction-value">({satisfaction})</p>
                       </div>
                       
                       {/* 정보 신뢰성 */}
-                      <div className="table-cell confidence-cell">
+                      <div className="user-table-cell user-confidence-cell">
                         {renderConfidenceBar(confidence)}
                       </div>
                     </div>

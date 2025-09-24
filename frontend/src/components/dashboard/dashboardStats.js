@@ -1,8 +1,3 @@
-// 랜덤 값 생성 헬퍼 함수
-const getRandomValue = (min = 1, max = 10) => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
 // 업로드된 URL 및 문서 데이터를 기반으로 날짜별 통계를 반환하는 함수
 export const getDateStats = (uploadedUrls, uploadedDocs) => {
     const dateMap = {};
@@ -39,9 +34,9 @@ export const getDateStats = (uploadedUrls, uploadedDocs) => {
         const dateStr = d.toISOString().substring(0, 10); // 전체 날짜 문자열
         const shortDate = dateStr.substring(8); // 일자만 추출 (예: "28")
 
-        // 실제 데이터가 있으면 사용, 없으면 랜덤 값 생성
-        const urlCount = dateMap[dateStr]?.url || getRandomValue(0, 8);
-        const docCount = dateMap[dateStr]?.doc || getRandomValue(0, 6);
+        // 실제 데이터만 사용, 없으면 0
+        const urlCount = dateMap[dateStr]?.url || 0;
+        const docCount = dateMap[dateStr]?.doc || 0;
 
         dates.push({
             date: shortDate, // 시각화용 짧은 날짜
@@ -84,9 +79,9 @@ export const getKnowledgeGraphDateStats = (knowledgeGraphStats) => {
         const dateStr = d.toISOString().substring(0, 10);
         const shortDate = dateStr.substring(8);
 
-        // 실제 데이터가 있으면 사용, 없으면 랜덤 값 생성
-        const entityCount = dateMap[dateStr]?.entity || getRandomValue(5, 25);
-        const relationshipCount = dateMap[dateStr]?.relationship || getRandomValue(3, 15);
+        // 실제 데이터만 사용, 없으면 0
+        const entityCount = dateMap[dateStr]?.entity || 0;
+        const relationshipCount = dateMap[dateStr]?.relationship || 0;
 
         dates.push({
             date: shortDate,
@@ -126,9 +121,9 @@ export const getGraphBuildDateStats = (graphBuildStats) => {
         const dateStr = d.toISOString().substring(0, 10);
         const shortDate = dateStr.substring(8);
 
-        // 실제 데이터가 있으면 사용, 없으면 랜덤 값 생성
-        const entityCount = dateMap[dateStr]?.entity || getRandomValue(50, 200);
-        const relationshipCount = dateMap[dateStr]?.relationship || getRandomValue(30, 150);
+        // 실제 데이터만 사용, 없으면 0
+        const entityCount = dateMap[dateStr]?.entity || 0;
+        const relationshipCount = dateMap[dateStr]?.relationship || 0;
 
         dates.push({
             date: shortDate,
