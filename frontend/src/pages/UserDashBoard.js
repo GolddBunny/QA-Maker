@@ -116,7 +116,7 @@ const UserDashboard = () => {
       percentage = Math.round(confidence);
     } else {
       // 100보다 큰 값인 경우 (잘못된 데이터)
-      percentage = Math.min(Math.round(confidence / 10), 100); // 임시 보정
+      percentage = Math.min(Math.round(confidence / 10), 100);
     }
     
     return (

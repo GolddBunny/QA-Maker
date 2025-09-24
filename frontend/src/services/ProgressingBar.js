@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import '../styles/ProgressingBar.css';
 
-const ProgressingBar = ({ 
+const ProgressingBar = ({
   onClose, 
   onAnalyzer, 
   isCompleted, 
@@ -29,10 +29,10 @@ const ProgressingBar = ({
 
     // 각 단계별 진행률 증가 한계치
     const stepConfigs = {
-      crawling: { max: 25 },
-      structuring: { max: 50 },
-      document: { max: 75 },
-      indexing: { max: 99 },
+      crawling: { max: 21 },      // 24%까지
+      structuring: { max: 56 },   // 53%까지
+      document: { max: 85 },      // 65%까지
+      indexing: { max: 99 },      // 99%까지
     };
 
     const config = stepConfigs[currentStep];
@@ -47,32 +47,32 @@ const ProgressingBar = ({
           // 랜덤한 동작 패턴 결정
           const randomAction = Math.random();
           
-          // 50% 확률로 멈춤 (아무것도 안함)
+          // 50% 확률로 멈춤
           if (randomAction < 0.5) {
             return prev;
           }
-          // 10% 확률로 빠른 진행 (큰 폭으로 증가)
-          else if (randomAction < 0.7) {
-            const fastIncrement = Math.floor(Math.random() * 7) + 2; // 2~10% 증가
+          // 10% 확률로 빠른 진행
+          else if (randomAction < 0.6) {
+            const fastIncrement = Math.floor(Math.random() * 4) + 1; // 1~4% 증가
             return Math.min(prev + fastIncrement, config.max);
           }
-          // 35% 확률로 일반 진행
+          // 40% 확률로 일반 진행
           else {
-            const normalIncrement = Math.floor(Math.random() * 2) + 1; // 1~3% 증가
+            const normalIncrement = Math.floor(Math.random() * 2) + 1; // 1~2% 증가
             return Math.min(prev + normalIncrement, config.max);
           }
         });
 
-        // 다음 업데이트까지의 랜덤 시간 설정 (2000ms ~ 8000ms)
-        const nextDelay = Math.floor(Math.random() * 6000) + 2000;
+        // 다음 업데이트까지의 랜덤 시간 설정 (4000ms ~ 12000ms)
+        const nextDelay = Math.floor(Math.random() * 8000) + 4000;
         
         setTimeout(() => {
           updateProgress();
         }, nextDelay);
       };
 
-      // 첫 업데이트 시작
-      const initialDelay = Math.floor(Math.random() * 2000) + 1000;
+      // 첫 업데이트 시작 (더 긴 초기 딜레이)
+      const initialDelay = Math.floor(Math.random() * 3000) + 2000;
       setTimeout(() => {
         updateProgress();
       }, initialDelay);
@@ -109,7 +109,7 @@ const ProgressingBar = ({
         const increment = diff > 0 ? Math.ceil(diff / 10) : Math.floor(diff / 10);
         return prev + increment;
       });
-    }, 50); // 더 부드러운 애니메이션을 위해 짧은 간격
+    }, 100); // 더 느린 애니메이션을 위해 간격 늘림
 
     return () => {
       if (displayIntervalRef.current) {

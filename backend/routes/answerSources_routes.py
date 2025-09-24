@@ -5,8 +5,43 @@ import pandas as pd
 from typing import List, Dict, Optional
 from firebase_config import bucket
 from io import BytesIO
+from urllib.parse import urlparse
 
 url_source_bp = Blueprint('url_source', __name__)
+
+def clean_url(url: str) -> str:
+    """URL에서 불필요한 텍스트 제거 및 정화"""
+    if not url:
+        return url
+    
+    # URL 뒤에 붙은 불필요한 텍스트 패턴들 제거
+    cleanup_patterns = [
+        r'Markdown.*$',  # Markdown으로 시작하는 모든 텍스트
+        r'\).*$',  # )로 시작하는 모든 텍스트
+        r'[\s]+.*$',  # 공백 뒤의 모든 텍스트 (단, URL 내부 공백은 보통 %20으로 인코딩되므로 실제 공백은 URL 끝을 의미)
+    ]
+    
+    cleaned_url = url.strip()
+    
+    for pattern in cleanup_patterns:
+        cleaned_url = re.sub(pattern, '', cleaned_url, flags=re.IGNORECASE)
+    
+    # URL이 유효한지 기본 검증
+    try:
+        parsed = urlparse(cleaned_url)
+        if parsed.scheme and parsed.netloc:
+            return cleaned_url
+        else:
+            # 스키마가 없으면 http:// 추가 시도
+            if not cleaned_url.startswith(('http://', 'https://')):
+                test_url = 'https://' + cleaned_url
+                test_parsed = urlparse(test_url)
+                if test_parsed.netloc:
+                    return test_url
+    except Exception:
+        pass
+    
+    return cleaned_url
 
 def extract_urls_from_csv(csv_path: str) -> List[Dict[str, str]]:
     """CSV 파일에서 URL Source와 Title 추출"""
@@ -103,7 +138,10 @@ def extract_urls_from_csv(csv_path: str) -> List[Dict[str, str]]:
                 for pattern in url_patterns:
                     url_match = re.search(pattern, text, re.IGNORECASE)
                     if url_match:
-                        url = url_match.group(1).strip()
+                        raw_url = url_match.group(1).strip()
+                        # URL 정화 적용
+                        url = clean_url(raw_url)
+                        print(f"[DEBUG] URL 정화: '{raw_url}' → '{url}'")
                         break
                 
                 if idx < 3:  # 처음 3개 행 디버깅 정보
@@ -221,15 +259,22 @@ def find_url_and_title_from_source_id(df: pd.DataFrame, source_id: int) -> Optio
             combined_match = re.search(r'Title:\s*([^U]+?)URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
             if combined_match:
                 title = combined_match.group(1).strip()
-                url = combined_match.group(2).strip()
-                return {'title': title, 'url': url}
+                raw_url = combined_match.group(2).strip()
+                # URL 정화 적용
+                cleaned_url = clean_url(raw_url)
+                print(f"[DEBUG] URL 정화 in find_url_and_title: '{raw_url}' → '{cleaned_url}'")
+                return {'title': title, 'url': cleaned_url}
 
             title_match = re.search(r'Title:\s*([^U\n]+)', text)
             url_match = re.search(r'URL Source:\s*(https?://[^\s]+?)(?:Markdown|$|\s)', text)
             if title_match or url_match:
                 title = title_match.group(1).strip() if title_match else None
-                url = url_match.group(1).strip() if url_match else None
-                return {'title': title, 'url': url}
+                raw_url = url_match.group(1).strip() if url_match else None
+                # URL 정화 적용
+                cleaned_url = clean_url(raw_url) if raw_url else None
+                if raw_url and cleaned_url:
+                    print(f"[DEBUG] URL 정화 in find_url_and_title: '{raw_url}' → '{cleaned_url}'")
+                return {'title': title, 'url': cleaned_url}
 
             return None
         
