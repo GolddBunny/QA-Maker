@@ -92,7 +92,7 @@ const AdminMainPage = () => {
               onClick={() => handlePageClick(page.id)} // 클릭 시 해당 페이지로 이동
             >
               <div className="org-circle">
-                <div className="org-icon">📘</div> {/* 아이콘은 필요 시 변경 가능 */}
+                <div className="org-icon">📒</div> {/* 아이콘은 필요 시 변경 가능 */}
               </div>
               <div className="org-name">{page.name}</div>
             </div>
@@ -112,7 +112,6 @@ const AdminMainPage = () => {
         <div className="footer-content">
           <p className="team-name">© 2025 황금토끼 팀</p>
           <p className="team-members">개발자: 옥지윤, 성주연, 김민서</p>
-          <p className="footer-note">본 시스템은 한성대학교 QA 시스템 구축 프로젝트의 일환으로 제작되었습니다.</p>
         </div>
       </footer>
     </div>

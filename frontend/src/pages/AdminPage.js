@@ -194,6 +194,8 @@ const AdminPage = () => {
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       const urlArray = Array.isArray(urls) ? urls : [];
+
+      setUploadedUrls(urlArray);
       setUrlCount(urlArray.length);
     } , []);
 
@@ -509,7 +511,7 @@ const AdminPage = () => {
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
+            fetchSavedUrls(pageId),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);
@@ -748,7 +750,7 @@ const AdminPage = () => {
                   </>
                 )}
               </div>
-              {!isAnyProcessing && (
+              {/* {!isAnyProcessing && (
                 <button
                   onClick={handleProcessDocuments}
                   disabled={isAnyProcessing}
@@ -756,7 +758,7 @@ const AdminPage = () => {
                 >
                   +
                 </button>
-              )}
+              )} */}
             </div>
 
             <div className="document-table-scroll">
@@ -801,7 +803,7 @@ const AdminPage = () => {
                 onClick={handleUpdate}
                 disabled={isCheckingOutput}
               > 
-                Update QA System
+                Update Q&A System
               </button>
               <button 
                 className="btn-apply-update"
@@ -824,7 +826,7 @@ const AdminPage = () => {
               onClick={handleApply}
               disabled={isCheckingOutput || hasOutput === null}
             > 
-              Build QA System
+              Build Q&A System
             </button>
           )}
         </div>
@@ -851,7 +853,7 @@ const AdminPage = () => {
           <div className="footer-content">
             <p className="team-name">© 2025 황금토끼 팀</p>
             <p className="team-members">개발자: 옥지윤, 성주연, 김민서</p>
-            <p className="footer-note">본 시스템은 한성대학교 QA 시스템 구축 프로젝트의 일환으로 제작되었습니다.</p>
+            {/* <p className="footer-note">본 시스템은 한성대학교 QA 시스템 구축 프로젝트의 일환으로 제작되었습니다.</p> */}
           </div>
         </footer>
       </div>
