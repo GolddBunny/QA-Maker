@@ -496,7 +496,7 @@ def convert_to_pdf_fast(input_file):
 
 @source_bp.route('/api/document/<path:filename>')
 def get_document(filename):
-    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외) - 하이라이팅 기능 추가"""
+    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외) + 근거 하이라이팅"""
     try:
         # page_id 쿼리 파라미터 필수
         page_id = request.args.get('page_id')
@@ -661,7 +661,7 @@ def download_document(filename):
         print(f"파일 다운로드 중 오류: {str(e)}")
         return jsonify({"error": str(e)}), 500
     
-# 기존 PDF API 엔드포인트 (호환성 유지)
+# 기존 PDF API 엔드포인트
 @source_bp.route('/api/pdf/<path:filename>')
 def get_pdf(filename):
     """PDF 파일 제공 (호환성을 위한 별칭)"""
