@@ -25,8 +25,8 @@ const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
   // 각 항목별 평균 처리 시간 (초 단위)
   const DOC_STRUCTURING_TIME_PER_MB = 15; // 문서 1MB당 구조화 시간 (초)
   const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
-  const URL_STRUCTURING_TIME = 15;        // URL 1개당 구조화 시간 (초)
-  const URL_INDEXING_TIME = 60;           // URL 1개당 인덱싱 시간 (초)
+  const URL_STRUCTURING_TIME = 5;        // URL 1개당 구조화 시간 (초)
+  const URL_INDEXING_TIME = 40;           // URL 1개당 인덱싱 시간 (초)
   
   // 총 처리 시간 계산 (초)
   const totalDocTime = totalDocSizeMB * (DOC_STRUCTURING_TIME_PER_MB + DOC_INDEXING_TIME_PER_MB);
@@ -497,7 +497,6 @@ const AdminPage = () => {
           document: null,
           indexing: null
         });
-
 
         // 크롤링 및 구조화
         const final_result = await executeFullPipeline(pageId, handleStepComplete);
