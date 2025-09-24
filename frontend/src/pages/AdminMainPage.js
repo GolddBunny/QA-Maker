@@ -92,7 +92,7 @@ const AdminMainPage = () => {
               onClick={() => handlePageClick(page.id)} // 클릭 시 해당 페이지로 이동
             >
               <div className="org-circle">
-                <div className="org-icon">📘</div> {/* 아이콘은 필요 시 변경 가능 */}
+                <div className="org-icon">📒</div> {/* 아이콘은 필요 시 변경 가능 */}
               </div>
               <div className="org-name">{page.name}</div>
             </div>
