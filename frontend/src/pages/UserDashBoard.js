@@ -148,7 +148,7 @@ const UserDashboard = () => {
             </div>
           </div>
           <div style={{ textAlign: 'center', padding: '2rem' }}>
-            페이지 ID {pageId}의 데이터를 불러오는 중...
+            데이터를 불러오는 중...
           </div>
         </div>
       </div>
@@ -230,7 +230,7 @@ const UserDashboard = () => {
               {qaData.length === 0 ? (
                 <div className="user-table-row">
                   <div className="user-table-cell" style={{ textAlign: 'center', padding: '2rem', gridColumn: '1 / -1' }}>
-                    페이지 ID {pageId}에 대한 QA 데이터가 없습니다.
+                    현재 유저 질문이 없습니다.
                   </div>
                 </div>
               ) : (
