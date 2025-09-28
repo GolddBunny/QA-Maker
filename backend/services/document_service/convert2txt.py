@@ -4,7 +4,7 @@ import pandas as pd
 import docx 
 import shutil
 
-from .hwp2txt import convert_hwp_file
+from .hwp_to_md_txt import convert_hwp_file
 from .pdf_to_md_txt import convert_pdf_file
 from .docx_to_md_txt import convert_docx_file
 
