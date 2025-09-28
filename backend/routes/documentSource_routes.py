@@ -16,9 +16,8 @@ import signal
 import psutil
 import fitz
 from firebase_config import bucket
-source_bp = Blueprint('source', __name__)
 from firebase_admin import firestore
-from firebase_config import bucket
+source_bp = Blueprint('source', __name__)
 db = firestore.client()
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -182,7 +181,7 @@ def get_context_sources():
         except Exception as e:
             print(f"Firestore 조회 오류: {e}")
         
-        print(f"filename_mapping: {filename_mapping}")
+        #print(f"filename_mapping: {filename_mapping}")
         print(f"headlines: {list(headlines)}")
         
         # headlines 순서에 맞춰 original_filenames 배열 생성
@@ -225,6 +224,7 @@ def extract_headline(text):
         headline_patterns = [
             r'headline:\s*([^|\n\r]+?)(?:\s*(?:page:|content:|headline:|\||$))',  # | 또는 다른 필드 전까지
             r'headline:\s*([^|\n\r]+)',  # 줄 끝까지
+            r'\*\*아래는\s+(.+?)\s+파일의\s+\d+페이지\s+내용입니다\.\*\*',
         ]
         
         for pattern in headline_patterns:
@@ -496,7 +496,7 @@ def convert_to_pdf_fast(input_file):
 
 @source_bp.route('/api/document/<path:filename>')
 def get_document(filename):
-    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외) + 근거 하이라이팅"""
+    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외) - 하이라이팅 기능 추가"""
     try:
         # page_id 쿼리 파라미터 필수
         page_id = request.args.get('page_id')
@@ -661,7 +661,7 @@ def download_document(filename):
         print(f"파일 다운로드 중 오류: {str(e)}")
         return jsonify({"error": str(e)}), 500
     
-# 기존 PDF API 엔드포인트
+# 기존 PDF API 엔드포인트 (호환성 유지)
 @source_bp.route('/api/pdf/<path:filename>')
 def get_pdf(filename):
     """PDF 파일 제공 (호환성을 위한 별칭)"""
