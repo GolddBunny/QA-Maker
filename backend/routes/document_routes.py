@@ -67,7 +67,7 @@ def upload_documents(page_id):
         # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
         blob.metadata = {
             "original_filename": original_filename,
-            "category": "unknown",
+            "category": "uploaded",  # 기본값
             "date": today_str
         }
 
@@ -81,7 +81,7 @@ def upload_documents(page_id):
             'download_url': blob.public_url,
             'page_id': page_id,
             'upload_date': today_str,
-            'category': "unknown",   
+            'category': "uploaded",  # 기본값
             'date': today_str,
             'size_mb': round(size_mb, 2)  # 크기 정보 추가  
         }

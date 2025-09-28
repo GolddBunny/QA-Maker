@@ -522,13 +522,13 @@ const DashboardPage = () => {
                             URL 리스트
                         </h2>
                             <div className="search-controls">
-                                <div className="search-box">
+                                {/* <div className="search-box">
                                     <span className="search-icon">🔍</span>
                                     <input 
                                         type="text" 
                                         placeholder="URL에서 도메인으로 검색..."
                                     />
-                                </div>
+                                </div> */}
                                 <div className="entity-count">
                                 {`총 URL 수: ${urlCount}`}
                                 </div>
@@ -579,13 +579,13 @@ const DashboardPage = () => {
                             문서 목록
                         </h2>
                         <div className="search-controls">
-                            <div className="search-box">
+                            {/* <div className="search-box">
                                 <span className="search-icon">🔍</span>
                                 <input 
                                     type="text" 
                                     placeholder="문서명으로 검색..."
                                 />
-                            </div>
+                            </div> */}
                             <div className="entity-count">
                                 {`총 문서 수: ${docCount}`}
                             </div>

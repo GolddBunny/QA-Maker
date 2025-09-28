@@ -710,8 +710,10 @@ const AdminPage = () => {
                   </tbody>
                 </table>
               </div>
+              
              <div className='search-firebase-sum'>총 url 수: {urlCount}</div>
             </div>
+            
           
           {/* 오른쪽 문서 섹션 */}
           <div className="doc-upload">
@@ -791,6 +793,20 @@ const AdminPage = () => {
               </table>
             </div>
             <div className="search-firebase-sum">총 문서 수: {docCount}</div>
+            {duplicateFileName && (
+              <div className="duplicate-warning-box">
+                <div className="duplicate-warning-message">
+                  <strong>중복된 문서</strong><br />
+                  <span>{duplicateFileName}은 이미 등록된 문서입니다. 문서명을 변경해주세요.</span>
+                </div>
+                <button
+                  className="close-warning-button"
+                  onClick={() => setDuplicateFileName(null)}
+                >
+                  ×
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

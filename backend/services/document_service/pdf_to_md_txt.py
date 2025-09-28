@@ -5,6 +5,9 @@ from glob import glob
 import os, re, sys, time, warnings, contextlib, csv
 from tabulate import tabulate
 from multiprocessing import Pool, cpu_count
+import pytesseract
+from PIL import Image
+import io
 warnings.filterwarnings("ignore")
 
 @contextlib.contextmanager
@@ -55,7 +58,7 @@ def extract_text_with_ocr(pdf_path, page_num):
         print(f"OCR 처리 중 오류 발생: {e}")
         return ""
     
-def convert_pdf_file(pdf_path, output_path, original_filename=None):
+def convert_pdf_file(pdf_path, output_path, original_filename):
     """
     주어진 PDF 파일에서 텍스트를 추출합니다.
     텍스트가 추출되지 않는 경우 OCR 사용
@@ -67,7 +70,7 @@ def convert_pdf_file(pdf_path, output_path, original_filename=None):
     
     all_content = []
 
-    pdf_name = Path(pdf_path).stem
+    pdf_name = os.path.splitext(original_filename)[0]
     
     for page_num in range(len(doc)):
         page = doc[page_num]
