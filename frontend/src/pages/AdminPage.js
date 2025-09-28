@@ -372,7 +372,7 @@ const AdminPage = () => {
     // URL 저장
     const handleUrlUpload = async () => {
       if (urlInput.trim() === '') return;
-      if (isAnyProcessing) return;
+      if (isUrlLoading) return;
 
       if (!isValidUrl(urlInput)) {
         alert('유효한 URL을 입력해주세요');
@@ -663,12 +663,12 @@ const AdminPage = () => {
             <div className="url-input">
               <input
                 type="text"
-                value={urlInput}
+                value={isAnyProcessing ? "처리 중 ..." : urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder={isAnyProcessing ? '처리 중 ...' : 'https://example.com'}
                 className="url-input-field"
                 disabled={isAnyProcessing}
-                style={{ color: isAnyProcessing ? 'transparent' : 'inherit' }}
+                style={{ color: isAnyProcessing ? '#070707ff' : 'inherit' }}
               />
 
               {/* 버튼은 로딩 중일 때 숨김 */}

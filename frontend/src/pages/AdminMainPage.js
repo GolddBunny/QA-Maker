@@ -66,8 +66,8 @@ const AdminMainPage = () => {
           
           {/* 기존 메인 페이지 열기 버튼 */}
           <div className="action-button open-page"
-                onClick={() => {
-                    const mainPage = findMainPage(); // 메인 타입 페이지 찾기
+                onClick={async () => {  // async로 만들어야 await 사용 가능
+                    const mainPage = await findMainPage(); // await 추가
                     if (mainPage) {
                         handlePageClick(mainPage.id);
                     } else {
