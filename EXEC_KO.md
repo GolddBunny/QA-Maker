@@ -163,21 +163,22 @@ backend/accuracy_service/.env
 4) 프로젝트 생성이 되면 ‘+앱 추가’ 버튼을 눌러 웹 버튼을 누른다.
 5) 웹 앱에 Firebase 추가 화면이 나온다.
 6) 앱 닉네임에 QA Maker를 작성하고 앱 등록 버튼을 누른다.
-7) Firebase SDK 추가에서 npm 사용 화면에 나온 코드를 확인한 후 const firebaseConfig 아래에 나온 apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId, measurementId의 값들을 project의 다음 위치에 아래 형식과 같이 넣어준다:
-  - frontend/src/.env
-REACT_APP_FIREBASE_API_KEY=your-api-key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
-REACT_APP_FIREBASE_PROJECT_ID=your-project-id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your-app.appspot.com
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=xxxx
-REACT_APP_FIREBASE_APP_ID=xxxx
-REACT_APP_FIREBASE_MEASUREMENT_ID=G-xxxx
-
-	8) 콘솔로 이동 버튼을 누른다.
-	9) 프로젝트 개요 옆 프로젝트 설정 버튼을 누른다. 
-	10) 서비스 계정 항목에 들어간다.
-	11) 아래 ‘새 비공개 키 생성’ 버튼을 눌러 json 파일을 다운받는다.
-	12) 다운받은 json 파일을 다음 위치에 넣어준다:
-	  - backend/services/firebase/
-	13) backend/firebase_config.py파일의 8번째 줄의 ‘qamaker-e32d7-firebase-adminsdk-fbsvc-9c8756c5bc.json’ 위치에 다운받은 json 파일 이름으로 변경해준다.
+7) Firebase SDK 추가에서 npm 사용 화면에 나온 코드를 확인한 후 const firebaseConfig 아래에 나온 apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId, measurementId의 값들을 project의 다음 위치에 아래 형식과 같이 넣어준다: <br>
+`frontend/src/.env`
+	```
+	REACT_APP_FIREBASE_API_KEY=your-api-key
+	REACT_APP_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
+	REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+	REACT_APP_FIREBASE_STORAGE_BUCKET=your-app.appspot.com
+	REACT_APP_FIREBASE_MESSAGING_SENDER_ID=xxxx
+	REACT_APP_FIREBASE_APP_ID=xxxx
+	REACT_APP_FIREBASE_MEASUREMENT_ID=G-xxxx
+	```
+8) 콘솔로 이동 버튼을 누른다.
+9) 프로젝트 개요 옆 프로젝트 설정 버튼을 누른다. 
+10) 서비스 계정 항목에 들어간다.
+11) 아래 ‘새 비공개 키 생성’ 버튼을 눌러 json 파일을 다운받는다.
+12) 다운받은 json 파일을 다음 위치에 넣어준다: <br>
+`backend/services/firebase/`
+13) `backend/firebase_config.py`파일의 8번째 줄의 `qamaker-e32d7-firebase-adminsdk-fbsvc-9c8756c5bc.json` 위치에 다운받은 json 파일 이름으로 변경해준다.
 
