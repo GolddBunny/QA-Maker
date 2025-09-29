@@ -134,3 +134,50 @@
 
 - **입력 데이터가 인식되지 않을 때**  
 &nbsp;&nbsp;output 폴더가 data/input/{page_id} 아래에 있는지, 각 폴더에 .env 파일이 있는지 확인.
+
+---
+
+## 외부 서비스 설정
+
+### 1. OpenAI API 키 - GPT 모델 사용을 위한 유료 API키 필요
+1) https://openai.com/ko-KR/index/openai-api/ 주소로 이동하여 로그인한다. 
+2) API platform에 들어간다. (https://platform.openai.com/docs/overview)
+3) Settings에서 API keys 항목에 들어간다. (https://platform.openai.com/settings/organization/api-keys)
+4) 우측 위 Create new secret key를 눌러 api key를 발급한다.
+5) Billing 항목에 들어가 Add to credit balance를 눌러 돈을 충전한다. (5$부터 충전가능함) 
+(https://platform.openai.com/settings/organization/billing/overview)
+6) 만든 키를 project의 다음 위치에 넣어준다: <br>
+
+```
+data/{모든 폴더}/.env 
+backend/accuracy_service/.env
+```
+
+.env 파일의 내용은 다음과 같다: <br>
+`GRAPHRAG_API_KEY=sk-your-openai-api-key-here`
+
+### 2. Firebase : Database, Storage 사용
+1) https://console.firebase.google.com/?hl=ko 주소로 이동하여 로그인한다.
+2) 새 Firebase 프로젝트 만들기를 누른다.
+3) 프로젝트 이름에 QA Maker 를 입력하고 계속 버튼을 눌러 프로젝트 만들기 버튼을 누른다.
+4) 프로젝트 생성이 되면 ‘+앱 추가’ 버튼을 눌러 웹 버튼을 누른다.
+5) 웹 앱에 Firebase 추가 화면이 나온다.
+6) 앱 닉네임에 QA Maker를 작성하고 앱 등록 버튼을 누른다.
+7) Firebase SDK 추가에서 npm 사용 화면에 나온 코드를 확인한 후 const firebaseConfig 아래에 나온 apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId, measurementId의 값들을 project의 다음 위치에 아래 형식과 같이 넣어준다:
+  - frontend/src/.env
+REACT_APP_FIREBASE_API_KEY=your-api-key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-app.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=xxxx
+REACT_APP_FIREBASE_APP_ID=xxxx
+REACT_APP_FIREBASE_MEASUREMENT_ID=G-xxxx
+
+	8) 콘솔로 이동 버튼을 누른다.
+	9) 프로젝트 개요 옆 프로젝트 설정 버튼을 누른다. 
+	10) 서비스 계정 항목에 들어간다.
+	11) 아래 ‘새 비공개 키 생성’ 버튼을 눌러 json 파일을 다운받는다.
+	12) 다운받은 json 파일을 다음 위치에 넣어준다:
+	  - backend/services/firebase/
+	13) backend/firebase_config.py파일의 8번째 줄의 ‘qamaker-e32d7-firebase-adminsdk-fbsvc-9c8756c5bc.json’ 위치에 다운받은 json 파일 이름으로 변경해준다.
+
