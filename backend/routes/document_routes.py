@@ -129,7 +129,7 @@ def get_uploaded_documents(page_id):
                     
             result.append({
                 'original_filename': data.get('original_filename'),
-                'category': data.get('category', 'unknown'),
+                'category': data.get('category', 'uploaded'),
                 'date': data.get('upload_date')
             })
 

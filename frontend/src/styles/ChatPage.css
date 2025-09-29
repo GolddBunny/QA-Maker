@@ -132,12 +132,12 @@
 
 /* 왼쪽 버튼 컨테이너 */
 .nav-button-container:first-of-type {
-  left: -4em;
+  left: -3em;
 }
 
 /* 오른쪽 버튼 컨테이너 */
 .nav-button-container:last-of-type {
-  right: -4em;
+  right: -3em;
 }
 
 /* 답변 버튼 */

@@ -11,6 +11,7 @@ const ProgressingBar = ({
 }) => {
   const [progress, setProgress] = useState(0);
   const [displayProgress, setDisplayProgress] = useState(0);
+  const [showAnalyzerButton, setShowAnalyzerButton] = useState(false);
   const intervalRef = useRef(null);
   const displayIntervalRef = useRef(null);
 
@@ -21,17 +22,11 @@ const ProgressingBar = ({
       intervalRef.current = null;
     }
 
-    // 완료 시 바로 100%
-    if (isCompleted) {
-      setProgress(100);
-      return;
-    }
-
     // 각 단계별 진행률 증가 한계치
     const stepConfigs = {
-      crawling: { max: 21 },      // 24%까지
-      structuring: { max: 56 },   // 53%까지
-      document: { max: 85 },      // 65%까지
+      crawling: { max: 12 },      // 24%까지
+      structuring: { max: 30 },   // 53%까지
+      document: { max: 48 },      // 65%까지
       indexing: { max: 99 },      // 99%까지
     };
 
@@ -117,6 +112,27 @@ const ProgressingBar = ({
       }
     };
   }, [progress]);
+
+  // 10초 후에 progress와 displayProgress를 100%로 설정하고 버튼 표시
+  useEffect(() => {
+    let timeoutId;
+    if (isCompleted) {
+      setShowAnalyzerButton(false);
+      timeoutId = setTimeout(() => {
+        setProgress(100);
+        setDisplayProgress(100);
+        setShowAnalyzerButton(true);
+      }, 10000);
+    } else {
+      setShowAnalyzerButton(false);
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isCompleted]);
 
   // 단계별 상태를 결정하는 함수
   const getStepStatus = (stepName) => {
@@ -277,8 +293,8 @@ const ProgressingBar = ({
         </div>
       </div>
       
-      {/* 완료 후 이동 버튼 */}
-      {isCompleted && (
+      {/* 완료 후 10초 대기 후 이동 버튼 노출 */}
+      {showAnalyzerButton && (
         <div className="apply-btn-row" style={{ marginTop: '40px' }}>
           <button className="btn-apply-update" onClick={onAnalyzer}>
             Go to Analyzer
