@@ -223,6 +223,87 @@ def update(page_id):
             'error': str(e)
         }), 500
     
+
+@generate_bp.route('/update/doc/<page_id>', methods=['POST'])
+def update_doc(page_id):
+    """증분 인덱싱"""
+    try:
+        base_path, input_path, upload_path = ensure_page_directory(page_id)
+        output_path = os.path.join(base_path, 'output')
+
+        downloaded = download_output_files_from_firebase(page_id, output_path)
+        if not downloaded:
+            print("기존 결과 파일이 Firebase에 존재하지 않습니다.")
+
+        # input 폴더는 복사하지 않고 현재 위치 사용
+        if not os.path.exists(input_path):
+            print(f"[중단] input 폴더가 존재하지 않습니다: {input_path}")
+            return jsonify({
+                'success': True,
+                'execution_time': 0
+            })
+        
+        # prompts 폴더 복사
+        url_prompts_path = '../data/parquet/doc_prompts'
+        dest_prompts_path = os.path.join(base_path, 'prompts')
+        if os.path.exists(url_prompts_path):
+            # 기존 prompts 폴더가 있으면 삭제 후 복사
+            if os.path.exists(dest_prompts_path):
+                shutil.rmtree(dest_prompts_path)
+            shutil.copytree(url_prompts_path, dest_prompts_path)
+            print(f"프롬프트 복사 완료: {url_prompts_path} -> {dest_prompts_path}")
+        else:
+            print(f"[경고] URL prompts 폴더 없음: {url_prompts_path}")
+        
+        start_time = time.time()
+        process = subprocess.run(['graphrag', 'update', '--root', base_path])
+            
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f'GraphRAG 업데이트 실행 시간: {execution_time}초')
+        
+        # 업데이트 실패 시 오류 반환
+        if process.returncode != 0 and "Warning" not in process.stderr:
+            error_msg = f"GraphRAG 업데이트 실패 (코드: {process.returncode})"
+            print(error_msg)
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+
+        # output 폴더 내부 파일 Firebase로 업로드
+        uploaded_files = []
+        if os.path.exists(output_path):
+            for filename in os.listdir(output_path):
+                file_path = os.path.join(output_path, filename)
+
+                if os.path.isfile(file_path):
+                    # Firebase Storage에 업로드 경로
+                    firebase_path = f'pages/{page_id}/results/{filename}'
+
+                    blob = bucket.blob(firebase_path)
+                    blob.upload_from_filename(file_path)
+                    blob.make_public()
+
+                    print(f"Uploaded {filename} → {firebase_path}")
+                    uploaded_files.append(firebase_path)
+
+                    # 업로드 후 파일 삭제
+                    # os.remove(file_path)
+                    # print(f"Deleted local file: {file_path}")
+
+        return jsonify({
+            'success': True,
+            'execution_time': execution_time
+        })
+    
+    except Exception as e:
+        print("Flask update 오류: ", str(e))
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    
 # 공통 디렉토리 유틸리티 함수
 def ensure_page_directory(page_id):
     """페이지 디렉토리 확인"""
