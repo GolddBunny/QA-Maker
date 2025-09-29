@@ -222,7 +222,7 @@ def extract_headline(text):
         return None
     
     try:
-        print(f"파일명 추출 시도: '{text[:100]}...'")
+        # print(f"파일명 추출 시도: '{text[:100]}...'")
         
         headline_patterns = [
             # "**아래는 파일명 파일의 1페이지 내용입니다.**"
