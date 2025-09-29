@@ -50,7 +50,7 @@ export const getDateStats = (uploadedUrls, uploadedDocs) => {
 };
 
 // 지식 그래프 구축 중 entity/relationship 프로세스 수를 날짜별로 집계하는 함수
-export const getKnowledgeGraphDateStats = (knowledgeGraphStats) => {
+export const getKnowledgeGraphDateStats = (knowledgeGraphStats, createdDate, totalEntities, totalRelationships) => {
     const dateMap = {};
 
     // 프로세스 항목 순회
@@ -91,11 +91,35 @@ export const getKnowledgeGraphDateStats = (knowledgeGraphStats) => {
         });
     }
 
+    // 생성일에 초기 데이터 배치
+    if (createdDate && totalEntities !== undefined && totalRelationships !== undefined) {
+        // 생성일을 yyyy-mm-dd 형식으로 변환 (예: "2024.09.24" -> "2024-09-24")
+        const createdDateStr = createdDate.replace(/\./g, '-');
+        
+        // 각 날짜별로 생성된 엔티티/관계 수의 총합 계산
+        const totalCreatedEntities = Object.values(dateMap).reduce((sum, item) => sum + item.entity, 0);
+        const totalCreatedRelationships = Object.values(dateMap).reduce((sum, item) => sum + item.relationship, 0);
+        
+        // 생성일에 배치할 초기 데이터 (전체 - 이후 생성된 것들)
+        const initialEntities = Math.max(0, totalEntities - totalCreatedEntities);
+        const initialRelationships = Math.max(0, totalRelationships - totalCreatedRelationships);
+        
+        // 생성일이 dates 배열에 있는지 확인하고 업데이트
+        const createdDateIndex = dates.findIndex(item => item.fullDate === createdDateStr);
+        if (createdDateIndex !== -1) {
+            dates[createdDateIndex].entity += initialEntities;
+            dates[createdDateIndex].relationship += initialRelationships;
+        } else {
+            // 생성일이 배열에 없으면 추가 (11일 범위를 벗어난 경우)
+            console.log(`생성일 ${createdDateStr}이 최근 11일 범위에 없습니다.`);
+        }
+    }
+
     return dates;
 };
 
 // 지식 그래프 빌드 결과의 날짜별 entity 및 relationship 개수를 집계하는 함수
-export const getGraphBuildDateStats = (graphBuildStats) => {
+export const getGraphBuildDateStats = (graphBuildStats, createdDate, totalEntities, totalRelationships) => {
     const dateMap = {};
 
     // 그래프 빌드 항목 순회
@@ -131,6 +155,27 @@ export const getGraphBuildDateStats = (graphBuildStats) => {
             entity: entityCount,
             relationship: relationshipCount,
         });
+    }
+
+    // 생성일에 초기 데이터 배치
+    if (createdDate && totalEntities !== undefined && totalRelationships !== undefined) {
+        const createdDateStr = createdDate.replace(/\./g, '-');
+        
+        // 각 날짜별로 생성된 엔티티/관계 수의 총합 계산
+        const totalCreatedEntities = Object.values(dateMap).reduce((sum, item) => sum + item.entity, 0);
+        const totalCreatedRelationships = Object.values(dateMap).reduce((sum, item) => sum + item.relationship, 0);
+        
+        // 생성일에 배치할 초기 데이터
+        const initialEntities = Math.max(0, totalEntities - totalCreatedEntities);
+        const initialRelationships = Math.max(0, totalRelationships - totalCreatedRelationships);
+        
+        const createdDateIndex = dates.findIndex(item => item.fullDate === createdDateStr);
+        if (createdDateIndex !== -1) {
+            dates[createdDateIndex].entity += initialEntities;
+            dates[createdDateIndex].relationship += initialRelationships;
+        } else {
+            console.log(`생성일 ${createdDateStr}이 최근 11일 범위에 없습니다.`);
+        }
     }
 
     return dates;
