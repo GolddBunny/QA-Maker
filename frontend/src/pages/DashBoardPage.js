@@ -50,6 +50,7 @@ const DashboardPage = () => {
     const { getCurrentPageSysName } = usePageContext();
     const [urlCount, setUrlCount] = useState(0);
     const [docCount, setDocCount] = useState(0);
+    const [lastUpdateTime, setLastUpdateTime] = useState(null);
 
     const [stepExecutionTimes, setStepExecutionTimes] = useState({
         crawling: null,
@@ -64,6 +65,27 @@ const DashboardPage = () => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}분 ${secs}초`;
+    };
+
+    const formatRelativeTime = (timestamp) => {
+        if (!timestamp) return "정보 없음";
+        
+        const now = new Date();
+        const updateTime = new Date(timestamp);
+        const diffInSeconds = Math.floor((now - updateTime) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return "방금 전";
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes}분 전`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours}시간 전`;
+        } else {
+            const days = Math.floor(diffInSeconds / 86400);
+            return `${days}일 전`;
+        }
     };
 
     const DashboardHeader = ({ isSidebarOpen, toggleSidebar }) => {
@@ -400,11 +422,17 @@ const DashboardPage = () => {
         // 1. Firestore URL 실시간 구독
         const urlsRef = collection(db, "url_list", pageId, "list");
         const urlQuery = query(urlsRef, orderBy("date", "desc"));
+
         const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
             const urlArray = snapshot.docs.map(doc => doc.data());
             console.log("URL 실시간 업데이트:", urlArray.length);
             setUploadedUrls(urlArray);
             setUrlCount(urlArray.length);
+
+            if (urlArray.length > 0 && urlArray[0].date) {
+                console.log("마지막 업데이트 시간 설정:", urlArray[0].date);
+                setLastUpdateTime(urlArray[0].date);
+            }
         }, (error) => {
             console.error("URL Firestore 구독 에러:", error);
         });
@@ -512,7 +540,7 @@ const DashboardPage = () => {
                         <div className="stat-header">
                             <span className="stat-icon">⏰</span>
                         </div>
-                        <div className="stat-number">2시간 전</div>
+                        <div className="stat-number">{formatRelativeTime(lastUpdateTime)}</div>
                         <div className="stat-label">마지막 업데이트</div>
                     </div>
 
