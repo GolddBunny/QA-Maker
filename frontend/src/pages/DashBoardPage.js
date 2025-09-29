@@ -21,7 +21,7 @@ import {
     getKnowledgeGraphDateStats, 
     getGraphBuildDateStats 
 } from '../components/dashboard/dashboardStats';
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 
 const DashboardPage = () => {
     const navigate = useNavigate();
@@ -50,6 +50,7 @@ const DashboardPage = () => {
     const { getCurrentPageSysName } = usePageContext();
     const [urlCount, setUrlCount] = useState(0);
     const [docCount, setDocCount] = useState(0);
+    const [lastUpdateTime, setLastUpdateTime] = useState(null);
 
     const [stepExecutionTimes, setStepExecutionTimes] = useState({
         crawling: null,
@@ -64,6 +65,27 @@ const DashboardPage = () => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}분 ${secs}초`;
+    };
+
+    const formatRelativeTime = (timestamp) => {
+        if (!timestamp) return "정보 없음";
+        
+        const now = new Date();
+        const updateTime = new Date(timestamp);
+        const diffInSeconds = Math.floor((now - updateTime) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return "방금 전";
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes}분 전`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours}시간 전`;
+        } else {
+            const days = Math.floor(diffInSeconds / 86400);
+            return `${days}일 전`;
+        }
     };
 
     const DashboardHeader = ({ isSidebarOpen, toggleSidebar }) => {
@@ -148,45 +170,62 @@ const DashboardPage = () => {
         }
     }, []);
 
-    // 저장된 URL 가져오기
-    const fetchSavedUrls = useCallback(async (pageId) => {
-      const urls = await fetchSavedUrlsApi(pageId);
-      const urlArray = Array.isArray(urls) ? urls : [];
-      setUploadedUrls(urlArray); // undefined 방지
-      setUrlCount(urlArray.length);
-    } , []);
+    // // 저장된 URL 가져오기
+    // const fetchSavedUrls = useCallback(async (pageId) => {
+    //   const urls = await fetchSavedUrlsApi(pageId);
+    //   const urlArray = Array.isArray(urls) ? urls : [];
+    //   setUploadedUrls(urlArray); // undefined 방지
+    //   setUrlCount(urlArray.length);
+    // } , []);
 
-    // 저장된 문서 목록 가져오기
-    const fetchDocuments = useCallback(async (pageId) => {
-        if (!pageId) return;
+    // // 저장된 문서 목록 가져오기
+    // const fetchDocuments = useCallback(async (pageId) => {
+    //     if (!pageId) return;
         
-        try {
-            console.log("문서 목록 로드 중...");
-            const { docs: documentsData, count: documentCount } = await loadUploadedDocsFromFirestore(pageId);
+    //     try {
+    //         console.log("문서 목록 로드 중...");
+    //         const { docs: documentsData, count: documentCount } = await loadUploadedDocsFromFirestore(pageId);
             
-            // 문서 목록과 개수 모두 설정
-            setUploadedDocs(documentsData || []);
-            setDocCount(documentCount || 0);
+    //         // 문서 목록과 개수 모두 설정
+    //         setUploadedDocs(documentsData || []);
+    //         setDocCount(documentCount || 0);
             
-            console.log("문서 목록 로드 완료:", {
-                count: documentCount,
-                docs: documentsData?.length || 0
-            });
-        } catch (error) {
-            console.error("문서 목록 가져오기 중 오류:", error);
-            setUploadedDocs([]);
-            setDocCount(0);
-        }
-    }, []);
+    //         console.log("문서 목록 로드 완료:", {
+    //             count: documentCount,
+    //             docs: documentsData?.length || 0
+    //         });
+    //     } catch (error) {
+    //         console.error("문서 목록 가져오기 중 오류:", error);
+    //         setUploadedDocs([]);
+    //         setDocCount(0);
+    //     }
+    // }, []);
 
     // 통계 데이터 계산
     const dateStats = useMemo(() => {
         return getDateStats(uploadedUrls, uploadedDocs);
     }, [uploadedUrls, uploadedDocs]);
 
-    const knowledgeGraphDateStats = useMemo(() => getKnowledgeGraphDateStats(knowledgeGraphStats), [knowledgeGraphStats]);
-    const graphDateStats = useMemo(() => getGraphBuildDateStats(graphBuildStats), [graphBuildStats]);
-    
+    const knowledgeGraphDateStats = useMemo(() => 
+        getKnowledgeGraphDateStats(
+            knowledgeGraphStats, 
+            createdDate,
+            entities.length, 
+            relationships.length
+        ), 
+        [knowledgeGraphStats, createdDate, entities.length, relationships.length]
+    );
+
+    const graphDateStats = useMemo(() => 
+        getGraphBuildDateStats(
+            graphBuildStats, 
+            createdDate,
+            entities.length, 
+            relationships.length
+        ), 
+        [graphBuildStats, createdDate, entities.length, relationships.length]
+    );
+
     // 통계 차트용 최대값 계산
     const maxValue = Math.max(...dateStats.map(item => Math.max(item.url, item.doc)), 1);
     const knowledgeGraphMaxValue = Math.max(
@@ -357,56 +396,79 @@ const DashboardPage = () => {
         }
     }, [pageId, setDomainName, setSystemName]);
 
-    // 초기 데이터 로드
+    // 초기 데이터 로드 및 Firestore 실시간 구독
     useEffect(() => {
-        // 중복 실행 방지
         if (loadedRef.current) return;
         
         if (location.state?.conversionTime) {
             console.log("conversionTime 설정:", location.state.conversionTime);
             setConversionTime(location.state.conversionTime);
-        } else {
-            console.log("conversionTime이 없음");
         }
         
-        // pageId 없을 경우
         if (!pageId) {
             const savedPages = JSON.parse(localStorage.getItem("pages")) || [];
             if (savedPages.length > 0) {
                 const fallbackPageId = savedPages[0].id;
                 console.log("Fallback pageId로 리다이렉트:", fallbackPageId);
                 navigate(`/dashboard/${fallbackPageId}`);
-            } else {
-                console.log("저장된 페이지가 없습니다");
             }
             return;
         }
-        
-        const init = async () => {
-            console.log("Dashboard 초기화 시작:", { pageId });
-            setLoading(true);
-            loadedRef.current = true;
 
-            // Firebase에서 stepExecutionTimes 불러오기
+        console.log("Dashboard 초기화 시작:", { pageId });
+        setLoading(true);
+        loadedRef.current = true;
+
+        // 1. Firestore URL 실시간 구독
+        const urlsRef = collection(db, "url_list", pageId, "list");
+        const urlQuery = query(urlsRef, orderBy("date", "desc"));
+
+        const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
+            const urlArray = snapshot.docs.map(doc => doc.data());
+            console.log("URL 실시간 업데이트:", urlArray.length);
+            setUploadedUrls(urlArray);
+            setUrlCount(urlArray.length);
+
+            if (urlArray.length > 0 && urlArray[0].date) {
+                console.log("마지막 업데이트 시간 설정:", urlArray[0].date);
+                setLastUpdateTime(urlArray[0].date);
+            }
+        }, (error) => {
+            console.error("URL Firestore 구독 에러:", error);
+        });
+
+        // 2. Firestore Document 실시간 구독
+        const docsRef = collection(db, "document_files");
+        const docQuery = query(
+            docsRef, 
+            where("page_id", "==", pageId),
+            orderBy("date", "desc")
+        );
+
+        const unsubscribeDocs = onSnapshot(docQuery, (snapshot) => {
+            const docArray = snapshot.docs.map(doc => doc.data());
+            console.log("문서 실시간 업데이트:", docArray.length);
+            setUploadedDocs(docArray);
+            setDocCount(docArray.length);
+        }, (error) => {
+            console.error("문서 Firestore 구독 에러:", error);
+        });
+
+        // 3. 초기 데이터 로드
+        const init = async () => {
             try {
-                console.log("pageid: ", pageId);
+                // Firebase에서 stepExecutionTimes 불러오기
                 const times = await loadStepExecutionTimes(pageId);
                 console.log("Firebase로부터 stepExecutionTimes 로딩:", times);
-                setStepExecutionTimes(times); // 상태에 저장
-            } catch (e) {
-                console.error("stepExecutionTimes 불러오기 실패:", e);
-            }
+                setStepExecutionTimes(times);
 
-            // 주요 데이터 병렬 로드 (loadPageInfo 추가)
-            try {
+                // 나머지 데이터 병렬 로드
                 await Promise.all([
                     loadEntities(pageId),
                     loadRelationships(pageId),
                     loadGraphData(pageId),
-                    fetchSavedUrls(pageId),
-                    fetchDocuments(pageId),
                     fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
-                    loadPageInfo() // Firebase에서 페이지 정보 로드 추가
+                    loadPageInfo()
                 ]);
                 console.log("모든 데이터 로드 완료");
             } catch (error) {
@@ -420,9 +482,12 @@ const DashboardPage = () => {
 
         // Cleanup function
         return () => {
+            console.log("Dashboard cleanup - 구독 해제");
+            unsubscribeUrls();
+            unsubscribeDocs();
             loadedRef.current = false;
         };
-    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, fetchSavedUrls, fetchDocuments, loadPageInfo, location.state]);
+    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, loadPageInfo, location.state]);
 
     return (
         <div className={`dashboard-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -475,7 +540,7 @@ const DashboardPage = () => {
                         <div className="stat-header">
                             <span className="stat-icon">⏰</span>
                         </div>
-                        <div className="stat-number">2시간 전</div>
+                        <div className="stat-number">{formatRelativeTime(lastUpdateTime)}</div>
                         <div className="stat-label">마지막 업데이트</div>
                     </div>
 
@@ -814,12 +879,18 @@ const DashboardPage = () => {
                                                         className="bar url-bar" 
                                                         style={{height: `${(item.url / maxValue) * 80}%`}}
                                                         title={`URL: ${item.url}개`}
-                                                    ></div>
+                                                        data-count={item.url}
+                                                    >
+                                                        <span className="bar-tooltip">URL: {item.url}개</span>
+                                                    </div>
                                                     <div 
                                                         className="bar doc-bar" 
                                                         style={{height: `${(item.doc / maxValue) * 80}%`}}
                                                         title={`문서: ${item.doc}개`}
-                                                    ></div>
+                                                        data-count={item.doc}
+                                                    >
+                                                        <span className="bar-tooltip">문서: {item.doc}개</span>
+                                                    </div>
                                                 </div>
                                                 <div className="bar-label">{item.date}일</div>
                                             </div>
@@ -869,12 +940,18 @@ const DashboardPage = () => {
                                                         className="bar entity-bar" 
                                                         style={{height: `${(item.entity / knowledgeGraphMaxValue) * 80}%`}}
                                                         title={`엔티티: ${item.entity}개`}
-                                                    ></div>
+                                                        data-count={item.entity}
+                                                    >
+                                                        <span className="bar-tooltip">엔티티: {item.entity}개</span>
+                                                    </div>
                                                     <div 
                                                         className="bar relationship-bar" 
                                                         style={{height: `${(item.relationship / knowledgeGraphMaxValue) * 80}%`}}
                                                         title={`관계: ${item.relationship}개`}
-                                                    ></div>
+                                                        data-count={item.relationship}
+                                                    >
+                                                        <span className="bar-tooltip">관계: {item.relationship}개</span>
+                                                    </div>
                                                 </div>
                                                 <div className="bar-label">{item.date}일</div>
                                             </div>
@@ -895,10 +972,10 @@ const DashboardPage = () => {
                                 </div>
                             </div>
                         </div>
-                        </div>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 };
