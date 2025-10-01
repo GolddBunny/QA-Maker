@@ -312,6 +312,7 @@ def download_crawled_documents(page_id):
         import sys
         import os
         sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
+        from backend.services.crawling_service.document_downloader import DocumentDownloader
         
         # Get input_path for the page
         _, input_path, _ = ensure_page_directory(page_id)
