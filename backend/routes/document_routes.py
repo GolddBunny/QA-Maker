@@ -60,6 +60,7 @@ def upload_documents(page_id):
 
         # 날짜 포맷 지정
         today_str = datetime.now().strftime('%Y-%m-%d')
+        # today_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         # 1. Firebase blob 생성
         blob = bucket.blob(upload_path)
