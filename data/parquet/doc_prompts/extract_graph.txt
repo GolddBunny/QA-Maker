@@ -63,11 +63,22 @@ The objective is to extract all semantically meaningful entities and relationshi
 ## 5. Relationship Identification
    ### Description Rules
    - **KOREAN ONLY**: All relationship descriptions in Korean
+	- When extracting relationships, always consider the following types from the text:
+      1.	Inclusion / Hierarchy (INCLUDES)
+         - Source entity contains or is the parent of the target entity (e.g., Law → Section, Section → Article)
+      2.	Role / Responsibility (RESPONSIBLE_FOR)
+         - Individuals or organizations responsible for an activity, task, or course (e.g., Professor → Course taught)
+      3.	Creation / Publication (CREATED_BY / PUBLISHED_BY)
+         - Documents or policies created or published by an individual or organization
+      4.	Definition / Attribute (DEFINED_AS / HAS_ATTRIBUTE)
+         - Terms, concepts, or systems defined or described with specific attributes
+      5.	Connection / Relatedness (RELATED_TO)
+         - Contextual or important links that are not direct inclusion, responsibility, or creation
 
    - For each relationship:
       - source_entity: name of the source entity, as identified in step 4
       - target_entity: name of the target entity, as identified in step 4
-      - relationship_description: specific explanation of the relationship
+      - relationship_description: a concise and specific explanation in Korean
       - relationship_strength: a numeric score(1-10) indicating strength of the relationship between the source entity and target entity
    - **Output Format**: ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
 

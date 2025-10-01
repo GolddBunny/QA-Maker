@@ -44,24 +44,24 @@ def convert2txt(firebase_path, output_folder, bucket, filename_mapping=None):
             continue
 
         try:
-            temp_path = os.path.join(tempfile.gettempdir(), file_name)
-            blob.download_to_filename(temp_path)
+            # Download the blob directly to output_path
+            blob.download_to_filename(output_path)
             original_name = filename_mapping.get(file_name, file_name)
 
             if lower_name.endswith('.hwp'):
-                convert_hwp_file(temp_path, output_path, original_filename=original_name)
+                convert_hwp_file(output_path, output_path, original_filename=original_name)
             elif lower_name.endswith('.pdf'):
-                convert_pdf_file(temp_path, output_path, original_filename=original_name)
+                convert_pdf_file(output_path, output_path, original_filename=original_name)
             elif lower_name.endswith('.docx'):
-                convert_docx_file(temp_path, output_path, original_filename=original_name)
+                convert_docx_file(output_path, output_path, original_filename=original_name)
             elif lower_name.endswith('.txt'):
                 try:
-                    with open(temp_path, 'r', encoding='utf-8') as f:
+                    with open(output_path, 'r', encoding='utf-8') as f:
                         text = f.read()
                     base_name = os.path.splitext(filename_mapping.get(file_name, file_name))[0]
                     with open(output_path, 'w', encoding='utf-8') as out:
-                        out.write(f"headline: {base_name}\ncontent:\n{text}")
-                    print(f"[TXT 변환] {temp_path} → {output_path}")
+                        out.write(f"\n---\n**아래는 {base_name} 파일의 내용입니다.**\n\n{text}")
+                    print(f"[TXT 변환] {output_path}")
                 except Exception as e:
                     print(f"[오류] {file_name} 변환 실패: {e}")
         except Exception as e:

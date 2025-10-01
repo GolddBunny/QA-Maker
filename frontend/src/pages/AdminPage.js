@@ -7,7 +7,7 @@ import { FileDropHandler } from '../api/handleFileDrop';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
-import { applyIndexing, updateIndexing, executeFullPipeline } from '../api/IndexingButton';
+import { applyIndexing, updateIndexing, executeFullPipeline, executeUpdatePipeline } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
@@ -77,6 +77,7 @@ const AdminPage = () => {
     const [isFileLoading, setIsFileLoading] = useState(false);
     const [isProcessLoading, setIsProcessLoading] = useState(false);
     const [isApplyLoading, setIsApplyLoading] = useState(false);
+    const [isUpdateLoading, setIsUpdateLoading] = useState(false);
     const [hasDocuments, setHasDocuments] = useState(false);
     const fileInputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -458,18 +459,31 @@ const AdminPage = () => {
         const docSnap = await getDoc(pageDocRef);
 
         if (docSnap.exists()) {
+          // 기존 stepExecutionTimes 불러오기
+          const prevTimes = docSnap.data().stepExecutionTimes || {};
+          // 누적 저장: 기존 값 + durationInSeconds
+          const prevVal = prevTimes[stepName] || 0;
+          const newVal = prevVal + durationInSeconds;
+          const updatedTimes = { ...prevTimes, [stepName]: newVal };
           await updateDoc(pageDocRef, {
-            stepExecutionTimes: stepTimesRef.current,
+            stepExecutionTimes: updatedTimes,
           });
-          console.log(`✅ Firestore에 stepExecutionTimes 업데이트 완료: ${stepName}`);
+          // stepTimesRef와 state도 누적값으로 갱신
+          setStepExecutionTimes(prev => ({ ...prev, [stepName]: newVal }));
+          stepTimesRef.current = { ...stepTimesRef.current, [stepName]: newVal };
+          console.log(`Firestore에 stepExecutionTimes 누적 업데이트 완료: ${stepName} (${prevVal} + ${durationInSeconds} = ${newVal})`);
         } else {
+          // 새로 생성
           await setDoc(pageDocRef, {
-            stepExecutionTimes: stepTimesRef.current,
+            stepExecutionTimes: { [stepName]: durationInSeconds },
           });
-          console.log(`✅ Firestore에 stepExecutionTimes 새로 저장 완료: ${stepName}`);
+          // stepTimesRef와 state도 갱신
+          setStepExecutionTimes(prev => ({ ...prev, [stepName]: durationInSeconds }));
+          stepTimesRef.current = { ...stepTimesRef.current, [stepName]: durationInSeconds };
+          console.log(`Firestore에 stepExecutionTimes 새로 저장 완료: ${stepName}`);
         }
       } catch (error) {
-        console.error("❌ Firestore 저장 실패:", error);
+        console.error("Firestore 저장 실패:", error);
       }
     };
 
@@ -536,32 +550,46 @@ const AdminPage = () => {
       }
 
       if (isAnyProcessing) return;
-      setIsApplyLoading(true);
-      const startTime = Date.now();
+
+      setShowProgressing(true);
+      localStorage.setItem(`showProgressing_${pageId}`, 'true');
+      setIsUpdateLoading(true);
+
+      //const startTime = Date.now();
+      // 초기 상태 설정: step, stepExecutionTimes
+      setCurrentStep('crawling');
+      setStepExecutionTimes({
+        crawling: null,
+        structuring: null,
+        document: null,
+        indexing: null
+      });
 
       try {
-        const result = await updateIndexing(pageId);
-        const endTime = Date.now();
+        // updateIndexing 함수가 step 콜백을 지원하도록 수정
+        const final_result = await executeUpdatePipeline(pageId, handleStepComplete);
+        //const endTime = Date.now();
 
-        if (result.success) {
-          const durationInSeconds = Math.round((endTime - startTime) / 1000);
-          setStepExecutionTimes(prev => ({
-            ...prev,
-            update: durationInSeconds
-          }));
+            if (final_result.success) {
+              setIsNewPage(false);
 
-          alert("업데이트 완료");
+          console.log("=== 최종 실행시간 요약 ===");
+          console.log("전체 실행시간:", final_result.execution_times.total, "초");
 
+          // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
+            fetchSavedUrls(pageId),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);
+
+          //alert("업데이트 완료");
         } else {
-          alert(`업데이트 실패: ${result.error}`);
+          alert(`업데이트 실패: ${final_result.error}`);
           setShowProgressing(false); 
         }
       } finally {
-        setIsApplyLoading(false);
+        setIsUpdateLoading(false);
       }
     };
 
@@ -850,14 +878,19 @@ const AdminPage = () => {
         {/* ProgressingBar는 중앙에 고정 */}
         {showProgressing && (
           <ProgressingBar
-            onClose={() => {
+            onClose={ async () => {
+              const serverStatus = await checkServerProcessingStatus(pageId);
+              if (serverStatus.isProcessing) {
+                alert("서버에서 작업이 진행 중입니다. 진행 창을 닫을 수 없습니다.");
+                return;
+              }
               setShowProgressing(false);
               localStorage.removeItem(`showProgressing_${pageId}`);
             }}
             onAnalyzer={() => navigate(`/dashboard/${pageId}`, {
               state: { stepExecutionTimes: stepTimesRef.current }
             })}
-            isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
+            isCompleted={!(isApplyLoading || isUpdateLoading)} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계
             estimatedTime={estimatedTime} // 새로 추가된 prop

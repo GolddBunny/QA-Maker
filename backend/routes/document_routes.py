@@ -313,19 +313,17 @@ def download_crawled_documents(page_id):
         import sys
         import os
         sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
-        from document_downloader import DocumentDownloader
         
-        # 임시 다운로드 폴더 생성
-        temp_download_folder = f'../data/temp_download/{page_id}'
-        os.makedirs(temp_download_folder, exist_ok=True)
+        # Get input_path for the page
+        _, input_path, _ = ensure_page_directory(page_id)
         
         # DocumentDownloader 인스턴스 생성
         downloader = DocumentDownloader(
-            input_folder=temp_download_folder,
+            input_folder=input_path,
             domain="crawled",
             delay=1.0,
             upload_to_firebase=True,
-            delete_local_after_upload=True,
+            delete_local_after_upload=False,
             page_id=page_id
         )
         
