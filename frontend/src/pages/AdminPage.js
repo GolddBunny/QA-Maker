@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import { usePageContext } from '../utils/PageContext';
-import { useQAHistoryContext } from '../utils/QAHistoryContext'; // QA History Context 추가
+import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { FileDropHandler } from '../api/handleFileDrop';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
@@ -23,8 +23,8 @@ const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
   const BASE_TIME = 1;
   
   // 각 항목별 평균 처리 시간 (초 단위)
-  const DOC_STRUCTURING_TIME_PER_MB = 15; // 문서 1MB당 구조화 시간 (초)
-  const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
+  const DOC_STRUCTURING_TIME_PER_MB = 10; // 문서 1MB당 구조화 시간 (초)
+  const DOC_INDEXING_TIME_PER_MB = 50;    // 문서 1MB당 인덱싱 시간 (초)
   const URL_STRUCTURING_TIME = 5;        // URL 1개당 구조화 시간 (초)
   const URL_INDEXING_TIME = 40;           // URL 1개당 인덱싱 시간 (초)
   
