@@ -19,7 +19,7 @@ def apply_documents(page_id):
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         
         # 프롬프트 폴더 복사
-        prompt_src = '../data/parquet/prompts'
+        prompt_src = '../data/parquet/doc_prompts'
         prompt_dest = os.path.join(base_path, 'prompts')
         
         if os.path.exists(prompt_src):
