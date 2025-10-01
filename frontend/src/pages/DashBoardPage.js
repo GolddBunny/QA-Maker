@@ -446,9 +446,9 @@ const DashboardPage = () => {
             setUploadedDocs(docArray);
             setDocCount(docArray.length);
 
-            if (docArray.length > 0 && docArray[0].date) {
-                console.log("마지막 업데이트 시간 설정:", docArray[0].date);
-                setLastUpdateTime(docArray[0].date);
+            if (docArray.length > 0 && docArray[0].time) {
+                console.log("마지막 업데이트 시간 설정:", docArray[0].time);
+                setLastUpdateTime(docArray[0].time);
             }
         }, (error) => {
             console.error("문서 Firestore 구독 에러:", error);

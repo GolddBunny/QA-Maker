@@ -58,18 +58,19 @@ def upload_documents(page_id):
         uuid_name = f"{uuid.uuid4().hex}{ext}"
         upload_path = f"pages/{page_id}/documents/{uuid_name}"
 
-        # 날짜 포맷 지정
-        today_str = datetime.now().strftime('%Y-%m-%d')
-        # today_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # 날짜와 시간을 분리해 저장
+        date_only = datetime.now().strftime('%Y-%m-%d')  # 날짜만
+        datetime_full = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # 날짜 + 시간
 
         # 1. Firebase blob 생성
         blob = bucket.blob(upload_path)
 
-        # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
+        # 2. metadata에 원본 파일명, 카테고리, 날짜, 시간 저장
         blob.metadata = {
             "original_filename": original_filename,
             "category": "uploaded",  # 기본값
-            "date": today_str
+            "date": date_only,  # 날짜만
+            "time": datetime_full  # 날짜 + 시간
         }
 
         # 3. 파일 업로드
@@ -81,10 +82,11 @@ def upload_documents(page_id):
             'firebase_filename': uuid_name,
             'download_url': blob.public_url,
             'page_id': page_id,
-            'upload_date': today_str,
+            'upload_date': date_only,  # 날짜만
             'category': "uploaded",  # 기본값
-            'date': today_str,
-            'size_mb': round(size_mb, 2)  # 크기 정보 추가  
+            'date': date_only,  # 날짜만
+            'time': datetime_full,  # 날짜 + 시간
+            'size_mb': round(size_mb, 2)  # 크기 정보
         }
 
         # 문서명을 문서 ID로 사용하면 중복 이슈 있음 → UUID 또는 자동 ID 사용 권장
