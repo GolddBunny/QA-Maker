@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 import uuid
 from firebase_admin import firestore
 import time
+from services.execution_time_service import get_tracker
+from services.crawling_service.document_downloader import DocumentDownloader
 
 document_bp = Blueprint('document', __name__)
 
@@ -150,6 +152,10 @@ def get_uploaded_documents(page_id):
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):
     """document 처리"""
+    
+    # 실행 시간 트래커 가져오기
+    tracker = get_tracker(page_id)
+    
     try:
         base_path, input_path, _ = ensure_page_directory(page_id)
         firebase_path = f"pages/{page_id}/documents"
@@ -168,6 +174,14 @@ def process_documents(page_id):
         convert2txt(firebase_path, input_path, bucket, filename_mapping)
         end_time = time.time()
         execution_time = round(end_time - start_time)
+
+        # 실행 시간 트래커에 기록
+        additional_data = {
+            "firebase_path": firebase_path,
+            "input_path": input_path,
+            "documents_processed": len(filename_mapping)
+        }
+        tracker.record_step('document_processing', execution_time, additional_data)
 
         print("모든 파일 .txt로 변환 완료")
         return jsonify({
@@ -273,6 +287,7 @@ def ensure_page_directory(page_id):
     
     return base_path, input_path, upload_path 
 
+# 크롤링된 문서 URL 다운로드
 @document_bp.route('/download-crawled-documents/<page_id>', methods=['POST'])
 def download_crawled_documents(page_id):
     """크롤링된 문서 URL 목록을 다운로드하여 Firebase에 저장"""
@@ -310,11 +325,6 @@ def download_crawled_documents(page_id):
                     'local_deleted': 0
                 }
             })
-        
-        # DocumentDownloader 임포트
-        import sys
-        import os
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
         
         # Get input_path for the page
         _, input_path, _ = ensure_page_directory(page_id)
