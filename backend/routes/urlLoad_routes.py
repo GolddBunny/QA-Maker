@@ -20,6 +20,7 @@ def get_existing_urls(page_id, url_type="general"):
     """페이지의 기존 URL 목록을 한 번에 가져와서 성능 최적화"""
     urls_ref = db.collection('urls')
     query = urls_ref.where('page_id', '==', page_id).where('type', '==', url_type)
+    
     docs = query.get()
     
     existing_urls = set()

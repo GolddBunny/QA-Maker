@@ -92,6 +92,8 @@ def start_url_crawling(page_id):
             crawling_results = crawl_urls(
                 start_url=start_url,
                 scope=scope_patterns if scope_patterns else None
+                # TODO: Test용 max_depth=0 제거
+                # ,max_depth=0  # 루트 페이지만 크롤링
             )
             
             # crawling_results는 직접 결과 딕셔너리입니다
@@ -123,7 +125,36 @@ def start_url_crawling(page_id):
                 # set 객체인 경우 list로 변환 (오류 방지)
                 if isinstance(doc_urls, set):
                     doc_urls = list(doc_urls)
-                doc_saved_count = save_urls_batch(page_id, doc_urls, "document")
+                
+                # 문서 URL도 인코딩 형식만 통일 (파라미터는 보존, Firebase에서 page_id별 중복 체크)
+                normalized_doc_urls = []
+                for url in doc_urls:
+                    try:
+                        # URL을 파싱하여 쿼리 파라미터 부분만 디코딩/재인코딩
+                        parsed = urlparse(url.strip())
+                        
+                        # 쿼리 파라미터를 디코딩한 후 다시 표준 인코딩
+                        if parsed.query:
+                            # 쿼리 문자열을 디코딩
+                            decoded_query = unquote(parsed.query)
+                            # 파라미터로 파싱
+                            params = parse_qs(decoded_query, keep_blank_values=True)
+                            # 표준 형식으로 재인코딩
+                            normalized_query = urlencode(params, doseq=True)
+                            # URL 재구성
+                            normalized_url = urlunparse((
+                                parsed.scheme, parsed.netloc, parsed.path,
+                                parsed.params, normalized_query, ''
+                            ))
+                        else:
+                            normalized_url = url.strip()
+                        
+                        normalized_doc_urls.append(normalized_url)
+                    except Exception:
+                        # 정규화 실패 시 원본 URL 사용
+                        normalized_doc_urls.append(url)
+                
+                doc_saved_count = save_urls_batch(page_id, normalized_doc_urls, "document")
                 
                 print(f"💾 Firebase에 {saved_count}개 페이지 URL, {doc_saved_count}개 문서 URL 저장 완료")
                 print(f"📎 발견된 문서 URL: {crawling_results.get('total_documents_discovered', 0)}개")
@@ -213,4 +244,3 @@ def crawl_and_structure(page_id):
             "success": False, 
             "error": f"웹 크롤링 중 오류 발생: {str(e)}"
         }), 500
-

@@ -75,8 +75,11 @@ EXPLICIT_DOWNLOAD_PATTERNS = [
     'download.do', 'filedown.do', 'getfile.do', 'downloadfile.do', 'downfile.do', 'fileview.do'
 ]
 
-# 다양한 오류 메시지 패턴 확인
+# 다양한 오류 메시지 패턴 확인 (구체적인 패턴만 사용)
 ERROR_PATTERNS = [
-    'alert 404', 'alert 500', 'alert 403', 'alert 400', 'error', '404', '500', '403', 'alert', 'Alert 500', 'Alert 404', 'Alert 403', 'Alert 400',
-    '관리모드 > 알림메세지', '관리모드'
+    'alert 404', 'alert 500', 'alert 403', 'alert 400', 
+    'Alert 500', 'Alert 404', 'Alert 403', 'Alert 400',
+    'page not found', 'not found', 'access denied', 'forbidden',
+    '404 error', '500 error', '403 error', '400 error',
+    '관리모드 > 알림메세지', '관리모드', '오류가 발생했습니다', '접근 권한이 없습니다'
 ] 

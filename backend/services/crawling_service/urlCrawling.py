@@ -714,6 +714,19 @@ class ScopeLimitedCrawler:
         # URL 공백 제거 및 정리
         url = url.strip()
         
+        # enc 파라미터가 있는 경우 디코딩하지 않고 원본 보존
+        if '?enc=' in url:
+            # enc 파라미터가 있는 URL은 디코딩하지 않고 원본 그대로 사용
+            self.normalization_cache.put(url, url)
+            return url
+        
+        # URL 디코딩 (일관된 처리를 위해)
+        try:
+            from urllib.parse import unquote
+            url = unquote(url)
+        except Exception:
+            pass  # 디코딩 실패 시 원본 URL 사용
+        
         # 캐시에서 확인
         cached_result = self.normalization_cache.get(url)
         if cached_result is not None:
@@ -751,19 +764,21 @@ class ScopeLimitedCrawler:
             base_url = base_url.replace('http://', 'https://')
         
         # www와 non-www 표준화 (동일한 사이트로 처리)
-        if parsed.netloc.startswith('www.'):
-            non_www = base_url.replace(f"{parsed.scheme}://www.", f"{parsed.scheme}://")
-            base_url = non_www
+        # 단, base_domain이 www로 시작하는 경우 www를 유지
+        if self.base_domain.startswith('www.'):
+            # base_domain이 www로 시작하면 모든 URL을 www 버전으로 통일
+            if not parsed.netloc.startswith('www.'):
+                base_url = base_url.replace(f"{parsed.scheme}://", f"{parsed.scheme}://www.")
         else:
-            www_version = base_url.replace(f"{parsed.scheme}://", f"{parsed.scheme}://www.")
-            if self.base_domain.startswith('www.') and not parsed.netloc.startswith('www.'):
-                base_url = www_version
+            # base_domain이 www로 시작하지 않으면 www 제거
+            if parsed.netloc.startswith('www.'):
+                base_url = base_url.replace(f"{parsed.scheme}://www.", f"{parsed.scheme}://")
         
         # 쿼리 파라미터 정규화
         normalized_query_params = {}
         
-        # 직접적인 페이지 파라미터가 있는 경우
-        if 'page' in query_params:
+        # 직접적인 페이지 파라미터가 있는 경우 (단, enc 파라미터가 있으면 제외)
+        if 'page' in query_params and 'enc' not in query_params:
             page_num = query_params['page'][0]
             # page=1인 경우 쿼리 파라미터 제거 (기본 URL만 반환)
             if page_num == '1':
@@ -773,28 +788,12 @@ class ScopeLimitedCrawler:
             self.normalization_cache.put(original_url, result)
             return result
         
-        # enc 파라미터에서 페이지 번호 추출 시도
+        # enc 파라미터가 있는 경우 원본 URL 보존 
         if 'enc' in query_params:
-            enc_value = query_params['enc'][0]
-            try:
-                # Base64 디코딩 시도
-                decoded = base64.b64decode(enc_value).decode('utf-8')
-                
-                # 페이지 번호 추출을 위한 정규식
-                page_match = re.search(r'page%3D(\d+)', decoded)
-                if page_match:
-                    page_num = page_match.group(1)
-                    # page=1인 경우 쿼리 파라미터 제거 (기본 URL만 반환)
-                    if page_num == '1':
-                        result = base_url
-                    else:
-                        result = f"{base_url}?page={page_num}"
-                    self.normalization_cache.put(original_url, result)
-                    return result
-            except Exception as e:
-                logger.debug(f"Base64 디코딩 실패: {e}")
-                # 디코딩 실패 시 계속 진행
-                pass
+            # enc 파라미터가 있는 URL은 정규화하지 않고 원본 보존
+            result = url
+            self.normalization_cache.put(original_url, result)
+            return result
         
         # 다른 일반적인 페이지네이션 파라미터 확인
         for page_param in ['pageNo', 'pageIndex', 'p', 'pg', 'pageNum']:
@@ -809,7 +808,7 @@ class ScopeLimitedCrawler:
                 return result
         
         # 중요한 쿼리 파라미터 보존 (검색, 카테고리 등)
-        important_params = ['q', 'query', 'search', 'category', 'type', 'id', 'no']
+        important_params = ['q', 'query', 'search', 'category', 'type', 'id', 'no', 'enc']
         for param in important_params:
             if param in query_params:
                 normalized_query_params[param] = query_params[param][0]
@@ -1102,6 +1101,32 @@ class ScopeLimitedCrawler:
             # 3. 첨부파일 추가 처리
             attachment_links = self.extract_attachments(soup, base_url)
             doc_links.update(attachment_links)
+            
+            # 🔍 디버깅: 첨부파일 추출 결과
+            logger.info(f"첨부파일 추출 결과: {len(attachment_links)}개")
+            if attachment_links:
+                for att_link in list(attachment_links)[:3]:
+                    logger.info(f"   첨부파일: {att_link}")
+            
+            # 🔍 디버깅: 전체 a 태그 분석
+            all_links = soup.find_all('a', href=True)
+            logger.info(f"페이지 내 전체 a 태그: {len(all_links)}개")
+            
+            # 다운로드 관련 키워드가 포함된 링크 찾기
+            download_keywords = ['download', 'file', 'attach', '첨부', '다운로드', '.pdf', '.doc', '.hwp']
+            potential_doc_links = []
+            for link in all_links:
+                href = link.get('href', '')
+                text = link.get_text().strip()
+                if any(keyword in href.lower() or keyword in text.lower() for keyword in download_keywords):
+                    potential_doc_links.append(f"href='{href}' text='{text}'")
+            
+            if potential_doc_links:
+                logger.info(f"🔍 다운로드 관련 링크 {len(potential_doc_links)}개 발견:")
+                for i, link_info in enumerate(potential_doc_links[:5]):
+                    logger.info(f"   {i+1}. {link_info}")
+            else:
+                logger.info(f"⚠️  다운로드 관련 링크를 찾지 못했습니다")
             
             logger.debug(f"링크 추출 완료 - 네비게이션: {len(nav_links)}개, 콘텐츠: {len(content_links)}개, 문서: {len(doc_links)}개")
             return nav_links, content_links, doc_links, menu_info
@@ -1691,6 +1716,43 @@ class ScopeLimitedCrawler:
                 pass
             return "다운로드_파일"
 
+    def _detect_javascript_dependency(self, soup: BeautifulSoup, html_content: str) -> bool:
+        """JavaScript 의존성을 감지하는 보편적인 방법들을 사용"""
+        try:
+            # 1. 초기 HTML 크기가 너무 작은 경우 (동적 로딩 추정)
+            if len(html_content) < 1000:
+                return True
+            
+            # 2. DOM 요소 개수가 적은 경우
+            all_elements = soup.find_all()
+            if len(all_elements) < 10:
+                return True
+            
+            # 3. JavaScript 프레임워크 특징적인 태그나 속성 확인
+            js_indicators = [
+                '[data-reactroot]', '[ng-app]', '[v-app]', '.vue-app',
+                'script[src*="react"]', 'script[src*="vue"]', 'script[src*="angular"]',
+                'div[id="app"]', 'div[id="root"]', 'div[class*="app"]'
+            ]
+            
+            for indicator in js_indicators:
+                try:
+                    if soup.select(indicator):
+                        return True
+                except:
+                    continue
+            
+            # 4. 기존 noscript 방식도 보조적으로 유지 (1000자에서 500자로 조정)
+            noscript_content = soup.find('noscript')
+            if noscript_content and len(noscript_content.text) > 500:
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.debug(f"JavaScript 의존성 감지 중 오류: {e}")
+            return False
+
     def fetch_page(self, url: str, max_retries: int = 1) -> Tuple[bool, Any, str]:
         """설정에 따라 requests 또는 selenium을 사용하여 페이지 내용을 가져옴."""
         url = self.normalize_url(url)
@@ -1732,8 +1794,7 @@ class ScopeLimitedCrawler:
                             return False, None, url
                         
                         # 페이지가 자바스크립트를 필요로 하는 것 같으면 Selenium으로 전환
-                        noscript_content = soup.find('noscript')
-                        js_required = noscript_content and len(noscript_content.text) > 1000
+                        js_required = self._detect_javascript_dependency(soup, response.text)
                         
                         if not js_required:
                             return True, soup, response.url
@@ -2044,7 +2105,7 @@ class ScopeLimitedCrawler:
             return
         
         # 깊이 제한 체크
-        if current_node.depth >= self.max_depth:
+        if current_node.depth > self.max_depth:
             logger.debug(f"최대 깊이 도달: {current_node.url} (깊이: {current_node.depth})")
             return
         
@@ -2154,6 +2215,20 @@ class ScopeLimitedCrawler:
             current_node.content_links = list(content_links)
             current_node.link_count = len(nav_links) + len(content_links) + len(doc_links)
             
+            # 🔍 디버깅: 문서 링크 추출 결과 로그
+            logger.info(f"🔍 [{progress}] 링크 추출 결과:")
+            logger.info(f"   📄 문서 링크: {len(doc_links)}개")
+            logger.info(f"   🔗 네비게이션 링크: {len(nav_links)}개") 
+            logger.info(f"   📝 콘텐츠 링크: {len(content_links)}개")
+            if doc_links:
+                logger.info(f"   📄 발견된 문서들:")
+                for i, doc_link in enumerate(list(doc_links)[:5]):  # 최대 5개만 표시
+                    logger.info(f"      {i+1}. {doc_link}")
+                if len(doc_links) > 5:
+                    logger.info(f"      ... 총 {len(doc_links)}개 중 5개만 표시")
+            else:
+                logger.info(f"   ⚠️  문서 링크를 찾지 못했습니다")
+            
             # 메뉴 구조 정보 파싱
             for menu_item in menu_info:
                 if ':' in menu_item:
@@ -2181,13 +2256,14 @@ class ScopeLimitedCrawler:
                     self.all_page_urls.add(url)
             
             # 문서 URL 추가 (페이지에서 발견된 문서 링크들)
+            # 문서는 depth 제한 없이 항상 수집 - 페이지에 방문했다면 모든 문서를 수집해야 함
             for doc_url in doc_links:
                 normalized_doc_url = self.normalize_url(doc_url)
                 if normalized_doc_url and normalized_doc_url not in self.all_doc_urls:
                     self.all_doc_urls.add(normalized_doc_url)
                     logger.debug(f"{progress} 문서 발견: {normalized_doc_url}")
                     
-                    # 문서 노드 생성 (통계에 반영되도록)
+                    # 문서 노드 생성 (통계에 반영되도록) - 문서는 depth 제한 없이 생성
                     if normalized_doc_url not in self.url_to_node:
                         doc_node = URLTreeNode(normalized_doc_url, current_node, current_node.depth + 1)
                         doc_node.is_document = True
@@ -2219,6 +2295,11 @@ class ScopeLimitedCrawler:
                 logger.debug(f"{progress} 페이지네이션 발견: {len(pagination_urls)}개 추가 페이지")
             
             for child_url in all_child_links:
+                # 깊이 체크 추가 - max_depth=0이면 자식 노드 생성하지 않음
+                if current_node.depth + 1 > self.max_depth:
+                    logger.debug(f"최대 깊이 초과로 자식 노드 생성 건너뜀: {child_url} (예상 깊이: {current_node.depth + 1})")
+                    continue
+                    
                 # 전역 페이지네이션 한도 초과 URL은 어떤 경로에서 오든 스킵
                 if self._is_over_pagination_limit(child_url):
                     logger.debug(f"전역 페이지네이션 한도 초과 스킵: {child_url}")
@@ -3130,7 +3211,7 @@ class ScopeLimitedCrawler:
             logger.debug(f"URL 제목 추출 실패: {e}")
             return ""
 
-def main(start_url, scope=None, max_pages=10000, delay=1.0, timeout=20, use_requests=True, verbose=False, max_depth=10, generate_extra_files=None, max_pagination_pages=30):
+def main(start_url, scope=None, max_pages=10000, delay=0.5, timeout=10, use_requests=True, verbose=False, max_depth=20, generate_extra_files=None, max_pagination_pages=30):
     """매개변수로 크롤러 실행 (DFS 방식)"""
     if verbose:
         logger.setLevel(logging.INFO)
@@ -3200,16 +3281,24 @@ def extract_document_urls_from_results(results: Dict[str, Any]) -> List[str]:
 if __name__ == "__main__":
     # 테스트 실행 예시
     results = main(
-        # start_url="https://spri.kr/",
+        # start_url="https://stat.spri.kr/",
         # start_url="https://cse.snu.ac.kr/",
-        start_url="https://www.oss.kr/",
+        start_url="https://hansung.ac.kr/CSE/10766/subview.do?enc=Zm5jdDF8QEB8JTJGYmJzJTJGQ1NFJTJGMTI0OCUyRjI3MDk0NyUyRmFydGNsVmlldy5kbyUzRnBhZ2UlM0QyJTI2c3JjaENvbHVtbiUzRHNqJTI2c3JjaFdyZCUzRCUyNmJic0NsU2VxJTNENzA5JTI2YmJzT3BlbldyZFNlcSUzRCUyNnJnc0JnbmRlU3RyJTNEJTI2cmdzRW5kZGVTdHIlM0QlMjZpc1ZpZXdNaW5lJTNEZmFsc2UlMjZwYXNzd29yZCUzRCUyNg%3D%3D",  # 사용자 제공 URL (HWP 파일 있음)
+        # start_url="https://www.oss.kr/",
+        # start_url="https://hansung.ac.kr/sites/CSE/index.do",
+        # start_url="https://www.nhncloud.com/kr",
+        # start_url="https://www.daouidc.com/index.do",
+        # start_url="https://www.bucketplace.com/",
+        # start_url="https://www.seoul.go.kr/",
+        # start_url="https://www.sw.or.kr/",
         scope=None,
         max_pages=99999,
         delay=0.5,
         timeout=10,
         use_requests=True,
         verbose=True,
-        max_depth=10
+        max_depth=100,
+        max_pagination_pages=30,
     )
     
     if results and "error" not in results:

@@ -99,9 +99,12 @@ data/input/*/cache
 /frontend/src/json/answer_graphml_data.json
 *.manifest
 *.parquet
+*.json
+*.yaml
+/data/input/*
 
 # firebase
-/backend/services/firebase/qamaker-e32d7-firebase-adminsdk-fbsvc-0408d84c8c.json
+/backend/services/firebase/*.json
 
 # 임시 및 테스트 파일
 *.txt
