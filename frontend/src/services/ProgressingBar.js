@@ -113,10 +113,10 @@ const ProgressingBar = ({
     };
   }, [progress]);
 
-  // 10초 후에 progress와 displayProgress를 100%로 설정하고 버튼 표시
+  // 완료 후 10초 후에 progress와 displayProgress를 100%로 설정하고 버튼 표시
   useEffect(() => {
     let timeoutId;
-    if (isCompleted) {
+    if (isCompleted && currentStep === 'indexing') {
       setShowAnalyzerButton(false);
       timeoutId = setTimeout(() => {
         setProgress(100);
@@ -132,7 +132,7 @@ const ProgressingBar = ({
         clearTimeout(timeoutId);
       }
     };
-  }, [isCompleted]);
+  }, [isCompleted, currentStep]);
 
   // 단계별 상태를 결정하는 함수
   const getStepStatus = (stepName) => {
