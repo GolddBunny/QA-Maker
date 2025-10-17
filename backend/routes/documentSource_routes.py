@@ -14,10 +14,10 @@ import unicodedata
 import atexit
 import signal
 import psutil
+import fitz
 from firebase_config import bucket
-source_bp = Blueprint('source', __name__)
 from firebase_admin import firestore
-from firebase_config import bucket
+source_bp = Blueprint('source', __name__)
 db = firestore.client()
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -132,14 +132,14 @@ atexit.register(cleanup_service)
 
 @source_bp.route('/api/context-sources', methods=['GET'])
 def get_context_sources():
-    """CSV 파일에서 추출한 headline 반환 - firestore의 original_filename 반환"""
+    """CSV 파일에서 추출한 파일명 반환 - firestore의 original_filename 반환"""
     try:
         # 요청에서 page_id 파라미터 가져오기
         page_id = request.args.get('page_id')
         if not page_id:
             return jsonify({"error": "page_id가 제공되지 않았습니다"}), 400
         
-        headlines = set()  # 중복 제거
+        filenames = set()  # 중복 제거
         
         if not os.path.exists(CSV_PATH):
             return jsonify({"error": f"CSV 파일을 찾을 수 없습니다: {CSV_PATH}"}), 404
@@ -149,23 +149,23 @@ def get_context_sources():
         with open(CSV_PATH, 'r', encoding='utf-8') as f:
             csv_reader = csv.DictReader(f)
             for row_num, row in enumerate(csv_reader, 1):
-                #print(f"행 {row_num} 처리 중: {row}")
+                print(f"행 {row_num} 처리 중")
                 
-                # headline 처리
+                # text 필드에서 파일명 추출
                 if 'text' in row and row['text']:
-                    # headline 추출 시도
-                    headline = extract_headline(row['text'])
-                    if headline:
-                        #print(f"추출된 headline: '{headline}'")
-                        headlines.add(headline)
+                    filename = extract_headline(row['text'])
+                    if filename:
+                        filenames.add(filename)
                 
-                # headline 필드가 있는 경우
+                # headline 필드가 별도로 있는 경우도 처리
                 elif 'headline' in row and row['headline'].strip():
-                    headline = row['headline'].strip()
-                    #print(f"직접 headline: '{headline}'")
-                    headlines.add(headline)
+                    filename = row['headline'].strip()
+                    print(f"직접 파일명: '{filename}'")
+                    filenames.add(filename)
         
-        print(f"최종 headlines: {list(headlines)}")
+        print(f"추출된 파일명들: {list(filenames)}")
+        
+        # Firestore에서 filename mapping 가져오기
         filename_mapping = {}
         try:
             docs = db.collection('document_files').where('page_id', '==', page_id).stream()
@@ -175,31 +175,36 @@ def get_context_sources():
                 original_filename = data.get('original_filename')
                 
                 if firebase_filename and original_filename:
-                    filename_mapping[firebase_filename] = original_filename
-                    print(f"매핑 추가: {firebase_filename} -> {original_filename}")
+                    # firebase_filename에서 확장자를 제거한 것을 키로 사용
+                    base_firebase_name = os.path.splitext(firebase_filename)[0]
+                    filename_mapping[base_firebase_name] = original_filename
+                    print(f"매핑 추가: {base_firebase_name} -> {original_filename}")
         
         except Exception as e:
             print(f"Firestore 조회 오류: {e}")
         
-        print(f"filename_mapping: {filename_mapping}")
-        print(f"headlines: {list(headlines)}")
-        
-        # headlines 순서에 맞춰 original_filenames 배열 생성
+        # 파일명에 대응하는 original_filename 찾기
         original_filenames = []
-        for headline in headlines:
-            # 확장자 붙여서 시도 (.pdf, .docx, .hwp 등)
-            candidates = [
-                headline + ".pdf",
-                headline + ".docx",
-                headline + ".hwp",
-                headline + ".txt"
-            ]
+        for filename in filenames:
+            # 정확히 일치하는 것을 먼저 찾기
+            if filename in filename_mapping:
+                original_filenames.append(filename_mapping[filename])
+                print(f"정확한 매칭: {filename} -> {filename_mapping[filename]}")
+                continue
             
-            # 매핑에 존재하는 파일명을 찾음
-            original_name = next((filename_mapping[f] for f in candidates if f in filename_mapping), headline)
+            # 부분 일치 찾기 (CSV의 파일명이 원본 파일명에 포함되어 있는 경우)
+            found = False
+            for base_name, original_name in filename_mapping.items():
+                if filename in base_name or base_name in filename:
+                    original_filenames.append(original_name)
+                    print(f"부분 매칭: {filename} -> {original_name}")
+                    found = True
+                    break
             
-            original_filenames.append(original_name)
-            print(f"headline: {headline} -> original: {original_name}")
+            # 매칭되는 것이 없으면 원래 파일명 사용
+            if not found:
+                original_filenames.append(filename)
+                print(f"매칭 실패, 원본 사용: {filename}")
         
         print(f"최종 original_filenames: {original_filenames}")
         
@@ -212,33 +217,172 @@ def get_context_sources():
         return jsonify({"error": str(e)}), 500
 
 def extract_headline(text):
-    """텍스트에서 headline 정보 추출"""
+    """텍스트에서 파일명 정보 추출"""
     if not text or not isinstance(text, str):
         return None
     
     try:
-        #print(f"headline 추출 시도: '{text}'")
+        # print(f"파일명 추출 시도: '{text[:100]}...'")
         
-        # 방법 1: headline: 뒤에 오는 텍스트 추출 (영어/한글 모두 지원)
-        # 더 포괄적인 정규식 사용
         headline_patterns = [
-            r'headline:\s*([^|\n\r]+?)(?:\s*(?:page:|content:|headline:|\||$))',  # | 또는 다른 필드 전까지
-            r'headline:\s*([^|\n\r]+)',  # 줄 끝까지
+            # "**아래는 파일명 파일의 1페이지 내용입니다.**"
+            r'\*\*아래는\s+(.+?)\s+파일의\s+\d+페이지\s+내용입니다\.\*\*',
+            
+            # "**아래는 파일명 파일의 페이지 내용입니다.**"
+            r'\*\*아래는\s+(.+?)\s+파일의\s+.+?페이지\s+내용입니다\.\*\*',
+            
+            # 기존 headline: 패턴도 유지 (다른 데이터 형식 대응)
+            r'headline:\s*([^|\n\r]+?)(?:\s*(?:page:|content:|headline:|\||$))',
+            r'headline:\s*([^|\n\r]+)',
         ]
         
         for pattern in headline_patterns:
-            headline_match = re.search(pattern, text, re.IGNORECASE)
+            headline_match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
             if headline_match and headline_match.group(1):
                 headline = headline_match.group(1).strip()
-                print(f"추출된 headline: '{headline}'")
+                print(f"추출된 파일명: '{headline}'")
                 return headline
         
-        print("headline 추출 실패")
+        print("파일명 추출 실패")
         return None
         
     except Exception as e:
-        print(f"headline 추출 중 오류: {str(e)}")
+        print(f"파일명 추출 중 오류: {str(e)}")
         return None
+
+def get_highlight_content_for_file(filename):
+    """특정 파일에 대한 하이라이트할 content 내용들을 CSV에서 가져오기"""
+    if not os.path.exists(CSV_PATH):
+        return []
+    
+    highlight_texts = []
+    base_filename = os.path.splitext(filename)[0]
+    
+    try:
+        with open(CSV_PATH, 'r', encoding='utf-8') as f:
+            csv_reader = csv.DictReader(f)
+            for row in csv_reader:
+                # 파일명이 매치되는 경우
+                extracted_filename = None
+                if 'text' in row and row['text']:
+                    extracted_filename = extract_headline(row['text'])
+                elif 'headline' in row and row['headline'].strip():
+                    extracted_filename = row['headline'].strip()
+                
+                # 파일명이 일치하는지 확인 (부분 매칭도 허용)
+                if extracted_filename and (
+                    extracted_filename == base_filename or 
+                    base_filename in extracted_filename or 
+                    extracted_filename in base_filename
+                ):
+                    # content 추출
+                    content = None
+                    if 'text' in row and row['text']:
+                        content = extract_content(row['text'])
+                    elif 'content' in row and row['content'].strip():
+                        content = row['content'].strip()
+                    
+                    if content:
+                        # 하이라이트할 텍스트를 문장 단위로 분할
+                        sentences = content.split('.')
+                        for sentence in sentences:
+                            sentence = sentence.strip()
+                            if len(sentence) >= 20:  # 너무 짧은 문장은 제외
+                                highlight_texts.append(sentence)
+                                print(f"하이라이트 텍스트 추가: {sentence[:30]}...")
+    
+    except Exception as e:
+        print(f"하이라이트 텍스트 추출 오류: {str(e)}")
+    
+    return highlight_texts
+
+def extract_content(text):
+    """텍스트에서 content 정보 추출 - 실제 문서 내용 부분"""
+    if not text or not isinstance(text, str):
+        return None
+    
+    try:
+        # 실제 데이터에서 내용 추출 패턴들
+        content_patterns = [
+            # "**아래는 ... 페이지 내용입니다.**" 다음에 오는 실제 내용
+            r'\*\*아래는\s+.+?파일의\s+.+?페이지\s+내용입니다\.\*\*\s*(.*?)(?=\*\*아래는|\Z)',
+            
+            # 기존 content: 패턴도 유지
+            r'content:\s*([^|\n\r]+?)(?:\s*(?:page:|content:|headline:|\||$))',
+            r'content:\s*([^|\n\r]+)',
+        ]
+        
+        for pattern in content_patterns:
+            content_match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+            if content_match and content_match.group(1):
+                content = content_match.group(1).strip()
+                # 너무 짧은 내용은 제외 (최소 10자 이상)
+                if len(content) >= 10:
+                    print(f"추출된 내용: '{content[:50]}...'")
+                    return content
+        
+        return None
+        
+    except Exception as e:
+        print(f"내용 추출 중 오류: {str(e)}")
+        return None
+
+def add_highlights_to_pdf(pdf_stream, highlight_texts):
+    """PDF에 하이라이트 추가"""
+    if not highlight_texts:
+        return pdf_stream
+    
+    try:
+        # PDF 문서 열기
+        pdf_document = fitz.open(stream=pdf_stream.getvalue(), filetype="pdf")
+        
+        # 각 페이지에서 텍스트 검색하고 하이라이트 추가
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            
+            for highlight_text in highlight_texts:
+                # 텍스트를 단어별로 분리해서 검색
+                words = highlight_text.split()
+                
+                # 전체 텍스트로 먼저 검색
+                text_instances = page.search_for(highlight_text)
+                if text_instances:
+                    for inst in text_instances:
+                        highlight = page.add_highlight_annot(inst)
+                        highlight.set_colors(stroke=[1, 1, 0])  # 노란색
+                        highlight.update()
+                    # print(f"전체 텍스트 하이라이트 추가: '{highlight_text}' (페이지 {page_num + 1})")
+                    continue
+                
+                # 전체 텍스트가 안되면 부분 텍스트로 검색
+                found_any = False
+                for word in words:
+                    if len(word.strip()) < 5:  # 너무 짧은 단어는 제외
+                        continue
+                        
+                    word_instances = page.search_for(word.strip())
+                    if word_instances:
+                        for inst in word_instances:
+                            highlight = page.add_highlight_annot(inst)
+                            highlight.set_colors(stroke=[1, 1, 0])  # 노란색
+                            highlight.update()
+                        found_any = True
+                
+                if found_any:
+                    # print(f"부분 텍스트 하이라이트 추가: '{highlight_text}' (페이지 {page_num + 1})")
+                    print(f"부분 텍스트 하이라이트 추가: 페이지 {page_num + 1}")
+
+        # 수정된 PDF를 새로운 스트림으로 저장
+        output_stream = io.BytesIO()
+        pdf_document.save(output_stream)
+        pdf_document.close()
+        
+        output_stream.seek(0)
+        return output_stream
+    
+    except Exception as e:
+        print(f"PDF 하이라이트 추가 오류: {str(e)}")
+        return pdf_stream
 
 def check_libreoffice_installation():
     """LibreOffice 설치 여부 및 경로 확인"""
@@ -378,7 +522,7 @@ def convert_to_pdf_fast(input_file):
 
 @source_bp.route('/api/document/<path:filename>')
 def get_document(filename):
-    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외)"""
+    """문서 파일 제공 (Firebase 연동 + PDF 뷰어용, HWP 제외) - 하이라이팅 기능 추가"""
     try:
         # page_id 쿼리 파라미터 필수
         page_id = request.args.get('page_id')
@@ -437,19 +581,30 @@ def get_document(filename):
 
         ext = os.path.splitext(firebase_filename)[1].lower()
 
-        # PDF면 바로 반환
+        # PDF면 바로 스트림으로 변환
         if ext == '.pdf':
-            return send_file(temp_path, mimetype='application/pdf')
+            with open(temp_path, 'rb') as f:
+                pdf_stream = io.BytesIO(f.read())
+        else:
+            # PDF로 변환 시도
+            start = time.time()
+            pdf_stream = convert_to_pdf_fast(temp_path)
+            
+            if not pdf_stream:
+                os.remove(temp_path)
+                return jsonify({"error": "문서 변환에 실패했습니다."}), 500
+            
+            print(f"[PDF 변환 완료] 소요 시간: {time.time() - start:.2f}s")
 
-        # PDF로 변환 시도
-        start = time.time()
-        pdf_stream = convert_to_pdf_fast(temp_path)
-        os.remove(temp_path)  # 변환 후 원본 삭제
+        os.remove(temp_path)  # 원본 파일 삭제
 
-        if not pdf_stream:
-            return jsonify({"error": "문서 변환에 실패했습니다."}), 500
-
-        print(f"[PDF 변환 완료] 소요 시간: {time.time() - start:.2f}s")
+        # CSV에서 하이라이트할 텍스트 추출
+        highlight_texts = get_highlight_content_for_file(base_filename)
+        
+        # 하이라이트 추가
+        if highlight_texts:
+            print(f"[하이라이트 추가] {len(highlight_texts)}개의 텍스트")
+            pdf_stream = add_highlights_to_pdf(pdf_stream, highlight_texts)
 
         return send_file(
             pdf_stream,

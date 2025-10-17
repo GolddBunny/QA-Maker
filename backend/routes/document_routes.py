@@ -4,9 +4,10 @@ import subprocess
 import tempfile
 import time
 from flask import Blueprint, jsonify, request
-from services.document_service.hwp2txt import convert_hwp_file
-from services.document_service.pdf2txt import extract_text_and_tables
-from services.document_service.convert2txt import convert2txt, convert_docx
+from services.document_service.hwp_to_md_txt import convert_hwp_file
+from services.document_service.pdf_to_md_txt import convert_pdf_file
+from services.document_service.convert2txt import convert2txt
+from services.document_service.docx_to_md_txt import convert_docx_file
 from firebase_config import bucket
 from werkzeug.utils import secure_filename
 import uuid
@@ -46,23 +47,31 @@ def upload_documents(page_id):
     for file in files:
         if file.filename == '':
             continue
-        
+
+        # 파일 크기 계산 (업로드 전)
+        file.seek(0, 2)  # 파일 끝으로 이동
+        file_size_bytes = file.tell()
+        file.seek(0)  # 파일 시작으로 되돌리기
+        size_mb = file_size_bytes / (1024 * 1024)
+
         original_filename = file.filename
         ext = os.path.splitext(original_filename)[1]
         uuid_name = f"{uuid.uuid4().hex}{ext}"
         upload_path = f"pages/{page_id}/documents/{uuid_name}"
 
-        # 날짜 포맷 지정
-        today_str = datetime.now().strftime('%Y-%m-%d')
+        # 날짜와 시간을 분리해 저장
+        date_only = datetime.now().strftime('%Y-%m-%d')  # 날짜만
+        datetime_full = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # 날짜 + 시간
 
         # 1. Firebase blob 생성
         blob = bucket.blob(upload_path)
 
-        # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
+        # 2. metadata에 원본 파일명, 카테고리, 날짜, 시간 저장
         blob.metadata = {
             "original_filename": original_filename,
-            "category": "unknown",
-            "date": today_str
+            "category": "uploaded",  # 기본값
+            "date": date_only,  # 날짜만
+            "time": datetime_full  # 날짜 + 시간
         }
 
         # 3. 파일 업로드
@@ -74,9 +83,11 @@ def upload_documents(page_id):
             'firebase_filename': uuid_name,
             'download_url': blob.public_url,
             'page_id': page_id,
-            'upload_date': today_str,
-            'category': "unknown",   
-            'date': today_str  
+            'upload_date': date_only,  # 날짜만
+            'category': "uploaded",  # 기본값
+            'date': date_only,  # 날짜만
+            'time': datetime_full,  # 날짜 + 시간
+            'size_mb': round(size_mb, 2)  # 크기 정보
         }
 
         # 문서명을 문서 ID로 사용하면 중복 이슈 있음 → UUID 또는 자동 ID 사용 권장
@@ -102,9 +113,27 @@ def get_uploaded_documents(page_id):
         result = []
         for doc in docs:
             data = doc.to_dict()
+            # Firebase Storage에서 실제 파일 크기 가져오기
+            firebase_filename = data.get('firebase_filename')
+            size_mb = 0
+            
+            if firebase_filename:
+                try:
+                    blob_path = f"pages/{page_id}/documents/{firebase_filename}"
+                    blob = bucket.blob(blob_path)
+                    
+                    # blob이 존재하면 크기 정보 가져오기
+                    if blob.exists():
+                        blob.reload()  # 메타데이터 새로고침
+                        size_bytes = blob.size
+                        size_mb = size_bytes / (1024 * 1024) if size_bytes else 0
+                except Exception as e:
+                    print(f"파일 크기 조회 오류 ({firebase_filename}): {str(e)}")
+                    size_mb = 0
+                    
             result.append({
                 'original_filename': data.get('original_filename'),
-                'category': data.get('category', 'unknown'),
+                'category': data.get('category', 'uploaded'),
                 'date': data.get('upload_date')
             })
 
@@ -130,7 +159,7 @@ def process_documents(page_id):
         base_path, input_path, _ = ensure_page_directory(page_id)
         firebase_path = f"pages/{page_id}/documents"
 
-        # 🔸 Firestore에서 filename 매핑 가져오기
+        # Firestore에서 filename 매핑 가져오기
         filename_mapping = {}  # {firebase_filename: original_filename}
         docs = db.collection('document_files').where('page_id', '==', page_id).stream()
         for doc in docs:
@@ -161,8 +190,16 @@ def process_documents(page_id):
         })
     
     except Exception as e:
+        end_time = time.time()
+        execution_time = round(end_time - start_time) if 'start_time' in locals() else None
         print("Flask 서버 오류:", str(e))
-        return jsonify({'success': False, 'error': str(e)}), 500
+
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'execution_time': execution_time
+        }), 500
+
     
 # 문서 직접 업로드 시 텍스트 추출
 @document_bp.route('/process-document-direct', methods=['POST'])
@@ -190,13 +227,13 @@ def process_document_direct():
 
             elif lower_name.endswith('.pdf'):
                 output_path = os.path.join(temp_dir, "output.txt")
-                extract_text_and_tables(file_path, output_path)
+                convert_pdf_file(file_path, output_path)
                 with open(output_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 
             elif lower_name.endswith('.docx'):
                 output_path = os.path.join(temp_dir, "output.txt")
-                convert_docx(file_path, output_path)
+                convert_docx_file(file_path, output_path)
                 with open(output_path, 'r', encoding='utf-8') as f:
                     text = f.read()
 
@@ -292,19 +329,17 @@ def download_crawled_documents(page_id):
         import sys
         import os
         sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
-        from document_downloader import DocumentDownloader
         
-        # 임시 다운로드 폴더 생성
-        temp_download_folder = f'../data/temp_download/{page_id}'
-        os.makedirs(temp_download_folder, exist_ok=True)
+        # Get input_path for the page
+        _, input_path, _ = ensure_page_directory(page_id)
         
         # DocumentDownloader 인스턴스 생성
         downloader = DocumentDownloader(
-            input_folder=temp_download_folder,
+            input_folder=input_path,
             domain="crawled",
             delay=1.0,
             upload_to_firebase=True,
-            delete_local_after_upload=True,
+            delete_local_after_upload=False,
             page_id=page_id
         )
         

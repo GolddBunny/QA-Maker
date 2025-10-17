@@ -32,7 +32,7 @@ class Crawler:
         self.curriculum_counter = 0  # curriculum 페이지 번호 매기기용 카운터
         self.url_breadcrumb_map = url_breadcrumb_map or {}  # URL-breadcrumb 매핑
         
-        # 첫 번째 URL에서 도메인 추출 (모든 URL이 같은 도메인이라고 가정)
+        # 첫 번째 URL에서 도메인 추출
         if self.urls_to_crawl:
             parsed_url = urlparse(self.urls_to_crawl[0])
             self.base_domain = parsed_url.netloc
@@ -89,7 +89,7 @@ class Crawler:
         chrome_options.add_argument('--memory-pressure-off')
         chrome_options.add_argument('--max_old_space_size=4096')
         
-        # 로그 레벨 설정 (오류 메시지 줄이기)
+        # 로그 레벨 설정 
         chrome_options.add_argument('--log-level=3')
         chrome_options.add_argument('--silent')
         
@@ -107,10 +107,10 @@ class Crawler:
                 service = Service(ChromeDriverManager().install())
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
                 self.driver.set_page_load_timeout(30)
-                print(f"✅ Chrome WebDriver 초기화 성공 (시도 {attempt + 1})")
+                print(f"Chrome WebDriver 초기화 성공 (시도 {attempt + 1})")
                 break
             except Exception as e:
-                print(f"❌ Chrome WebDriver 초기화 실패 (시도 {attempt + 1}/{max_retries}): {e}")
+                print(f"Chrome WebDriver 초기화 실패 (시도 {attempt + 1}/{max_retries}): {e}")
                 if attempt == max_retries - 1:
                     raise Exception(f"Chrome WebDriver 초기화에 {max_retries}번 실패했습니다: {e}")
                 time.sleep(2)  # 재시도 전 2초 대기
@@ -124,9 +124,9 @@ class Crawler:
         if hasattr(self, 'driver') and self.driver is not None:
             try:
                 self.driver.quit()
-                print("✅ Chrome WebDriver 정리 완료")
+                print("Chrome WebDriver 정리 완료")
             except Exception as e:
-                print(f"⚠️ WebDriver 정리 중 오류 (무시됨): {e}")
+                print(f"WebDriver 정리 중 오류 (무시됨): {e}")
             finally:
                 self.driver = None
 

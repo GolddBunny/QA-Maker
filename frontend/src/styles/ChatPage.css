@@ -31,6 +31,7 @@
 .chat-container {
   height: calc(100vh - 130px); /* 필요 시 전체 높이 조절 */
   overflow-y: auto;
+  max-width: 100%;
   max-height: calc(100vh - 147px);
 }
 
@@ -75,10 +76,11 @@
   font-weight: 500;
   text-align: justify;
   box-shadow: var(--box-shadow);
-  max-width: 60%;
+  max-width: 38%;
   margin-left: auto;
   margin-right: 28%;
   margin-top: 25px;
+  line-height: 1.45;
   border: 1px solid #DBD8FF;
 }
 
@@ -130,12 +132,12 @@
 
 /* 왼쪽 버튼 컨테이너 */
 .nav-button-container:first-of-type {
-  left: -4em;
+  left: -3em;
 }
 
 /* 오른쪽 버튼 컨테이너 */
 .nav-button-container:last-of-type {
-  right: -4em;
+  right: -3em;
 }
 
 /* 답변 버튼 */
@@ -171,7 +173,8 @@
 
 .action-button-container {
   display: flex;
-  width: 100%;
+  width: 70%;
+  margin-left: 30px;
 }
 
 /* 정확도, 만족도 버튼 스타일 */
@@ -186,6 +189,7 @@
   align-items: center;
   box-shadow: 0 2px 5px #d4c9e3;
   margin-bottom: 3px;
+  margin-left: 30px;
 }
 
 .action-button-left-graph {
@@ -210,11 +214,11 @@
   align-items: center;
   gap: 4px;
 }
+
 .graph-button-wrapper .action-button-left:hover {
   background-color: var(--light-purple);
   font-weight: 500;
 }
-
 
 .button-icon img {
   width: 16px;
@@ -260,6 +264,7 @@
   border: 1px solid #e8e0f3;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  margin-left: 30px;
 }
 
 .related-questions-header {
@@ -427,7 +432,7 @@ p.loading .bouncing-text {
   left: 0;
   right: 0;
   width: 100%;
-  max-width: 700px;
+  max-width: 750px;
   margin: 20px auto;
   border-radius: 20px;
   background-color: white;
@@ -676,6 +681,72 @@ p.loading .bouncing-text {
   background-color: #e0e0e0;
 }
 
+/* 문서 뷰어 컨테이너 */
+.document-viewer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #ffffff;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 문서 뷰어 헤더 */
+.document-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #e9e1f8;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 10;
+}
+
+.document-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.document-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* headline 선택기 */
+.headline-selector {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+/* 닫기 버튼 */
+.close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: #e0e0e0;
+}
+
 /* PDF 뷰어 컨테이너 */
 .pdf-viewer-container {
   flex: 1;
@@ -702,7 +773,7 @@ p.loading .bouncing-text {
 
 /* 근거 문서 버튼 스타일 */
 .source-docs-container {
-  width: 106.5%; /* 부모 컨테이너 너비에 맞춤 */
+  width: 100%; /* 부모 컨테이너 너비에 맞춤 */
   background-color: white;
   border-radius: 4px;
   box-shadow: 0 2px 5px #eae8ed;

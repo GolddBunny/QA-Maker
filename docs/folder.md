@@ -60,4 +60,4 @@ qa_system/
 │
 ├── .gitignore
 ├── README.md                    # 프로젝트 개요 및 설정 방법
-└── CONTRIBUTING.md              # 기여 가이드라인 (SW 공개 개발자 대회 나가려면,,)
+└── CONTRIBUTING.md              # 기여 가이드라인

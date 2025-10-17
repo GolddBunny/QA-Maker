@@ -2,23 +2,73 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import { usePageContext } from '../utils/PageContext';
-import { useQAHistoryContext } from '../utils/QAHistoryContext'; // QA History Context 추가
+import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { FileDropHandler } from '../api/handleFileDrop';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
-import { applyIndexing, updateIndexing, executeFullPipeline, executeIndexingOnly } from '../api/IndexingButton';
+import { applyIndexing, updateIndexing, executeFullPipeline, executeIndexingOnly, executeUpdatePipeline } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
 import { initDocUrl } from '../api/InitDocUrl';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase/sdk";
 
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
+
+const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
+  // 기본 시간 (firebase에 저장하는 데 1분)
+  const BASE_TIME = 1;
+  
+  // 각 항목별 평균 처리 시간 (초 단위)
+  const DOC_STRUCTURING_TIME_PER_MB = 10; // 문서 1MB당 구조화 시간 (초)
+  const DOC_INDEXING_TIME_PER_MB = 50;    // 문서 1MB당 인덱싱 시간 (초)
+  const URL_STRUCTURING_TIME = 5;        // URL 1개당 구조화 시간 (초)
+  const URL_INDEXING_TIME = 40;           // URL 1개당 인덱싱 시간 (초)
+  
+  // 총 처리 시간 계산 (초)
+  const totalDocTime = totalDocSizeMB * (DOC_STRUCTURING_TIME_PER_MB + DOC_INDEXING_TIME_PER_MB);
+  const totalUrlTime = urlCount * (URL_STRUCTURING_TIME + URL_INDEXING_TIME);
+  const totalProcessingTime = totalDocTime + totalUrlTime;
+  
+  // 기본 시간 초로 변환 후 더하기
+  const totalTimeInSeconds = totalProcessingTime + (BASE_TIME * 60);
+  
+  // 최종 분 단위로 변환
+  const totalTimeInMinutes = Math.ceil(totalTimeInSeconds / 60);
+  
+  return {
+    totalMinutes: totalTimeInMinutes,
+    formattedTime: formatTime(totalTimeInMinutes),
+    breakdown: {
+      docStructuringTime: Math.ceil((totalDocSizeMB * DOC_STRUCTURING_TIME_PER_MB) / 60),
+      docIndexingTime: Math.ceil((totalDocSizeMB * DOC_INDEXING_TIME_PER_MB) / 60),
+      urlProcessingTime: Math.ceil(totalUrlTime / 60),
+      baseTime: BASE_TIME
+    }
+  };
+};
+
+// 시간 "0시간 0분" 형식으로 변환
+const formatTime = (minutes) => {
+  if (minutes < 60) {
+    return `${minutes}분`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) {
+      return `${hours}시간`;
+    } else {
+      return `${hours}시간 ${remainingMinutes}분`;
+    }
+  }
+};
 
 const AdminPage = () => {
     const navigate = useNavigate();
-    const { pageId } = useParams();  // URL에서 페이지 ID 가져오기
+    const { pageId } = useParams();
     const [urlInput, setUrlInput] = useState("");
     const [uploadedUrls, setUploadedUrls] = useState([]);
     const [isNewPage, setIsNewPage] = useState(false);
@@ -27,22 +77,25 @@ const AdminPage = () => {
     const [isFileLoading, setIsFileLoading] = useState(false);
     const [isProcessLoading, setIsProcessLoading] = useState(false);
     const [isApplyLoading, setIsApplyLoading] = useState(false);
+    const [isUpdateLoading, setIsUpdateLoading] = useState(false);
     const [hasDocuments, setHasDocuments] = useState(false);
     const fileInputRef = useRef(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [duplicateFileName, setDuplicateFileName] = useState(null); //중복 파일 검사
+    const [duplicateFileName, setDuplicateFileName] = useState(null);
+    const [uploadedDocs, setUploadedDocs] = useState([]);
 
     const { currentPageId, updatePages, updatePageSysName, updatePageName,
       systemName, setSystemName, domainName, setDomainName
     } = usePageContext();
-    const [uploadedDocs, setUploadedDocs] = useState([]); // 초기값은 빈 배열
-    // Firebase QA History Context 사용 (pageId 기반, Firebase 사용)
+
+    // QA History 불러오기 (Firebase 기반)
     const { 
         qaHistory, 
         loading: qaLoading, 
         error: qaError 
     } = useQAHistoryContext(pageId, true); // useFirestore = true로 설정
+
     // 작업 처리 중인지 확인 상태
     const isAnyProcessing = isUrlLoading || isFileLoading || isProcessLoading || isApplyLoading;
     const [hasOutput, setHasOutput] = useState(null);
@@ -52,10 +105,21 @@ const AdminPage = () => {
       const saved = localStorage.getItem(`showProgressing_${pageId}`);
       return saved === 'true';
     });
-    const [docCount, setDocCount] = useState(0);  //문서 수
-    const [urlCount, setUrlCount] = useState(0);
+
+    const [docCount, setDocCount] = useState(0); // 문서 수
+    const [urlCount, setUrlCount] = useState(0); // URL 수
     const [conversionTime, setConversionTime] = useState(null); //문서 전처리 실행 시간
     const [applyExecutionTime, setApplyExecutionTime] = useState(null); //index 시간
+
+    const [stepExecutionTimes, setStepExecutionTimes] = useState({
+      crawling: null,
+      structuring: null,
+      document: null,
+      indexing: null
+    });
+    
+    const stepTimesRef = useRef(stepExecutionTimes);
+    const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
 
     const { handleFileDrop } = useMemo(() => FileDropHandler({  //문서 수 firebase 실시간 연동
       uploadedDocs,
@@ -65,18 +129,45 @@ const AdminPage = () => {
       setHasDocuments,
       isAnyProcessing,
       pageId,
-      setDocCount
-    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount]);
+      setDocCount,
+      setIsDragOver
+    }), [uploadedDocs, setUploadedDocs, setDuplicateFileName, setIsFileLoading, setHasDocuments, isAnyProcessing, pageId, setDocCount, setIsDragOver]);
+
+    // 전체 문서 용량 합계 (MB)
+    const totalDocSizeMB = useMemo(() => {
+      console.log('uploadedDocs:', uploadedDocs);
+      const total = uploadedDocs.reduce((total, doc) => {
+        console.log(`Document ${doc.original_filename}: size_mb = ${doc.size_mb}`);
+        return total + (doc.size_mb || 0);
+      }, 0);
+      console.log('Total document size (MB):', total);
+      return total;
+    }, [uploadedDocs]);
+
+    // 예상 처리 시간 계산
+    const estimatedTime = useMemo(() => {
+      return calculateEstimatedTime(urlCount, docCount, totalDocSizeMB);
+    }, [urlCount, docCount, totalDocSizeMB]);
 
     const handleCloseProgressing = async () => {
-      setShowProgressing(false);
-      localStorage.removeItem(`showProgressing_${pageId}`);
-
-      if (!pageId) return;
-
       try {
-        await checkOutputFolder(pageId);
+        // 서버 작업 상태 확인
+        const serverStatus = await checkServerProcessingStatus(pageId);
+        
+        if (serverStatus.isProcessing) {
+          const confirmClose = window.confirm(
+            "서버에서 작업이 진행 중입니다. 정말로 진행 창을 닫으시겠습니까?\n" +
+            "창을 닫아도 서버 작업은 계속됩니다."
+          );
+          if (!confirmClose) return;
+        }
+        
+        setShowProgressing(false);
+        localStorage.removeItem(`showProgressing_${pageId}`);
 
+        if (!pageId) return;
+
+        await checkOutputFolder(pageId);
         await Promise.all([
           fetchSavedUrls(pageId),
           loadDocumentsInfo(pageId)
@@ -86,11 +177,26 @@ const AdminPage = () => {
       }
     };
 
+    // 서버 작업 상태 확인
+    const checkServerProcessingStatus = useCallback(async (pageId) => {
+      if (!pageId) return { isProcessing: false };
+      
+      try {
+        const response = await fetch(`${BASE_URL}/processing-status/${pageId}`);
+        const data = await response.json();
+        return data; // { isProcessing: true/false, currentStep: 'crawling'/'structuring'/etc, progress: 0.5 }
+      } catch (error) {
+        console.error("서버 작업 상태 확인 실패:", error);
+        return { isProcessing: false };
+      }
+    }, []);
+
     // URL 목록 불러오기
     const fetchSavedUrls = useCallback(async (pageId) => {
       const urls = await fetchSavedUrlsApi(pageId);
       const urlArray = Array.isArray(urls) ? urls : [];
-      setUploadedUrls(urlArray); // undefined 방지
+
+      setUploadedUrls(urlArray);
       setUrlCount(urlArray.length);
     } , []);
 
@@ -99,11 +205,13 @@ const AdminPage = () => {
       if (!pageId) return;
       
       try {
-        const res = await fetch(`${BASE_URL}/documents/${pageId}`);  // 문서 목록 api
+        const res = await fetch(`${BASE_URL}/documents/${pageId}`);
         const data = await res.json();
+        console.log('API Response:', data); // 응답 구조 확인
 
         if (data.success) {
             const uploaded = data.uploaded_files;
+            console.log('Uploaded files:', data.uploaded_files);
             setUploadedDocs(data.uploaded_files);
             setHasDocuments(data.uploaded_files.length > 0);
         } else {
@@ -142,49 +250,98 @@ const AdminPage = () => {
       setIsLoadingPage(true);
       
       console.log("현재 admin pageId:", pageId);
+      stepTimesRef.current = stepExecutionTimes;
 
-      // 페이지가 변경될 때마다 상태 초기화
-      // setEntities([]);
-      // setRelationships([]);
-      // setGraphData(null);
-      // setUploadedUrls([]);
-      // setUploadedDocs([]);
-      // setHasDocuments(false);
-      // setHasOutput(null);
-      
-      const savedShow = localStorage.getItem(`showProgressing_${pageId}`);
-      if (savedShow === 'true') {
-        setShowProgressing(true);
-      } else {
-        setShowProgressing(false);
-      }
-      
-      if (pageId) {
-        Promise.all([
-          loadUploadedDocsFromFirestore(pageId)
-            .then(({ docs, count }) => {
-              const docsArray = Array.isArray(docs) ? docs : []; // 배열인지 확인
-              setUploadedDocs(docsArray);
-              setDocCount(count); // 문서 개수
-            })
-            .catch(error => {
-              console.error("문서 목록 로드 중 오류:", error);
-              setUploadedDocs([]);
-              setDocCount(0);
-            }),
-          fetchSavedUrls(pageId),
-          checkOutputFolder(pageId)
-        ]).catch(error => console.error("데이터 로드 중 오류:", error))
-          .finally(() => setIsLoadingPage(false)); // 로딩 종료
-        
-        const pages = JSON.parse(localStorage.getItem('pages')) || [];
-        const currentPage = pages.find(page => page.id === pageId);
-        if (currentPage) {
-          setDomainName(currentPage.name || "");
-          setSystemName(currentPage.sysname || "");
+      // 1. Firestore URL 실시간 구독
+      const urlsRef = collection(db, "url_list", pageId, "list");
+      const urlQuery = query(urlsRef, orderBy("date", "desc"));
+      const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
+        const urlArray = snapshot.docs.map(doc => doc.data());
+        setUploadedUrls(urlArray);
+        setUrlCount(urlArray.length);
+      });
+
+      // 2. Firestore Document 실시간 구독
+      const docsRef = collection(db, "document_files");   // 컬렉션만 지정
+      const docQuery = query(
+        docsRef, 
+        where("page_id", "==", pageId),  // pageId 필터링
+        orderBy("date", "desc")          // 날짜 순 정렬
+      );
+
+      const unsubscribeDocs = onSnapshot(docQuery, (snapshot) => {
+        const docArray = snapshot.docs.map(doc => doc.data());
+        setUploadedDocs(docArray);
+        setDocCount(docArray.length);
+      }, (error) => {
+        console.error("Firestore 구독 에러:", error);
+      });
+
+      const initializePage = async () => {
+        try {
+          // 1. 서버 작업 상태 먼저 확인
+          const serverStatus = await checkServerProcessingStatus(pageId);
+          
+          // 2. localStorage 상태 확인
+          const savedShow = localStorage.getItem(`showProgressing_${pageId}`);
+          
+          // 3. 서버에서 실제 작업 중이 아니면 localStorage 정리
+          if (savedShow === 'true' && !serverStatus.isProcessing) {
+            console.log("서버 작업이 중단됨. localStorage 정리");
+            setShowProgressing(false);
+            localStorage.removeItem(`showProgressing_${pageId}`);
+          } else if (serverStatus.isProcessing) {
+            // 4. 서버에서 작업 중이면 상태 복원
+            console.log("서버 작업 진행 중. 상태 복원");
+            setShowProgressing(true);
+            setCurrentStep(serverStatus.currentStep || 'crawling');
+            
+            // 진행 상태에 따라 stepExecutionTimes 복원
+            if (serverStatus.stepTimes) {
+              setStepExecutionTimes(serverStatus.stepTimes);
+            }
+          } else {
+            setShowProgressing(false);
+          }
+
+          // 5. 기존 데이터 로드
+          await Promise.all([
+            loadUploadedDocsFromFirestore(pageId)
+              .then(({ docs, count }) => {
+                const docsArray = Array.isArray(docs) ? docs : [];
+                setUploadedDocs(docsArray);
+                setDocCount(count);
+              })
+              .catch(error => {
+                console.error("문서 목록 로드 중 오류:", error);
+                setUploadedDocs([]);
+                setDocCount(0);
+              }),
+            fetchSavedUrls(pageId),
+            checkOutputFolder(pageId)
+          ]);
+
+          // 6. 페이지 정보 설정
+          const pages = JSON.parse(localStorage.getItem('pages') || "[]");
+          const currentPage = pages.find(page => page.id === pageId);
+          if (currentPage) {
+            setDomainName(currentPage.name || "");
+            setSystemName(currentPage.sysname || "");
+          }
+          
+        } catch (error) {
+          console.error("페이지 초기화 중 오류:", error);
+        } finally {
+          setIsLoadingPage(false);
         }
-      }
-    }, [pageId, navigate]);
+      };
+
+      initializePage();
+      return () => {
+        unsubscribeUrls();
+        unsubscribeDocs();
+      };
+    }, [pageId, navigate, checkServerProcessingStatus, fetchSavedUrls, checkOutputFolder]);
 
     const toggleSidebar = () => {
       setIsSidebarOpen(!isSidebarOpen);
@@ -216,7 +373,7 @@ const AdminPage = () => {
     // URL 저장
     const handleUrlUpload = async () => {
       if (urlInput.trim() === '') return;
-      if (isAnyProcessing) return;
+      if (isUrlLoading) return;
 
       if (!isValidUrl(urlInput)) {
         alert('유효한 URL을 입력해주세요');
@@ -245,7 +402,7 @@ const AdminPage = () => {
       }
     };
 
-    // 문서 처리 함수
+    // 문서 구조화 함수
     const handleProcessDocuments = async () => {
       if (!pageId) {
         alert("먼저 페이지를 생성해주세요.");
@@ -277,29 +434,60 @@ const AdminPage = () => {
       }
     };
 
-    const [stepExecutionTimes, setStepExecutionTimes] = useState({
-      crawling: null,
-      structuring: null,
-      document: null,
-      indexing: null
-    });
-    const [currentStep, setCurrentStep] = useState('crawling'); // 현재 진행 중인 단계
-
     // 각 단계 완료 시 호출되는 콜백 함수
-    const handleStepComplete = (stepName, durationInSeconds) => {
-      setStepExecutionTimes(prev => ({
-        ...prev,
-        [stepName]: durationInSeconds,
-      }));
+    const handleStepComplete = async (stepName, durationInSeconds) => {
+      setStepExecutionTimes(prev => {
+        const updated = { ...prev, [stepName]: durationInSeconds };
+        stepTimesRef.current = updated; 
+        console.log("Updated stepExecutionTimes:", updated);
+        return updated;
+      });
 
       const stepOrder = ['crawling', 'structuring', 'document', 'indexing'];
       const nextIndex = stepOrder.indexOf(stepName) + 1;
       if (nextIndex < stepOrder.length) {
         setCurrentStep(stepOrder[nextIndex]);
       }
+
+      if (!pageId) {
+        console.warn("pageId가 없어 Firestore에 저장하지 못함");
+        return;
+      }
+
+      try {
+        const pageDocRef = doc(db, "dashboard", pageId);
+        const docSnap = await getDoc(pageDocRef);
+
+        if (docSnap.exists()) {
+          // 기존 stepExecutionTimes 불러오기
+          const prevTimes = docSnap.data().stepExecutionTimes || {};
+          // 누적 저장: 기존 값 + durationInSeconds
+          const prevVal = prevTimes[stepName] || 0;
+          const newVal = prevVal + durationInSeconds;
+          const updatedTimes = { ...prevTimes, [stepName]: newVal };
+          await updateDoc(pageDocRef, {
+            stepExecutionTimes: updatedTimes,
+          });
+          // stepTimesRef와 state도 누적값으로 갱신
+          setStepExecutionTimes(prev => ({ ...prev, [stepName]: newVal }));
+          stepTimesRef.current = { ...stepTimesRef.current, [stepName]: newVal };
+          console.log(`Firestore에 stepExecutionTimes 누적 업데이트 완료: ${stepName} (${prevVal} + ${durationInSeconds} = ${newVal})`);
+        } else {
+          // 새로 생성
+          await setDoc(pageDocRef, {
+            stepExecutionTimes: { [stepName]: durationInSeconds },
+          });
+          // stepTimesRef와 state도 갱신
+          setStepExecutionTimes(prev => ({ ...prev, [stepName]: durationInSeconds }));
+          stepTimesRef.current = { ...stepTimesRef.current, [stepName]: durationInSeconds };
+          console.log(`Firestore에 stepExecutionTimes 새로 저장 완료: ${stepName}`);
+        }
+      } catch (error) {
+        console.error("Firestore 저장 실패:", error);
+      }
     };
 
-    // 인덱싱 버튼
+    // Q&A 시스템 생성 빌드 버튼 (크롤링 -> 구조화 -> 인덱싱)
     const handleApply = async () => {
       if (!pageId) {
         alert("먼저 페이지를 생성해주세요.");
@@ -311,6 +499,7 @@ const AdminPage = () => {
       }
 
       if (isAnyProcessing) return;
+      
       setShowProgressing(true);
       localStorage.setItem(`showProgressing_${pageId}`, 'true');
       setIsApplyLoading(true);
@@ -325,14 +514,6 @@ const AdminPage = () => {
           indexing: null
         });
 
-        const init_result = await initDocUrl(pageId);
-
-        if (init_result.success) {
-          console.log("초기화 성공:", init_result.message);
-        } else {
-          console.error("초기화 실패:", init_result.error);
-        }
-
         // 크롤링 및 구조화
         const final_result = await executeFullPipeline(pageId, handleStepComplete);
         
@@ -344,18 +525,18 @@ const AdminPage = () => {
 
           // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
+            fetchSavedUrls(pageId),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);
         } else {
-          alert(`QA 시스템 구축 실패: ${final_result.error}`);
-          setShowProgressing(false); // 실패 시에만 자동으로 닫기
+          // alert(`QA 시스템 구축 실패: ${final_result.error}`);
+          // setShowProgressing(false); // 실패 시에만 자동으로 닫기
         }
       } catch (error) {
         console.error("QA 시스템 구축 중 오류:", error);
-        alert("QA 시스템 구축 중 오류가 발생했습니다.");
-        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+        // alert("QA 시스템 구축 중 오류가 발생했습니다.");
+        // setShowProgressing(false); // 에러 시에만 자동으로 닫기
       }finally {
         setIsApplyLoading(false);
       }
@@ -415,13 +596,20 @@ const AdminPage = () => {
       }
     };
 
-    const handleUpdate = async () => {
+    // 인덱싱 재시작 버튼 (기존 파일들 이용)
+    const handleRestartIndexing = async () => {
+      if (!pageId) {
+        alert("먼저 페이지를 생성해주세요.");
+        return;
+      }
       if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
         alert("먼저 문서나 URL을 업로드해주세요.");
         return;
       }
 
       if (isAnyProcessing) return;
+      setShowProgressing(true);
+      localStorage.setItem(`showProgressing_${pageId}`, 'true');
       setIsApplyLoading(true);
       const startTime = Date.now();
 
@@ -429,26 +617,79 @@ const AdminPage = () => {
         const result = await updateIndexing(pageId);
         const endTime = Date.now();
 
-        if (result.success) {
-          const durationInSeconds = Math.round((endTime - startTime) / 1000);
-          setStepExecutionTimes(prev => ({
-            ...prev,
-            update: durationInSeconds
-          }));
+            if (final_result.success) {
+              setIsNewPage(false);
 
-          alert("업데이트 완료");
+          console.log("=== 최종 실행시간 요약 ===");
+          console.log("전체 실행시간:", final_result.execution_times.total, "초");
 
+          // 인덱싱 완료 후 데이터 다시 로드
           await Promise.all([
             fetchSavedUrls(pageId).then(setUploadedUrls),
             loadDocumentsInfo(pageId),
             checkOutputFolder(pageId)
           ]);
         } else {
-          alert(`업데이트 실패: ${result.error}`);
+          alert(`인덱싱 재시작 실패: ${final_result.error}`);
+          setShowProgressing(false); // 실패 시에만 자동으로 닫기
+        }
+      } catch (error) {
+        console.error("인덱싱 재시작 중 오류:", error);
+        alert("인덱싱 재시작 중 오류가 발생했습니다.");
+        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+      } finally {
+        setIsApplyLoading(false);
+      }
+    };
+
+    // 업데이트 버튼 클릭 시
+    const handleUpdate = async () => {
+      if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
+        alert("먼저 문서나 URL을 업로드해주세요.");
+        return;
+      }
+
+      if (isAnyProcessing) return;
+
+      setShowProgressing(true);
+      localStorage.setItem(`showProgressing_${pageId}`, 'true');
+      setIsUpdateLoading(true);
+
+      //const startTime = Date.now();
+      // 초기 상태 설정: step, stepExecutionTimes
+      setCurrentStep('crawling');
+      setStepExecutionTimes({
+        crawling: null,
+        structuring: null,
+        document: null,
+        indexing: null
+      });
+
+      try {
+        // updateIndexing 함수가 step 콜백을 지원하도록 수정
+        const final_result = await executeUpdatePipeline(pageId, handleStepComplete);
+        //const endTime = Date.now();
+
+            if (final_result.success) {
+              setIsNewPage(false);
+
+          console.log("=== 최종 실행시간 요약 ===");
+          console.log("전체 실행시간:", final_result.execution_times.total, "초");
+
+          // 인덱싱 완료 후 데이터 다시 로드
+          await Promise.all([
+            fetchSavedUrls(pageId),
+            loadDocumentsInfo(pageId),
+            checkOutputFolder(pageId)
+          ]);
+
+          //alert("업데이트 완료");
+        } else {
+          alert(`업데이트 실패: ${final_result.error}`);
           setShowProgressing(false); 
         }
       } finally {
-        setIsApplyLoading(false);
+        setIsUpdateLoading(false);
       }
     };
 
@@ -463,29 +704,26 @@ const AdminPage = () => {
       return dateB - dateA; // 최근 날짜가 먼저 오도록 (내림차순)
     });
 
-    
-    const handleAnalyzer = async () => {
-      if (!pageId) {
-        alert("먼저 페이지를 생성해주세요.");
-        return;
-      }
+    // Log Analyzer로 이동 버튼 클릭 시
+    const handleAnalyzer = () => {
+      const allDone = Object.values(stepExecutionTimes).every(v => v !== null);
 
-      if (isAnyProcessing) return;
+      console.log("최종 stepExecutionTimes로 navigate:", stepExecutionTimes);
+      navigate(`/dashboard/${pageId}`, {
+        state: { stepExecutionTimes: stepExecutionTimes } // state 직접 사용
+      });
+    };
 
-      try {
-        console.log("Analyzer 실행");
-
-        navigate(`/dashboard/${pageId}`, { state: { conversionTime } });  //conversionTime : 문서 전처리 실행 시간
-      } catch (error) {
-        console.error("Analyzer 실행 중 오류:", error);
-        alert("Analyzer 실행 중 오류가 발생했습니다.");
-      }
+    // 사용자 만족도 페이지로 이동 버튼 클릭 시
+    const handleUserDashboard = () => {
+      console.log("UserDashboard로 navigate:", pageId);
+      navigate(`/userDashBoard/${pageId}`);
     };
 
     return (
       <>
-      {/* {isLoadingPage && <LoadingSpinner />} */}
       <div className={`admin-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+        {/* 헤더 */}
         <AdminHeader isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
         {/* 사이드바는 AdminPage 안에서만 조건부 렌더링 */}
@@ -495,11 +733,13 @@ const AdminPage = () => {
             toggleSidebar={toggleSidebar}
           />
         )}
-
+        
+        {/* 본문 */}
         <div className={`admin-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
           {/* 상단 입력부 */}
           <div className="input-container" id="name">
             <div className="input-row-horizontal">
+              {/* 시스템 이름/도메인 이름 입력부 */}
               <div className="input-field">
                 <input
                   type="text"
@@ -551,12 +791,12 @@ const AdminPage = () => {
             <div className="url-input">
               <input
                 type="text"
-                value={urlInput}
+                value={isAnyProcessing ? "처리 중 ..." : urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder={isAnyProcessing ? '' : 'https://example.com'}
+                placeholder={isAnyProcessing ? '처리 중 ...' : 'https://example.com'}
                 className="url-input-field"
                 disabled={isAnyProcessing}
-                style={{ color: isAnyProcessing ? 'transparent' : 'inherit' }}
+                style={{ color: isAnyProcessing ? '#070707ff' : 'inherit' }}
               />
 
               {/* 버튼은 로딩 중일 때 숨김 */}
@@ -598,8 +838,10 @@ const AdminPage = () => {
                   </tbody>
                 </table>
               </div>
+              
              <div className='search-firebase-sum'>총 url 수: {urlCount}</div>
             </div>
+            
           
           {/* 오른쪽 문서 섹션 */}
           <div className="doc-upload">
@@ -622,8 +864,10 @@ const AdminPage = () => {
                   disabled={isAnyProcessing}
                 />
                 
-                {/* 기존 텍스트는 isAnyProcessing이 false일 때만 보이도록 */}
-                {!isAnyProcessing && (
+                {/* 처리 중이면 전용 메시지 보여주기 */}
+                {isAnyProcessing ? (
+                  <p>처리 중...</p>
+                ) : (
                   <>
                     <p>
                       {isFileLoading
@@ -636,7 +880,7 @@ const AdminPage = () => {
                   </>
                 )}
               </div>
-              {!isAnyProcessing && (
+              {/* {!isAnyProcessing && (
                 <button
                   onClick={handleProcessDocuments}
                   disabled={isAnyProcessing}
@@ -644,7 +888,7 @@ const AdminPage = () => {
                 >
                   +
                 </button>
-              )}
+              )} */}
             </div>
 
             <div className="document-table-scroll">
@@ -677,6 +921,20 @@ const AdminPage = () => {
               </table>
             </div>
             <div className="search-firebase-sum">총 문서 수: {docCount}</div>
+            {duplicateFileName && (
+              <div className="duplicate-warning-box">
+                <div className="duplicate-warning-message">
+                  <strong>중복된 문서</strong><br />
+                  <span>{duplicateFileName}은 이미 등록된 문서입니다. 문서명을 변경해주세요.</span>
+                </div>
+                <button
+                  className="close-warning-button"
+                  onClick={() => setDuplicateFileName(null)}
+                >
+                  ×
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -689,7 +947,14 @@ const AdminPage = () => {
                 onClick={handleUpdate}
                 disabled={isCheckingOutput}
               > 
-                Update QA System
+                Update Q&A System
+              </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleRestartIndexing}
+                disabled={isCheckingOutput}
+              > 
+                Restart Indexing
               </button>
               <button 
                 className="btn-apply-update"
@@ -705,6 +970,13 @@ const AdminPage = () => {
               > 
                 Go to Analyzer
               </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleUserDashboard}
+                disabled={isCheckingOutput}
+              > 
+                Go to UserDashboard
+              </button>
             </>
           ) : (
             <>
@@ -713,7 +985,7 @@ const AdminPage = () => {
                 onClick={handleApply}
                 disabled={isCheckingOutput || hasOutput === null}
               > 
-                Build QA System
+                Build Q&A System
               </button>
               <button 
                 className="btn-apply-update"
@@ -729,14 +1001,20 @@ const AdminPage = () => {
         {/* ProgressingBar는 중앙에 고정 */}
         {showProgressing && (
           <ProgressingBar
-            onClose={() => {
+            onClose={ async () => {
+              const serverStatus = await checkServerProcessingStatus(pageId);
+              if (serverStatus.isProcessing) {
+                alert("서버에서 작업이 진행 중입니다. 진행 창을 닫을 수 없습니다.");
+                return;
+              }
               setShowProgressing(false);
               localStorage.removeItem(`showProgressing_${pageId}`);
             }}
-            onAnalyzer={() => navigate(`/dashboard/${pageId}`, { state: { conversionTime } })}
+            onAnalyzer={() => navigate('/analyzer')}
             isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계
+            estimatedTime={estimatedTime} // 새로 추가된 prop
           />
         )}
 
@@ -745,7 +1023,7 @@ const AdminPage = () => {
           <div className="footer-content">
             <p className="team-name">© 2025 황금토끼 팀</p>
             <p className="team-members">개발자: 옥지윤, 성주연, 김민서</p>
-            <p className="footer-note">본 시스템은 한성대학교 QA 시스템 구축 프로젝트의 일환으로 제작되었습니다.</p>
+            {/* <p className="footer-note">본 시스템은 한성대학교 QA 시스템 구축 프로젝트의 일환으로 제작되었습니다.</p> */}
           </div>
         </footer>
       </div>

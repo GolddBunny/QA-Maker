@@ -1,114 +1,116 @@
 /* 헤더 스타일 */
 .dashboard-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: linear-gradient(to top, #cbc4f3 33%, #c7b2f4 100%);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to top, #cbc4f3 33%, #c7b2f4 100%);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* 대시보드 헤더 컨텐츠 */
 .dashboard-header-content {
-  height: 100%;
-  max-width: 100%;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+    height: 100%;
+    max-width: 100%;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .dashboard-header-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 /* 돌아가기 버튼 스타일 */
 .back-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: white;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .back-button:active {
-  transform: translateY(0);
+    transform: translateY(0);
 }
 
 .dashboard-logo-section {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .dashboard-title {
-  font-size: 30px;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-  line-height: 1;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 30px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-nav-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 15px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
 .dashboard-nav-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-1px);
 }
 
 /* 대시보드 컨테이너 및 콘텐츠 여백 조정 */
 .dashboard-container {
-  min-height: 100vh;
-  background: #f8fafc;
-  padding-top: 80px; /* 헤더 높이만큼 패딩 추가 */
+    min-height: 100vh;
+    background: #f8fafc;
+    padding-top: 80px;
+    background-color: #f3f0ff;
 }
 
 .dashboard-content {
-  padding: 60px 55px 55px;
-  max-width: 85%;
-  margin: 0 auto;
-  transition: margin-left 0.3s ease;
+    padding: 60px 55px 55px;
+    max-width: 85%;
+    margin: 0 auto;
+    height: auto;
 }
 
 .dashboard-content.sidebar-open {
-  margin-left: 280px;
+    margin-left: 280px;
 }
 
 /* 통계 섹션 */
 .stats-section {
     padding: 15px;
     margin-top: 25px;
-    background-color: #f8f9fa;
+    /* background-color: #f3f0ff; */
 }
 
 .stats-grid {
@@ -208,6 +210,7 @@
     padding: 0px 20px;
     max-width: 1200px;
     margin: 0 auto;
+    margin-top: -20px;
 }
 
 .section-header {
@@ -263,7 +266,9 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
-    border: 1px solid #f0f0f0;
+    border: 1px solid #f0f0f0; 
+    max-height: 250px;
+    margin-top: -5px;
 }
 
 .url-table {
@@ -373,7 +378,7 @@
     padding: 30px 20px;
     max-width: 1200px;
     margin: 0 auto;
-    margin-bottom: 40px;
+    margin-bottom: 0px;
 }
 
 /* QA 시스템 정보 보기 섹션 스타일 */
@@ -381,15 +386,16 @@
     padding: 30px 20px;
     max-width: 1200px;
     margin: 0 auto;
-    margin-bottom: 40px;
+    margin-bottom: 0px;
+    margin-top: -20px;
 }
 
 /* 그래프 섹션 스타일 */
 .graph-section {
-    padding: 30px 20px;
+    padding: 0px 20px;
     max-width: 1200px;
+    /* max-height: 50px; */
     margin: 0 auto;
-    margin-bottom: 40px;
 }
 
 /* 헤더 컨트롤 영역 */
@@ -468,12 +474,6 @@
     border: none;
 }
 
-/* 테이블 스크롤 래퍼 */
-.table-scroll-wrapper {
-    max-height: 300px;
-    overflow-y: auto;
-    border-radius: 8px;
-}
 
 /* 스크롤바 스타일링 */
 .table-scroll-wrapper::-webkit-scrollbar {
@@ -524,34 +524,16 @@
 
 /* 테이블 스크롤 래퍼 스타일 */
 .table-scroll-wrapper {
-    max-height: 500px; /* 테이블 최대 높이 설정 */
+    max-height: 250px;
     overflow-y: auto; /* 세로 스크롤 활성화 */
     overflow-x: auto; /* 가로 스크롤 활성화 (필요시) */
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     background: white;
     position: relative;
+    padding-bottom: 40px; /* 마지막 row 여유 공간 */
 }
 
-/* 스크롤바 스타일링 (Webkit 기반 브라우저) */
-.table-scroll-wrapper::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.table-scroll-wrapper::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.table-scroll-wrapper::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
 
 /* 테이블 내부에서 헤더 고정 */
 .table-scroll-wrapper .url-table {
@@ -589,6 +571,11 @@
 .table-scroll-wrapper .url-table tbody td {
     padding: 12px 16px;
     vertical-align: top;
+}
+
+.table-scroll-wrapper .url-table tbody tr:last-child {
+    border-bottom: none; /* 필요시 */
+    padding-bottom: 16px; /* 마지막 row가 컨테이너 끝에 닿도록 */
 }
 
 /* 로딩 및 에러 메시지 스타일 */
@@ -857,26 +844,28 @@
 
 /* 지식그래프 섹션 스타일 */
 .knowledge-graph-section {
-    margin-bottom: 120px;
-    margin-top: 120px;
+    margin-bottom: 60px;
+    margin-top: 55px;
 }
 
 .knowledge-graph-title {
     font-size: 1.5rem;
     font-weight: 600;
     color: #1a1a1a;
-    padding: 0;
+    padding: 10px;
+    margin-bottom: 100px;
     text-align: left;
 }
 
 .knowledge-graph-container {
     background-color: white;
     padding: 1rem;
-    min-height: 200px;
+    max-height: 400px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
+    margin-top: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     border: 1px solid #f0f0f0;
@@ -887,7 +876,7 @@
     text-align: center;
     color: #6b7280;
     font-size: 1rem;
-    padding: 2rem;
+    padding: 1px;
 }
 
 .graph-error-message {
@@ -948,4 +937,115 @@
 
 .relationship-color {
     background-color: var(--relationship-bar-color, #8b5cf6);
+}
+
+/* 막대 그래프 툴팁 스타일 */
+.bar {
+    position: relative;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.bar:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+}
+
+/* 툴팁 기본 스타일 */
+.bar-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 툴팁 화살표 */
+.bar-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.85);
+}
+
+/* 호버 시 툴팁 표시 */
+.bar:hover .bar-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-12px);
+}
+
+/* URL 바 툴팁 색상 */
+.url-bar:hover .bar-tooltip {
+    background-color: #4a90e2;
+    border: 1px solid #357abd;
+}
+
+.url-bar:hover .bar-tooltip::after {
+    border-top-color: #4a90e2;
+}
+
+/* 문서 바 툴팁 색상 */
+.doc-bar:hover .bar-tooltip {
+    background-color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.doc-bar:hover .bar-tooltip::after {
+    border-top-color: #10b981;
+}
+
+/* 엔티티 바 툴팁 색상 */
+.entity-bar:hover .bar-tooltip {
+    background-color: #f59e0b;
+    border: 1px solid #e3940c;
+}
+
+.entity-bar:hover .bar-tooltip::after {
+    border-top-color: #f59e0b;
+}
+
+/* 관계 바 툴팁 색상 */
+.relationship-bar:hover .bar-tooltip {
+    background-color: #8b5cf6;
+    border: 1px solid #7f53e4;
+}
+
+.relationship-bar:hover .bar-tooltip::after {
+    border-top-color: #7f53e4;
+}
+
+/* 막대 그룹 호버 효과 */
+.bar-group {
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.bar-group:hover {
+    transform: translateY(-2px);
+}
+
+/* 반응형 - 작은 화면에서 툴팁 조정 */
+@media (max-width: 768px) {
+    .bar-tooltip {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    .bar-tooltip::after {
+        border-width: 4px;
+    }
 }

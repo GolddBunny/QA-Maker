@@ -1,4 +1,4 @@
-
+/* 전체 화면 로딩 오버레이 */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -12,6 +12,7 @@
   z-index: 1000;
 }
 
+/* 로딩 스피너 */
 .spinner {
   width: 64px;
   height: 64px;

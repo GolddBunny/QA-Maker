@@ -1,3 +1,4 @@
+/* 전체 관리자 메인 페이지 컨테이너 */
 .admin-main-container {
   background: linear-gradient(180deg, #D8BAFF 0%, #C3B7F6 33%, #786ED0 100%);
   display: flex;
@@ -7,12 +8,14 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* 본문 영역 */
 .main-content {
   flex: 1; /* 공간을 차지해서 footer를 아래로 밀어냄 */
   text-align: center;
   margin: 0 auto;
 }
 
+/* 메인 타이틀 */
 .title {
   font-size: 4rem;
   font-weight: 700;
@@ -22,6 +25,7 @@
   letter-spacing: -2px;
 }
 
+/* 서브 텍스트 */
 .subtitle {
   font-size: 1.1rem;
   color: #333;
@@ -32,6 +36,7 @@
   margin-right: auto;
 }
 
+/* 특징(특징 아이콘+설명 나열하는 부분) */
 .features {
   display: flex;
   justify-content: center;
@@ -63,6 +68,7 @@
   font-size: 1.2rem;
 }
 
+/* 주요 액션 버튼 ("새 프로젝트 만들기" 같은 카드형 버튼) */
 .action-buttons {
   display: flex;
   gap: 30px;
@@ -114,6 +120,7 @@
   line-height: 1.4;
 }
 
+/* 조직/기관 아이콘 섹션 */
 .organization-section {
   display: flex;
   justify-content: center;
@@ -140,7 +147,7 @@
   justify-content: center;
 }
 
-
+/* 원형 아이콘 스타일 */
 .org-circle {
   width: 80px;
   height: 80px;
@@ -158,13 +165,15 @@
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
+/* 특정 기관(hansung) 전용 스타일 */
 .org-circle.hansung {
   background: linear-gradient(45deg, #1e3a8a, #3b82f6);
   color: white;
 }
 
+/* 추가 버튼 전용 (점선 원) */
 .org-circle.add-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(128, 128, 128, 0.2);
   border: 2px dashed rgba(255, 255, 255, 0.4);
 }
 
@@ -187,7 +196,7 @@
   font-weight: 300;
 }
 
-
+/* 반응형 처리 (태블릿 이하) */
 @media (max-width: 768px) {
   .title {
     font-size: 3rem;

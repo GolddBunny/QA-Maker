@@ -1,16 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, FileText, ExternalLink } from "lucide-react";
 import { marked } from 'marked';
+import { useQAHistoryContext } from "../../utils/QAHistoryContext";
 
-const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument, showDocument, sendQuestion, handleDownloadDocument }) => {
+const ChatMessage = ({ qa, index, qaId, conversationIndex, handleShowGraph, showGraph, handleShowDocument, showDocument, sendQuestion, handleDownloadDocument }) => {
     // 현재 보고 있는 답변 타입 상태 (local 또는 global)
     const [currentAnswerType, setCurrentAnswerType] = useState('local');
     const [relatedQuestions, setRelatedQuestions] = useState([]);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
-    const [rating, setRating] = useState(0);
+    const [rating, setRating] = useState(qa.satisfaction || 3);
     const [selectedHeadlineIndex, setSelectedHeadlineIndex] = useState(null); // 선택된 문서 인덱스 추적
     const chatEndRef = useRef(null);
-    
+    const { updateQASatisfaction } = useQAHistoryContext();
+
+    useEffect(() => {
+        if (qa.satisfaction !== undefined && qa.satisfaction !== null) {
+            setRating(qa.satisfaction);
+        }
+    }, [qa.satisfaction]);
+
     // 현재 보고 있는 답변 가져오기
     const getCurrentAnswer = () => {
         if (currentAnswerType === 'local') {
@@ -71,7 +79,38 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                         
             return answer;
         } else {
-            return qa.globalAnswer || "글로벌 답변이 없습니다.";
+            // 글로벌 답변: 무조건 마지막 문장 뒤에 URL 버튼 추가
+            let answer = qa.globalAnswer || "글로벌 답변이 없습니다.";
+
+            if (qa.sources && qa.sources.length > 0) {
+                // 모든 소스에 대한 버튼 HTML 생성
+                const createSourceButtons = (sources) => {
+                    return sources.map(source => {
+                        const buttonText = source.title || '출처 보기';
+                        return source.url 
+                            ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source-link-button">${buttonText}</a>`
+                            : `<span class="source-link-button disabled">${buttonText}</span>`;
+                    }).join(' ');
+                };
+
+                // 마지막 문장 뒤에 버튼 추가
+                const sentencePattern = /[^.!?]+[.!?](?:\s|$)/g;
+                const sentences = [];
+                let match;
+                
+                while ((match = sentencePattern.exec(answer)) !== null) {
+                    sentences.push(match[0]);
+                }
+
+                if (sentences.length > 0) {
+                    const lastSentence = sentences[sentences.length - 1].trim();
+                    const allButtonsHtml = createSourceButtons(qa.sources);
+                    const lastSentenceWithButtons = `${lastSentence} ${allButtonsHtml}`;
+                    answer = answer.substring(0, answer.lastIndexOf(lastSentence)) + lastSentenceWithButtons;
+                }
+            }
+
+            return answer;
         }
     };
 
@@ -96,6 +135,28 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         );
     };
 
+    // 별점 클릭 시 호출할 함수
+    const handleRatingChange = async (rating) => {
+        setRating(rating);
+        if (qaId) {
+            console.log('만족도 저장 시도:', qaId, 'conversationIndex:', index, 'rating:', rating);
+            console.log('현재 qa 정보:', qa);
+            try {
+                // localStorage 먼저 업데이트
+                updateQASatisfaction(qaId, index, rating, false);
+                console.log('localStorage 만족도 저장 완료');
+                
+                // Firebase 업데이트 (별도로 실행)
+                await updateQASatisfaction(qaId, index, rating, true);
+                console.log('만족도 Firebase 저장 완료:', qaId, 'conversationIndex:', index, 'rating:', rating);
+            } catch (error) {
+                console.error('만족도 저장 실패:', error);
+            }
+        } else {
+            console.warn('qaId가 없습니다:', qaId);
+        }
+    };
+
     // 답변이 로딩 중인지 확인하는 함수 
     const isLoadingAnswer = () => {
         const currentAnswer = currentAnswerType === 'local' 
@@ -105,7 +166,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         return currentAnswer === "답변을 불러오는 중...";
     };
 
-    // 답변 HTML로 렌더링하는 함수
+    // 답변 HTML로 렌더링하는 함수     
     const renderAnswer = () => {
         const answer = getCurrentAnswer();
         
@@ -115,16 +176,21 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
         }
         
         let cleanAnswer = answer;
-
-    // [Data: ...] 제거
+        
+        // [Data: ...] 제거
         cleanAnswer = cleanAnswer.replace(/\[Data:[^\]]*\]/g, "");
-
+        
         // INFO: ~ Response: 구간 제거 (줄바꿈 포함)
         cleanAnswer = cleanAnswer.replace(/INFO:([\s\S]*?)Response:/g, "");
-
+        
+        // 마크다운 헤딩 한단계씩 줄임
+        cleanAnswer = cleanAnswer.replace(/^### /gm, "#### ");
+        cleanAnswer = cleanAnswer.replace(/^## /gm, "### ");
+        cleanAnswer = cleanAnswer.replace(/^# /gm, "## ");
+        
         // Markdown → HTML 변환
         const htmlAnswer = marked.parse(cleanAnswer);
-
+        
         return { __html: htmlAnswer };
     };
 
@@ -281,7 +347,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                                 <span
                                     key={star}
                                     className={`star ${rating >= star ? 'filled' : ''}`}
-                                    onClick={() => setRating(star)}
+                                    onClick={() => handleRatingChange(star)}  // setRating(star) → handleRatingChange(star)
                                 >
                                     ★
                                 </span>
@@ -296,7 +362,7 @@ const ChatMessage = ({ qa, index, handleShowGraph, showGraph, handleShowDocument
                             <button 
                                 type="button" 
                                 className="action-button-left" 
-                                onClick={handleShowGraph}
+                                onClick={() => handleShowGraph(qa.id, index)}
                             >
                                 <span className="button-icon">
                                     지식 그래프 보기 

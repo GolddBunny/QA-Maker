@@ -9,10 +9,9 @@ import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
 import Modal from '../components/modal/Modal';
 import answerGraphData from '../json/answer_graphml_data.json';
-const BASE_URL = 'http://localhost:5000/flask';
+import BASE_URL from "../config/url";  
 
 function ChatPage() {
-    
     const { currentPageId, setCurrentPageId } = usePageContext();
     const { qaHistory, addQA, updateQAHeadlines, updateSelectedHeadline, updateQASources } = useQAHistoryContext();
     const [qaList, setQaList] = useState([]);
@@ -190,7 +189,16 @@ function ChatPage() {
                 return [];
             }
             
-            // Sources 형식 확인
+            // 1. 우선 CSV에서 모든 URL 소스 추출 시도
+            console.log("4.1. CSV에서 소스 추출 시도");
+            const csvSources = await extractSourcesFromCSV();
+            if (csvSources.length > 0) {
+                console.log("CSV에서 소스 추출 성공:", csvSources);
+                return csvSources;
+            }
+            
+            // 2. CSV에서 추출 실패시 기존 방식(Sources 패턴) 시도
+            console.log("4.2. 기존 Sources 패턴 방식으로 시도");
             if (!answerText.includes("Sources")) {
                 console.log("Sources 표기가 없어 소스 추출을 건너뜁니다.");
                 return [];
@@ -219,38 +227,67 @@ function ChatPage() {
                 return [];
             }
             
-            // 응답 형식 검증 및 로깅
-            //console.log("서버에서 받은 소스 데이터:", data.sources);
-            
             // 소스 데이터 검증
             if (!Array.isArray(data.sources)) {
                 console.error("소스 데이터가 배열이 아닙니다:", data.sources);
                 return [];
             }
             
-            // 각 소스 데이터의 구조 검증 및 로깅
+            // 각 소스 데이터의 구조 검증
             const validSources = data.sources.filter(source => {
                 if (!source || typeof source !== 'object') {
                     console.warn("유효하지 않은 소스 데이터:", source);
                     return false;
                 }
                 
-                // source_id는 필수, url과 title 중 하나는 있어야 함
-                if (!source.source_id || (!source.url && !source.title)) {
-                    console.warn("소스 ID가 없거나 URL/Title이 모두 없는 소스:", source);
+                // URL과 title 중 하나는 있어야 함
+                if (!source.url && !source.title) {
+                    console.warn("URL/Title이 모두 없는 소스:", source);
                     return false;
                 }
                 
-                console.log(`소스 ${source.source_id}: Title="${source.title || '없음'}", URL="${source.url || '없음'}"`);
+                console.log(`소스: Title="${source.title || '없음'}", URL="${source.url || '없음'}"`);
                 return true;
             });
             
             console.log(`총 ${data.sources.length}개 소스 중 ${validSources.length}개 유효한 소스 추출됨`);
-            
             return validSources;
             
         } catch (error) {
             console.error("소스 URL/Title 추출 실패:", error);
+            return [];
+        }
+    };
+
+    // CSV에서 직접 모든 URL 소스 추출하는 새로운 함수
+    const extractSourcesFromCSV = async () => {
+        try {
+            console.log("CSV에서 소스 추출 시작");
+            
+            const response = await fetch(`${BASE_URL}/extract-sources-from-csv`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`서버 응답 오류: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error("CSV 소스 추출 오류:", data.error);
+                return [];
+            }
+            
+            console.log(`CSV에서 총 ${data.total_count}개의 소스 추출됨:`, data.sources);
+            return data.sources || [];
+            
+        } catch (error) {
+            console.error("CSV에서 소스 추출 실패:", error);
             return [];
         }
     };
@@ -489,24 +526,18 @@ function ChatPage() {
                     console.error(`3. 근거 문서 목록 요청 실패 (${(headlinesEndTime - headlinesStartTime).toFixed(2)}ms):`, headlinesError);
                 }
 
-                // 4. 그래프 버튼 표시 (소스 URL 추출)
-                console.log("4. 그래프 버튼(소스 URL 추출) 시작");
+                // 4. 근거 URL 버튼 생성
+                console.log("4. 소스 URL 추출 시작");
                 const sourcesStartTime = performance.now();
                 let sourcesData = [];
                 try {
+                    // CSV에서 직접 추출하거나 답변에서 추출
                     sourcesData = await extractSourcesFromAnswer(localAnswer, currentPageId);
                     const sourcesEndTime = performance.now();
-                    console.log(`4. 소스 URL 추출 완료 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesData);
-                    
-                    updateQaList((updatedList, lastIndex) => {
-                        updatedList[lastIndex].sources = sourcesData;
-                        updatedList[lastIndex].actionButtonVisible = true;
-                        return updatedList;
-                    });
-                    console.log("4. 그래프 버튼 화면 표시 완료");
+                    console.log(`소스 URL 추출 완료 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesData);
                 } catch (sourcesError) {
                     const sourcesEndTime = performance.now();
-                    console.error(`4. 소스 URL 추출 실패 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesError);
+                    console.error(`소스 URL 추출 실패 (${(sourcesEndTime - sourcesStartTime).toFixed(2)}ms):`, sourcesError);
                 }
 
                 // 5. 로컬 정확도 계산 및 표시
@@ -612,6 +643,7 @@ function ChatPage() {
             relatedQuestions: relatedQuestions || [],
             headlines: headlines || [], // 근거 문서 목록 추가
             sources: sources || [], // 소스 URL 정보 추가
+            satisfaction: 3, // 만족도 기본값 추가
         };
         
         if (qaId) {
@@ -675,6 +707,7 @@ function ChatPage() {
         });
     };
 
+    // 지식 그래프 보기 버튼 클릭 시
     const handleShowGraph = async () => {
         if (isLoading) {
             console.log("이미 그래프를 로딩 중입니다.");
@@ -695,19 +728,9 @@ function ChatPage() {
 
         try {
             setIsLoading(true);
-            console.log("그래프 데이터 로딩 시작");
+            console.log("그래프 데이터 로딩 시작 (최신 질의응답 기준)");
 
-            const cacheKey = `${entities}-${relationships}`;
-            
-            if (graphDataCacheRef.current[cacheKey]) {
-                console.log("메모리 캐시에서 그래프 데이터 로드");
-                setGraphData(graphDataCacheRef.current[cacheKey]);
-                setShowGraph(true);
-                setIsLoading(false);
-                return;
-            }
-
-            // 여기서 fetch 대신 import로 가져온 데이터를 사용
+            // 캐시 사용하지 않고 항상 최신 데이터 로드
             const jsonData = answerGraphData;
 
             console.log("그래프 데이터 로드 성공:", jsonData);
@@ -716,7 +739,6 @@ function ChatPage() {
                 throw new Error("유효하지 않은 그래프 데이터입니다.");
             }
 
-            graphDataCacheRef.current[cacheKey] = jsonData;
             setGraphData(jsonData);
             setShowGraph(true);
 
@@ -787,9 +809,9 @@ function ChatPage() {
     const handleUrlOptionClick = () => {
         setSearchType('url');
         setShowUrlInput(true); // 입력창 보이게
-
     };
 
+    // URL 입력 버튼 클릭 시
     const handleAddUrl = () => {
         const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/;
         if (!urlPattern.test(urlInput.trim())) {
@@ -1054,6 +1076,7 @@ function ChatPage() {
         }
     };
     
+    // 문서 다운 버튼 클릭 시
     const handleDownloadDocument = async (headline) => {
         if (!headline) return;
         
@@ -1089,14 +1112,13 @@ function ChatPage() {
                 }
             }
             
-            // Blob으로 파일 데이터 처리
             const blob = await response.blob();
             
             // 다운로드 링크 생성
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = actualFilename; // 서버에서 제공한 실제 파일명 사용
+            link.download = actualFilename;
             link.target = '_blank';
             
             // 다운로드 실행
@@ -1115,7 +1137,7 @@ function ChatPage() {
         }
     };
 
-    //정확도 계산
+    // 정확도 계산
     const calculateAccuracy = async (question, answer, answerType = 'local') => {
         try {
             const pageId = localStorage.getItem("currentPageId") || currentPageId;
@@ -1161,7 +1183,7 @@ function ChatPage() {
                 isSidebarOpen={isSidebarOpen} 
                 toggleSidebar={toggleSidebar} 
             />
-            {/* 모달 컴포넌트 추가 */}
+            {/* 모달 컴포넌트 */}
             <Modal
                 isOpen={modalState.isOpen}
                 onClose={closeModal}
@@ -1173,15 +1195,17 @@ function ChatPage() {
             
             <div className={`chat-container ${showGraph || showDocument ? "shift-left" : ""} ${isSidebarOpen ? "sidebar-open" : ""}`}>
                 <div className="domain-name">
-                    <h2>{systemName + " QA 시스템" || "한성대 QA 시스템"}</h2>
+                    <h2>{systemName + " Q&A 시스템" || "한성대 Q&A 시스템"}</h2>
                 </div>
                 <div className="chat-messages">
                     {qaList.map((qa, index) => (
-                        <ChatMessage 
-                            key={index} 
-                            qa={qa} 
-                            index={index} 
-                            handleShowGraph={handleShowGraph} 
+                        <ChatMessage
+                            key={index}
+                            qa={qa}
+                            index={index}
+                            qaId={currentQaId}
+                            // conversationIndex={qaIndex}
+                            handleShowGraph={handleShowGraph}
                             showGraph={showGraph}
                             handleShowDocument={handleShowDocument}
                             showDocument={showDocument && currentMessageIndex === index}
@@ -1192,6 +1216,7 @@ function ChatPage() {
                     <div ref={chatEndRef} />
                 </div>
 
+                {/* 채팅 입력창 */}
                 <ChatInput
                     newQuestion={newQuestion}
                     setNewQuestion={setNewQuestion}
@@ -1216,13 +1241,15 @@ function ChatPage() {
                     style={{ display: 'none' }}
                     accept=".pdf,.doc,.docx,.txt"
                 />
+                {/* 숨겨진 파일 입력 필드 */}
                 {showGraph && graphData && (
                     <div className="graph-container">
                         <button className="close-graph" onClick={handleCloseGraph}>닫기</button>
                         <NetworkChart data={graphData} />
                     </div>
                 )}
-                
+                               
+                {/* 근거 문서 보기 */}
                 {showDocument && (
                     <div className="document-viewer">
                         <div className="document-viewer-header">
@@ -1246,7 +1273,10 @@ function ChatPage() {
                                     title="원본 문서 다운로드"
                                     disabled={!selectedHeadline}
                                 >
-                                    📥
+                                    <img 
+                                        src="/assets/download2.png" 
+                                        alt="다운로드" 
+                                    />
                                 </button>
                                 <button 
                                     className="close-button"
