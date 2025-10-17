@@ -419,12 +419,21 @@ const DashboardPage = () => {
         setLoading(true);
         loadedRef.current = true;
 
-        // 1. Firestore URL 실시간 구독
-        const urlsRef = collection(db, "url_list", pageId, "list");
-        const urlQuery = query(urlsRef, orderBy("date", "desc"));
+        // 1. Firestore URL 실시간 구독 (urls 컬렉션 사용)
+        const urlsRef = collection(db, "urls");
+        const urlQuery = query(
+            urlsRef, 
+            where("page_id", "==", pageId)
+        );
         
         const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
             const urlArray = snapshot.docs.map(doc => doc.data());
+            // 클라이언트 사이드에서 timestamp 기준으로 정렬 (오래된 순)
+            urlArray.sort((a, b) => {
+                const timestampA = a.timestamp?.toDate?.() || new Date(a.date || 0);
+                const timestampB = b.timestamp?.toDate?.() || new Date(b.date || 0);
+                return timestampA - timestampB; // 오름차순 정렬 (오래된 순)
+            });
             console.log("URL 실시간 업데이트:", urlArray.length);
             setUploadedUrls(urlArray);
             setUrlCount(urlArray.length);

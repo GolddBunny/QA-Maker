@@ -10,7 +10,7 @@ from routes.urlLoad_routes import get_general_urls_from_firebase, get_urls_from_
 from services.crawling_service.crawling_and_structuring import main as crawling_and_structuring
 from firebase_admin import firestore
 # from services.crawling_service import line1
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote, parse_qs, urlencode, urlunparse
 from services.execution_time_service import get_tracker
 
 crawling_bp = Blueprint('crawling', __name__)

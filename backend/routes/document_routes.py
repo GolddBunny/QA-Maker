@@ -14,6 +14,7 @@ import uuid
 from firebase_admin import firestore
 import time
 from services.execution_time_service import get_tracker
+from services.crawling_service.document_downloader import DocumentDownloader
 
 document_bp = Blueprint('document', __name__)
 
@@ -324,11 +325,6 @@ def download_crawled_documents(page_id):
                     'local_deleted': 0
                 }
             })
-        
-        # DocumentDownloader 임포트
-        import sys
-        import os
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
         
         # Get input_path for the page
         _, input_path, _ = ensure_page_directory(page_id)
