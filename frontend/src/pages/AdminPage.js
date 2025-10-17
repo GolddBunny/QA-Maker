@@ -596,51 +596,6 @@ const AdminPage = () => {
       }
     };
 
-    // 인덱싱 재시작 버튼 (기존 파일들 이용)
-    const handleRestartIndexing = async () => {
-      if (!pageId) {
-        alert("먼저 페이지를 생성해주세요.");
-        return;
-      }
-      if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
-        alert("먼저 문서나 URL을 업로드해주세요.");
-        return;
-      }
-
-      if (isAnyProcessing) return;
-      setShowProgressing(true);
-      localStorage.setItem(`showProgressing_${pageId}`, 'true');
-      setIsApplyLoading(true);
-      const startTime = Date.now();
-
-      try {
-        const result = await updateIndexing(pageId);
-        const endTime = Date.now();
-
-            if (final_result.success) {
-              setIsNewPage(false);
-
-          console.log("=== 최종 실행시간 요약 ===");
-          console.log("전체 실행시간:", final_result.execution_times.total, "초");
-
-          // 인덱싱 완료 후 데이터 다시 로드
-          await Promise.all([
-            fetchSavedUrls(pageId).then(setUploadedUrls),
-            loadDocumentsInfo(pageId),
-            checkOutputFolder(pageId)
-          ]);
-        } else {
-          alert(`인덱싱 재시작 실패: ${final_result.error}`);
-          setShowProgressing(false); // 실패 시에만 자동으로 닫기
-        }
-      } catch (error) {
-        console.error("인덱싱 재시작 중 오류:", error);
-        alert("인덱싱 재시작 중 오류가 발생했습니다.");
-        setShowProgressing(false); // 에러 시에만 자동으로 닫기
-      } finally {
-        setIsApplyLoading(false);
-      }
-    };
 
     // 업데이트 버튼 클릭 시
     const handleUpdate = async () => {
