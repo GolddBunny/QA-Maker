@@ -419,11 +419,12 @@ const DashboardPage = () => {
         setLoading(true);
         loadedRef.current = true;
 
-        // 1. Firestore URL 실시간 구독 (urls 컬렉션 사용)
+        // 1. Firestore URL 실시간 구독 (urls 컬렉션 사용, crawled 타입만)
         const urlsRef = collection(db, "urls");
         const urlQuery = query(
             urlsRef, 
-            where("page_id", "==", pageId)
+            where("page_id", "==", pageId),
+            where("type", "==", "crawled")
         );
         
         const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
