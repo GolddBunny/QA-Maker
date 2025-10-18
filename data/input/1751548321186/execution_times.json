@@ -1,0 +1,60 @@
+{
+  "url_crawling": {
+    "execution_time_seconds": 1,
+    "execution_time_formatted": "1.00초",
+    "timestamp": "2025-07-03T22:12:15.266734",
+    "step_name": "url_crawling",
+    "start_url": "https://hansung.ac.kr/CSE/10732/subview.do",
+    "total_pages_discovered": 1,
+    "total_documents_discovered": 3,
+    "scope_patterns": [
+      "CSE",
+      "10732"
+    ],
+    "saved_pages": 1,
+    "saved_documents": 3
+  },
+  "web_structuring": {
+    "execution_time_seconds": 17,
+    "execution_time_formatted": "17.00초",
+    "timestamp": "2025-07-03T22:12:31.898516",
+    "step_name": "web_structuring",
+    "processed_urls": 1,
+    "result_success": true,
+    "page_id": "1751548321186",
+    "total_success_count": 1,
+    "output_dir": "../data/input/1751548321186_url/input",
+    "artcl_results": {},
+    "jina_results": {
+      "saved_files": [
+        "../data/input/1751548321186_url/input/캡스톤 디자인.txt"
+      ],
+      "success_count": 1,
+      "output_dir": "../data/input/1751548321186_url/input"
+    },
+    "execution_time": "0:00:16.580182",
+    "errors": []
+  },
+  "text_cleanup": {
+    "execution_time_seconds": 0,
+    "execution_time_formatted": "0.00초",
+    "timestamp": "2025-07-03T22:12:31.910207",
+    "step_name": "text_cleanup",
+    "input_path": "/Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/data/input/1751548321186_url/input",
+    "result_success": true,
+    "processed_files": 1,
+    "processed_folders": {
+      "루트 폴더": 1
+    },
+    "message": "총 1개 파일 처리 완료 (루트 폴더: 1개)"
+  },
+  "document_processing": {
+    "execution_time_seconds": 187,
+    "execution_time_formatted": "3분 7.0초",
+    "timestamp": "2025-07-03T22:15:53.241613",
+    "step_name": "document_processing",
+    "firebase_path": "pages/1751548321186/documents",
+    "input_path": "../data/input/1751548321186/input",
+    "documents_processed": 3
+  }
+}

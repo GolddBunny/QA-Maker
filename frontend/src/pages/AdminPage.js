@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import SidebarAdmin from "../components/navigation/SidebarAdmin";
 import { usePageContext } from '../utils/PageContext';
-import { useQAHistoryContext } from '../utils/QAHistoryContext'; // QA History Context 추가
+import { useQAHistoryContext } from '../utils/QAHistoryContext';
 import { FileDropHandler } from '../api/handleFileDrop';
 import { fetchSavedUrls as fetchSavedUrlsApi, uploadUrl } from '../api/UrlApi';
 import { checkOutputFolder as checkOutputFolderApi } from '../api/HasOutput';
 import { processDocuments, loadUploadedDocs } from '../api/DocumentApi';
-import { applyIndexing, updateIndexing, executeFullPipeline, executeUpdatePipeline } from '../api/IndexingButton';
+import { applyIndexing, updateIndexing, executeFullPipeline, executeIndexingOnly, executeUpdatePipeline } from '../api/IndexingButton';
 import AdminHeader from '../services/AdminHeader';
 import "../styles/AdminPage.css";
 import ProgressingBar from '../services/ProgressingBar';
@@ -23,8 +23,8 @@ const calculateEstimatedTime = (urlCount, docCount, totalDocSizeMB = 0) => {
   const BASE_TIME = 1;
   
   // 각 항목별 평균 처리 시간 (초 단위)
-  const DOC_STRUCTURING_TIME_PER_MB = 15; // 문서 1MB당 구조화 시간 (초)
-  const DOC_INDEXING_TIME_PER_MB = 60;    // 문서 1MB당 인덱싱 시간 (초)
+  const DOC_STRUCTURING_TIME_PER_MB = 10; // 문서 1MB당 구조화 시간 (초)
+  const DOC_INDEXING_TIME_PER_MB = 50;    // 문서 1MB당 인덱싱 시간 (초)
   const URL_STRUCTURING_TIME = 5;        // URL 1개당 구조화 시간 (초)
   const URL_INDEXING_TIME = 40;           // URL 1개당 인덱싱 시간 (초)
   
@@ -252,11 +252,20 @@ const AdminPage = () => {
       console.log("현재 admin pageId:", pageId);
       stepTimesRef.current = stepExecutionTimes;
 
-      // 1. Firestore URL 실시간 구독
-      const urlsRef = collection(db, "url_list", pageId, "list");
-      const urlQuery = query(urlsRef, orderBy("date", "desc"));
+      // 1. Firestore URL 실시간 구독 (urls 컬렉션 사용)
+      const urlsRef = collection(db, "urls");
+      const urlQuery = query(
+        urlsRef, 
+        where("page_id", "==", pageId)
+      );
       const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
         const urlArray = snapshot.docs.map(doc => doc.data());
+        // 클라이언트 사이드에서 timestamp 기준으로 정렬 (오래된 순)
+        urlArray.sort((a, b) => {
+          const timestampA = a.timestamp?.toDate?.() || new Date(a.date || 0);
+          const timestampB = b.timestamp?.toDate?.() || new Date(b.date || 0);
+          return timestampA - timestampB; // 오름차순 정렬 (오래된 순)
+        });
         setUploadedUrls(urlArray);
         setUrlCount(urlArray.length);
       });
@@ -541,6 +550,61 @@ const AdminPage = () => {
         setIsApplyLoading(false);
       }
     };
+
+    // 인덱싱 재시작 버튼 (기존 파일들 이용)
+    const handleRestartIndexing = async () => {
+      if (!pageId) {
+        alert("먼저 페이지를 생성해주세요.");
+        return;
+      }
+      if (uploadedDocs.length === 0 && uploadedUrls.length === 0) {
+        alert("먼저 문서나 URL을 업로드해주세요.");
+        return;
+      }
+
+      if (isAnyProcessing) return;
+      setShowProgressing(true);
+      localStorage.setItem(`showProgressing_${pageId}`, 'true');
+      setIsApplyLoading(true);
+
+      try {
+        // 인덱싱 단계로 바로 설정
+        setCurrentStep('indexing');
+        setStepExecutionTimes({
+          crawling: null,
+          structuring: null,
+          document: null,
+          indexing: null
+        });
+
+        // 기존 파일들을 이용한 인덱싱만 실행
+        const final_result = await executeIndexingOnly(pageId, handleStepComplete);
+        
+        if (final_result.success) {
+          setIsNewPage(false);
+
+          console.log("=== 인덱싱 재시작 완료 ===");
+          console.log("실행시간:", final_result.execution_times.total, "초");
+
+          // 인덱싱 완료 후 데이터 다시 로드
+          await Promise.all([
+            fetchSavedUrls(pageId).then(setUploadedUrls),
+            loadDocumentsInfo(pageId),
+            checkOutputFolder(pageId)
+          ]);
+        } else {
+          alert(`인덱싱 재시작 실패: ${final_result.error}`);
+          setShowProgressing(false); // 실패 시에만 자동으로 닫기
+        }
+      } catch (error) {
+        console.error("인덱싱 재시작 중 오류:", error);
+        alert("인덱싱 재시작 중 오류가 발생했습니다.");
+        setShowProgressing(false); // 에러 시에만 자동으로 닫기
+      } finally {
+        setIsApplyLoading(false);
+      }
+    };
+
 
     // 업데이트 버튼 클릭 시
     const handleUpdate = async () => {
@@ -851,6 +915,20 @@ const AdminPage = () => {
               </button>
               <button 
                 className="btn-apply-update"
+                onClick={handleRestartIndexing}
+                disabled={isCheckingOutput}
+              > 
+                Restart Indexing
+              </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleRestartIndexing}
+                disabled={isCheckingOutput}
+              > 
+                Restart Indexing
+              </button>
+              <button 
+                className="btn-apply-update"
                 onClick={handleAnalyzer}
                 disabled={isCheckingOutput}
               > 
@@ -865,13 +943,22 @@ const AdminPage = () => {
               </button>
             </>
           ) : (
-            <button 
-              className="btn-apply-update"
-              onClick={handleApply}
-              disabled={isCheckingOutput || hasOutput === null}
-            > 
-              Build Q&A System
-            </button>
+            <>
+              <button 
+                className="btn-apply-update"
+                onClick={handleApply}
+                disabled={isCheckingOutput || hasOutput === null}
+              > 
+                Build Q&A System
+              </button>
+              <button 
+                className="btn-apply-update"
+                onClick={handleRestartIndexing}
+                disabled={isCheckingOutput}
+              > 
+                Restart Indexing
+              </button>
+            </>
           )}
         </div>
 
@@ -887,10 +974,8 @@ const AdminPage = () => {
               setShowProgressing(false);
               localStorage.removeItem(`showProgressing_${pageId}`);
             }}
-            onAnalyzer={() => navigate(`/dashboard/${pageId}`, {
-              state: { stepExecutionTimes: stepTimesRef.current }
-            })}
-            isCompleted={!(isApplyLoading || isUpdateLoading)} // 로딩이 끝나면 완료
+            onAnalyzer={() => navigate('/analyzer')}
+            isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계
             estimatedTime={estimatedTime} // 새로 추가된 prop

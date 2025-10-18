@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/Engineering/50/569/artclView.doMarkdown Content:## 교과목 소개본 과목은 피드백 제어시스템의 전달함수 또는 상태 방정식의 표현에 의한 모델링, 제어시스템의 특성을 시간 영역과 주파수 영역에서 해석, 주파수 및 시간영역에서의 제어시스템의 설계기법 등을 학습한다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || V030026 | 제어공학 | 3 |

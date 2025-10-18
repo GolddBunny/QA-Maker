@@ -1,1 +1,0 @@
-Title: URL Source: https://hansung.ac.kr/curriculum/CSE/144/194/artclView.doMarkdown Content:## 교과목 소개발레 표준 용어와 동작에 대한 분석을 여러 발레교수법의 관점에서 이해하고 적용할 수 있는 능력을 증진하는데 목적을 두고 있다.### 교육과정소개| 교과목코드 | 교과목 | 학점 || --- | --- | --- || A2965208 | 발레용어 및 동작분석 | 3 |

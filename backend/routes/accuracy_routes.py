@@ -29,6 +29,7 @@ def calculate_accuracy_api():
         answer = data.get("answer", "")
         answer_type = data.get("answer_type", "local")
         page_id = data.get("page_id")
+        # page_id = 1755480639734
 
         if not question or not answer:
             return jsonify({"error": "question and answer are required"}), 400

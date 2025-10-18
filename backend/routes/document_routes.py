@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 import uuid
 from firebase_admin import firestore
 import time
+from services.execution_time_service import get_tracker
+from services.crawling_service.document_downloader import DocumentDownloader
 
 document_bp = Blueprint('document', __name__)
 
@@ -58,17 +60,19 @@ def upload_documents(page_id):
         uuid_name = f"{uuid.uuid4().hex}{ext}"
         upload_path = f"pages/{page_id}/documents/{uuid_name}"
 
-        # 날짜 포맷 지정
-        today_str = datetime.now().strftime('%Y-%m-%d')
+        # 날짜와 시간을 분리해 저장
+        date_only = datetime.now().strftime('%Y-%m-%d')  # 날짜만
+        datetime_full = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # 날짜 + 시간
 
         # 1. Firebase blob 생성
         blob = bucket.blob(upload_path)
 
-        # 2. metadata에 원본 파일명, 카테고리, 날짜 저장
+        # 2. metadata에 원본 파일명, 카테고리, 날짜, 시간 저장
         blob.metadata = {
             "original_filename": original_filename,
             "category": "uploaded",  # 기본값
-            "date": today_str
+            "date": date_only,  # 날짜만
+            "time": datetime_full  # 날짜 + 시간
         }
 
         # 3. 파일 업로드
@@ -80,10 +84,11 @@ def upload_documents(page_id):
             'firebase_filename': uuid_name,
             'download_url': blob.public_url,
             'page_id': page_id,
-            'upload_date': today_str,
+            'upload_date': date_only,  # 날짜만
             'category': "uploaded",  # 기본값
-            'date': today_str,
-            'size_mb': round(size_mb, 2)  # 크기 정보 추가  
+            'date': date_only,  # 날짜만
+            'time': datetime_full,  # 날짜 + 시간
+            'size_mb': round(size_mb, 2)  # 크기 정보
         }
 
         # 문서명을 문서 ID로 사용하면 중복 이슈 있음 → UUID 또는 자동 ID 사용 권장
@@ -147,6 +152,10 @@ def get_uploaded_documents(page_id):
 @document_bp.route('/process-documents/<page_id>', methods=['POST'])
 def process_documents(page_id):
     """document 처리"""
+    
+    # 실행 시간 트래커 가져오기
+    tracker = get_tracker(page_id)
+    
     try:
         base_path, input_path, _ = ensure_page_directory(page_id)
         firebase_path = f"pages/{page_id}/documents"
@@ -165,6 +174,14 @@ def process_documents(page_id):
         convert2txt(firebase_path, input_path, bucket, filename_mapping)
         end_time = time.time()
         execution_time = round(end_time - start_time)
+
+        # 실행 시간 트래커에 기록
+        additional_data = {
+            "firebase_path": firebase_path,
+            "input_path": input_path,
+            "documents_processed": len(filename_mapping)
+        }
+        tracker.record_step('document_processing', execution_time, additional_data)
 
         print("모든 파일 .txt로 변환 완료")
         return jsonify({
@@ -270,6 +287,7 @@ def ensure_page_directory(page_id):
     
     return base_path, input_path, upload_path 
 
+# 크롤링된 문서 URL 다운로드
 @document_bp.route('/download-crawled-documents/<page_id>', methods=['POST'])
 def download_crawled_documents(page_id):
     """크롤링된 문서 URL 목록을 다운로드하여 Firebase에 저장"""
@@ -307,12 +325,6 @@ def download_crawled_documents(page_id):
                     'local_deleted': 0
                 }
             })
-        
-        # DocumentDownloader 임포트
-        import sys
-        import os
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'crawling_service'))
-        from backend.services.crawling_service.document_downloader import DocumentDownloader
         
         # Get input_path for the page
         _, input_path, _ = ensure_page_directory(page_id)

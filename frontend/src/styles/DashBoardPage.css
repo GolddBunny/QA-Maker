@@ -1000,12 +1000,12 @@
 
 /* 문서 바 툴팁 색상 */
 .doc-bar:hover .bar-tooltip {
-    background-color: #50c878;
-    border: 1px solid #3da660;
+    background-color: #10b981;
+    border: 1px solid #10b981;
 }
 
 .doc-bar:hover .bar-tooltip::after {
-    border-top-color: #50c878;
+    border-top-color: #10b981;
 }
 
 /* 엔티티 바 툴팁 색상 */
