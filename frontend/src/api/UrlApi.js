@@ -1,6 +1,6 @@
 import BASE_URL from "../config/url";  
 
-// 저장된 URL 목록 가져오기
+// 저장된 URL 목록 가져오기 (general 먼저, 그 다음 crawled 타입)
 export const fetchSavedUrls = async (pageId) => {
   try {
     const response = await fetch(`${BASE_URL}/get-general-crawled-urls/${pageId}`, {
@@ -15,7 +15,7 @@ export const fetchSavedUrls = async (pageId) => {
 
     if (data.success) {
       const urls = Array.isArray(data.urls) ? data.urls : [];
-      console.log(`[fetchSavedUrls] 성공: ${urls.length}개 URL 로드`);
+      console.log(`[fetchSavedUrls] 성공: ${urls.length}개 URL 로드 (general + crawled)`);
       return urls;
     } else {
       console.error('URL 목록 불러오기 실패:', data.error);
