@@ -130,6 +130,24 @@ def get_urls_by_type(page_id, url_type=None):
     
     return urls
 
+def get_general_crawled_urls_sorted(page_id):
+    """일반 URL과 크롤링된 URL을 타입별로 정렬하여 가져오기 (general 먼저, 그 다음 crawled, 중복 제거)"""
+    general_urls = get_urls_by_type(page_id, 'general')
+    crawled_urls = get_urls_by_type(page_id, 'crawled')
+    
+    # general 타입의 URL들을 set으로 만들어서 중복 체크용으로 사용
+    general_url_set = {url['url'] for url in general_urls}
+    
+    # crawled 타입에서 general 타입과 중복되지 않는 URL만 필터링
+    filtered_crawled_urls = [url for url in crawled_urls if url['url'] not in general_url_set]
+    
+    # general 타입 먼저, 그 다음 중복 제거된 crawled 타입 순서로 합치기
+    all_urls = general_urls + filtered_crawled_urls
+    
+    print(f"URL 중복 제거 결과: general {len(general_urls)}개, crawled {len(crawled_urls)}개 -> 필터링된 crawled {len(filtered_crawled_urls)}개")
+    
+    return all_urls
+
 # 크롤링된 URL 목록 가져오기 (Firestore 버전) - crawled 타입만
 def get_urls_from_firebase(page_id):
     """크롤링된 URL만 가져오기 (type='crawled')"""
@@ -208,15 +226,15 @@ def get_all_saved_urls(page_id):
     print(f"Firestore에서 가져온 전체 URL 목록 ({page_id}): {len(urls)}개")
     return jsonify({"success": True, "urls": urls}), 200
 
-# 일반 URL과 크롤링된 URL 목록 불러오기 (document 제외)
+# 일반 URL과 크롤링된 URL 목록 불러오기 (document 제외, general 먼저)
 @url_load_bp.route('/get-general-crawled-urls/<page_id>', methods=['GET'])
 def get_general_crawled_urls(page_id):
-    """일반 URL과 크롤링된 URL 목록 (general, crawled 타입만)"""
-    general_urls = get_urls_by_type(page_id, 'general')
-    crawled_urls = get_urls_by_type(page_id, 'crawled')
+    """일반 URL과 크롤링된 URL 목록 (general 먼저, 그 다음 crawled 타입)"""
+    all_urls = get_general_crawled_urls_sorted(page_id)
     
-    # 두 리스트 합치기
-    all_urls = general_urls + crawled_urls
+    # 타입별 개수 계산
+    general_count = len([url for url in all_urls if url.get('type') == 'general'])
+    crawled_count = len([url for url in all_urls if url.get('type') == 'crawled'])
     
-    print(f"Firestore에서 가져온 일반+크롤링 URL 목록 ({page_id}): {len(all_urls)}개 (general: {len(general_urls)}, crawled: {len(crawled_urls)})")
+    print(f"Firestore에서 가져온 일반+크롤링 URL 목록 ({page_id}): {len(all_urls)}개 (general: {general_count}, crawled: {crawled_count})")
     return jsonify({"success": True, "urls": all_urls}), 200
