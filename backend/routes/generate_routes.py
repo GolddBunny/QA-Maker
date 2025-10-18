@@ -243,6 +243,8 @@ def update(page_id):
 @generate_bp.route('/update/doc/<page_id>', methods=['POST'])
 def update_doc(page_id):
     """증분 인덱싱"""
+
+    tracker = get_tracker(page_id)
     try:
         base_path, input_path, upload_path = ensure_page_directory(page_id)
         output_path = os.path.join(base_path, 'output')
@@ -311,7 +313,6 @@ def update_doc(page_id):
         # 실행 시간 트래커에 기록
         additional_data = {
             "base_path": base_path,
-            "url_input_path": url_input_path,
             "downloaded_existing": downloaded,
             "operation_type": "index" if not downloaded else "update",
             "uploaded_files_count": len(uploaded_files),
