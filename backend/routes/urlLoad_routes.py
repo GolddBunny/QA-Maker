@@ -121,8 +121,8 @@ def get_urls_by_type(page_id, url_type=None):
             'timestamp': data.get('timestamp')  # 정렬용으로 추가
         })
     
-    # Python에서 timestamp 기준으로 내림차순 정렬
-    urls.sort(key=lambda x: x.get('timestamp') or datetime.min, reverse=True)
+    # Python에서 timestamp 기준으로 오름차순 정렬 (오래된 순)
+    urls.sort(key=lambda x: x.get('timestamp') or datetime.min, reverse=False)
     
     # timestamp 필드 제거 후 반환
     for url in urls:
