@@ -922,13 +922,6 @@ const AdminPage = () => {
               </button>
               <button 
                 className="btn-apply-update"
-                onClick={handleRestartIndexing}
-                disabled={isCheckingOutput}
-              > 
-                Restart Indexing
-              </button>
-              <button 
-                className="btn-apply-update"
                 onClick={handleAnalyzer}
                 disabled={isCheckingOutput}
               > 
@@ -974,7 +967,7 @@ const AdminPage = () => {
               setShowProgressing(false);
               localStorage.removeItem(`showProgressing_${pageId}`);
             }}
-            onAnalyzer={() => navigate('/analyzer')}
+            onAnalyzer={() => navigate(`/dashboard/${pageId}`, { state: { conversionTime } })}
             isCompleted={!isApplyLoading} // 로딩이 끝나면 완료
             stepExecutionTimes={stepExecutionTimes} // 각 단계별 실행시간
             currentStep={currentStep} // 현재 진행 중인 단계

@@ -300,13 +300,24 @@ export const executeUpdatePipeline = async (pageId, onStepComplete) => {
     console.log("2-1. 웹 크롤링 및 구조화 시작...");
     const structStart = Date.now();
     const structuringResult = await crawlAndStructure(pageId);
-    if (!structuringResult.success) throw new Error(`웹 크롤링 및 구조화 실패: ${structuringResult.error}`);
-
-    // 2단계-2: line1 텍스트 정리
-    console.log("2-2. 웹 크롤링 텍스트 line1 정리 시작...");
-    const line1Result = await line1(pageId);
-    if (!line1Result.success) throw new Error(`line1 정리 실패: ${line1Result.error}`);
     
+    if (!structuringResult.success) {
+      throw new Error(`웹 크롤링 및 구조화 실패: ${structuringResult.error}`);
+    }
+    
+    console.log("✅ 웹 크롤링 및 구조화 완료:", structuringResult.results);
+    
+    // 2단계-2: 텍스트 정리 (line1.py) - 비활성화됨
+    // console.log("2-2. 웹 크롤링 텍스트 line1 정리 시작...");
+    // const line1Result = await line1(pageId);
+    // if (!line1Result.success) throw new Error(`line1 정리 실패: ${line1Result.error}`);
+    
+    executionTimes.structuring = structuringResult.execution_time || null;
+    
+    // 실시간 업데이트 콜백 호출
+    if (onStepComplete) {
+      onStepComplete('structuring', executionTimes.structuring);
+    }
 
     // 2단계-3: 문서 다운로더 (document_downloader.py)
     console.log("2-3. 문서 다운로더 시작...");
@@ -316,7 +327,7 @@ export const executeUpdatePipeline = async (pageId, onStepComplete) => {
       throw new Error(`문서 다운로더 실패: ${documentDownloaderResult.error}`);
     }
 
-    console.log("문서 다운로더 완료:", documentDownloaderResult.results);
+    console.log("✅ 문서 다운로더 완료:", documentDownloaderResult.results);
     const structEnd = Date.now();
     executionTimes.structuring = (structEnd - structStart) / 1000;
     if (onStepComplete) onStepComplete('structuring', executionTimes.structuring);
