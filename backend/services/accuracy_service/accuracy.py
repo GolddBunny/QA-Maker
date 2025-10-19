@@ -1,643 +1,294 @@
 import asyncio
+from openai import AsyncOpenAI
 from concurrent.futures import ThreadPoolExecutor
-from sentence_transformers import SentenceTransformer
-import tiktoken
-import re
 import time
-import json
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
-from openai import OpenAI
-import pandas as pd
-import requests
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 import os
+import re
+from typing import List, Tuple, Dict, Any
 from dotenv import load_dotenv
-from graphrag.config.enums import ModelType
-from graphrag.config.models.language_model_config import LanguageModelConfig
-from graphrag.language_model.manager import ModelManager
-from graphrag.query.context_builder.entity_extraction import EntityVectorStoreKey
-from graphrag.query.indexer_adapters import (
-    read_indexer_communities,
-    read_indexer_covariates,
-    read_indexer_entities,
-    read_indexer_relationships,
-    read_indexer_reports,
-    read_indexer_text_units,
-)
-from graphrag.query.question_gen.local_gen import LocalQuestionGen
-from graphrag.query.structured_search.local_search.mixed_context import (
-    LocalSearchMixedContext,
-)
-from graphrag.query.structured_search.local_search.search import LocalSearch
-from graphrag.vector_stores.lancedb import LanceDBVectorStore
-from graphrag.query.structured_search.global_search.community_context import (
-    GlobalCommunityContext,
-)
+import pandas as pd
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
 api_key = os.getenv("GRAPHRAG_API_KEY", "").strip()
-client= OpenAI(api_key=api_key)
+# AsyncOpenAI 클라이언트 초기화
+async_client = AsyncOpenAI(api_key=api_key)
 
-@dataclass
-class QAEvaluation:
-    question: str
-    answer: str
-    contexts: List[str]
-    ground_truth: Optional[str] = None
-
-class LLMEvaluator:
-    """LLM을 사용한 텍스트 평가 클래스"""
+class OptimizedLLMEvaluator:
+    """비동기 및 배치 처리로 최적화된 LLM 평가 클래스"""
     
-    def __init__(self, api_key: str = None, model: str = "gpt-4o-mini"):
+    def __init__(self, model: str = "gpt-4o-mini", max_concurrent: int = 5):
         self.model = model
+        self.max_concurrent = max_concurrent
+        self.semaphore = asyncio.Semaphore(max_concurrent)
     
-    def extract_statements(self, text: str) -> List[str]:
-        """
-        주어진 텍스트에서 사실적 진술(statement)만 뽑아내는 함수
-        - 완전한 정보만 포함하도록 설계
-        - 조언/권유 문장은 제거
-        - LLM 호출 실패 시 간단 문장 분리로 폴백
-        """
-        prompt = f"""
-                다음 텍스트에서 개별적인 사실적 진술들을 추출해주세요.
-                - 각 진술은 하나의 완전한 정보를 담고 있어야 합니다.
-                - 단순한 조언, 권유, 제안의 문장은 포함하지 마세요.
-
-                텍스트: {text}
-
-                결과를 다음 형식으로 반환해주세요:
-                1. [진술1]
-                2. [진술2]
-                3. [진술3]
-                ...
-
-                진술이 없으면 "진술 없음"이라고 답해주세요.
-                """
+    async def _safe_llm_call(self, prompt: str, temperature: float = 0) -> str:
+        """비동기 LLM 호출 with rate limiting"""
+        async with self.semaphore:
+            try:
+                response = await async_client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=temperature
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                print(f"LLM 호출 오류: {e}")
+                return ""
+    
+    async def extract_statements_and_check_support_batch(
+        self, answer: str, contexts: List[str]
+    ) -> Tuple[List[str], List[float]]:
+        """진술 추출과 지원도 체크를 한 번에 처리 (통합 프롬프트)"""
         
-        try:
-            response = client.chat.completions.create(model=self.model, 
-                                                      messages=[{"role": "user", "content": prompt}], 
-                                                      temperature=0)
-            
-            content = response.choices[0].message.content
-            
-            # 번호가 있는 리스트에서 진술 추출
-            statements = []
-            for line in content.split('\n'):
-                line = line.strip()
-                if re.match(r'\d+\.', line):
-                    statement = re.sub(r'^\d+\.\s*', '', line).strip()
-                    if statement and statement != "진술 없음":
-                        statements.append(statement)
-            return statements
-        except Exception as e:
-            print(f"LLM 진술 추출 오류: {e}")
-            return self._fallback_extract_statements(text)
-    
-    def _fallback_extract_statements(self, text: str) -> List[str]:
-        """LLM 호출 실패 시 간단 문장 단위로 진술 추출
-        - 문장 길이 최소 10 이상만 사용
-        - 완벽하지 않지만 최소한의 정보 추출 가능
-        """
-        sentences = re.split(r'[.!?。]', text)
-        return [s.strip() for s in sentences if len(s.strip()) > 10]
-    
-    def check_statement_support(self, statements: str, contexts: List[str]) -> float:
-        """각 진술(statement)이 주어진 context에서 얼마나 뒷받침되는지 평가
-        - 0~1 점수로 반환
-        - 완전 일치/추론 가능/관련 있음/약간 관련/모순 여부로 나누어 점수
-        - LLM 실패 시 SequenceMatcher 기반 폴백
-        """
         contexts_text = "\n".join(contexts)
-        statements_text = "\n".join([f"{i+1}. {s}" for i, s in enumerate(statements)])
-
-        prompt = f"""
-    다음은 여러 개의 Statement와 하나의 Context입니다. 각 Statement가 Context에서 얼마나 뒷받침되는지를 다음 기준에 따라 점수를 0.0~1.0 사이로 매겨주세요.
-
-    Context:
-    {contexts_text}
-
-    Statements:
-    {statements_text}
-
-    판정 기준:
-    - 완전히 동일한 문장이 있거나, 사실적으로 명시되어 있으면 1.0점
-    - 추론을 약간 요구하지만, 뒷받침이 분명하면 0.9점
-    - 관련이 있는 경우 0.8점
-    - 약간 관련은 있지만 불확실하거나 일부 누락된 경우 0.6점
-    - 전혀 언급되지 않았거나 모순되는 경우 0.0점
-
-    - 형식은 반드시 아래 예시처럼 번호와 점수를 한 줄씩 출력해주세요.
-
-    예시 출력:
-    1. 1.0
-    2. 0.9
-    3. 0.6
-    ...
-
-        """
-
-        try:
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-            content = response.choices[0].message.content.strip()
-            print("다중 지원 점수 응답:", content)
-
-            lines = content.splitlines()
-            scores = []
-            for i, line in enumerate(lines):
-                match = re.match(rf"{i+1}\.\s*([01](?:\.\d+)?)", line)
-                if match:
-                    scores.append(float(match.group(1)))
-            # 길이 안 맞는 경우 fallback 고려
-            return scores if len(scores) == len(statements) else [self._fallback_check_support(s, contexts) for s in statements]
         
-        except Exception as e:
-            print(f"LLM 다중 진술 평가 오류: {e}")
-            return [self._fallback_check_support(s, contexts) for s in statements]
-    
-    def _fallback_check_support(self, statement: str, contexts: List[str]) -> bool:
-        """LLM 호출 실패 시, SequenceMatcher 기반으로 간단 점수 계산
-        - ratio를 0~1로 제한
-        - 매우 단순하지만 최소한의 점수 산정 가능
-        """
-        from difflib import SequenceMatcher
-
-        joined_context = " ".join(contexts)
-        ratio = SequenceMatcher(None, statement, joined_context).ratio()
-        return round(min(max(ratio, 0.0), 1.0), 2)
-    
-    def generate_reverse_question(self, answer: str) -> str:
-        """LLM을 사용하여 답변에서 역질문 생성"""
+        # 통합 프롬프트: 진술 추출 + 각 진술의 지원도 평가를 한 번에
         prompt = f"""
-                    다음 답변을 바탕으로 원래 질문이 무엇이었을지 추측하여 질문을 생성해주세요.
+다음 답변에서 사실적 진술을 추출하고, 각 진술이 Context에서 얼마나 뒷받침되는지 평가해주세요.
 
-                    답변: {answer}
+답변: {answer}
 
-                    생성된 질문만 답해주세요. 설명은 불필요합니다.
-                    """
+Context:
+{contexts_text}
+
+작업:
+1. 답변에서 개별적인 사실적 진술들을 추출 (조언/권유 제외)
+2. 각 진술이 Context에서 얼마나 뒷받침되는지 0.0~1.0 점수로 평가
+
+평가 기준:
+- 완전히 동일하거나 명시적으로 뒷받침: 1.0
+- 추론 가능하고 뒷받침 분명: 0.9
+- 관련 있음: 0.8
+- 약간 관련: 0.6
+- 전혀 없음/모순: 0.0
+
+출력 형식 (반드시 준수):
+1. [진술 내용] | [점수]
+2. [진술 내용] | [점수]
+...
+
+진술이 없으면 "진술 없음"
+"""
         
-        try:
-            response = client.chat.completions.create(model=self.model, 
-                                                      messages=[{"role": "user", "content": prompt}], 
-                                                      temperature=0)
-            print("generate reverse question 답변 : ",  response.choices[0].message.content)
-            return response.choices[0].message.content.strip()
-            
-        except Exception as e:
-            print(f"LLM 역질문 생성 오류: {e}")
-            return self._fallback_generate_question(answer)
+        content = await self._safe_llm_call(prompt)
+        
+        # 파싱
+        statements = []
+        scores = []
+        for line in content.split('\n'):
+            line = line.strip()
+            if '|' in line and re.match(r'\d+\.', line):
+                parts = line.split('|')
+                if len(parts) == 2:
+                    statement = re.sub(r'^\d+\.\s*', '', parts[0]).strip()
+                    try:
+                        score = float(parts[1].strip())
+                        statements.append(statement)
+                        scores.append(score)
+                    except:
+                        pass
+        
+        return statements, scores
     
-    def _fallback_generate_question(self, answer: str) -> str:
-        """LLM 실패 시 폴백 질문 생성"""
-        # 간단한 패턴 매칭으로 질문 생성
-        if re.search(r'\d+년', answer):
-            return "언제인가요?"
-        elif re.search(r'\d+학점', answer):
-            return "몇 학점인가요?"
-        elif "위치" in answer or "주소" in answer:
-            return "어디인가요?"
-        else:
-            return "무엇인가요?"
+    async def generate_reverse_question(self, answer: str) -> str:
+        """비동기 역질문 생성"""
+        prompt = f"""
+다음 답변을 바탕으로 원래 질문이 무엇이었을지 추측하여 질문을 생성해주세요.
 
-class AccuracyCalculator:
-    """정확도 계산 메인 클래스"""
+답변: {answer}
+
+생성된 질문만 답해주세요.
+"""
+        return await self._safe_llm_call(prompt)
     
-    def __init__(self, llm_evaluator: LLMEvaluator = None):
-        self.weights = [0.40, 0.35, 0.25]  # faithfulness, relevancy, recall
-        self.metric_names = ['faithfulness', 'answer_relevancy','context_recall']
-        self.llm_evaluator = llm_evaluator or LLMEvaluator()
-        self.vectorizer = TfidfVectorizer()
-        self.model = "gpt-4o-mini"
+    async def extract_key_information(self, question: str) -> List[str]:
+        """비동기 핵심 정보 추출"""
+        prompt = f"""
+다음 질문에서 답변에 필요한 핵심 정보 개념을 추출해주세요.
+
+질문: {question}
+
+규칙:
+- 날짜, 숫자 등 구체적 값 제외
+- 질문에 등장한 개념어 중심
+- 간결하고 일반화된 형태
+
+출력 형식:
+1. [핵심 정보 1]
+2. [핵심 정보 2]
+...
+
+핵심 정보가 없으면 "정보 없음"
+"""
+        content = await self._safe_llm_call(prompt)
+        
+        key_info = []
+        for line in content.split('\n'):
+            line = line.strip()
+            if re.match(r'\d+\.', line):
+                info = re.sub(r'^\d+\.\s*', '', line).strip()
+                if info and info != "정보 없음":
+                    key_info.append(info)
+        
+        return key_info if key_info else ["기본 정보"]
+    
+    async def check_answer_accuracy_batch(
+        self, key_infos: List[str], context: str, answer: str
+    ) -> List[float]:
+        """여러 핵심 정보의 답변 정확도를 배치로 평가"""
+        
+        infos_text = "\n".join([f"{i+1}. {info}" for i, info in enumerate(key_infos)])
+        
+        prompt = f"""
+다음 각 핵심 정보(info)에 대해 context 포함 여부와 answer 반영 여부를 평가해주세요.
+
+핵심 정보 목록:
+{infos_text}
+
+Context: {context}
+Answer: {answer}
+
+평가 기준:
+- Context 포함: 정확(+0.5), 유사(+0.4), 없음(0.0)
+- Answer 반영: 정확(+0.5), 추론가능(+0.4), 유사(+0.3), 없음(0.0)
+
+출력 형식 (각 줄마다):
+1. [context점수], [answer점수]
+2. [context점수], [answer점수]
+...
+
+예: 1. 0.5, 0.4
+"""
+        
+        content = await self._safe_llm_call(prompt)
+        
+        scores = []
+        lines = content.strip().split('\n')
+        for i, line in enumerate(lines):
+            if i >= len(key_infos):
+                break
+            numbers = re.findall(r'\d+\.?\d*', line)
+            if len(numbers) >= 2:
+                total = min(float(numbers[0]) + float(numbers[1]), 1.0)
+                scores.append(round(total, 3))
+        
+        # 부족한 경우 0.0으로 채우기
+        while len(scores) < len(key_infos):
+            scores.append(0.0)
+        
+        return scores
+
+
+class OptimizedAccuracyCalculator:
+    """비동기 처리로 최적화된 정확도 계산 클래스"""
+    
+    def __init__(self):
+        self.weights = [0.40, 0.35, 0.25]
+        self.metric_names = ['faithfulness', 'answer_relevancy', 'context_recall']
+        self.llm_evaluator = OptimizedLLMEvaluator(max_concurrent=5)
         self.embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-
-    def safe_llm_call(self, prompt: str, temperature: float = 0) -> str:
-        """안전한 LLM 호출 메서드 - 누락된 메서드 추가"""
-        try:
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=temperature
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            print(f"LLM 호출 오류: {e}")
-            return ""
-
-    def calculate_faithfulness(self, answer: str, contexts: List[str]) -> float:
-        """신실성 계산: LLM으로 평가, 코드로 계산"""
-        print("신실성 계산 시작")
-        start_time = time.time()
-
+    
+    async def calculate_faithfulness_async(
+        self, answer: str, contexts: List[str]
+    ) -> float:
+        """비동기 신실성 계산"""
         if not answer.strip():
             return 0.0
         
-        # LLM으로 진술 추출
-        statements = self.llm_evaluator.extract_statements(answer)
+        statements, scores = await self.llm_evaluator.extract_statements_and_check_support_batch(
+            answer, contexts
+        )
         
         if not statements:
-            elapsed = time.time() - start_time
-            print(f"신실성 계산 종료: {elapsed:.2f}초")
-            return 1.0  # 진술이 없으면 완벽한 신실성
+            return 1.0
         
-        # LLM으로 각 진술의 지원 여부 확인
-        scores = self.llm_evaluator.check_statement_support(statements, contexts)
-
-        for s, sc in zip(statements, scores):
-            print(f"진술: {s} → 점수: {sc}")
-
         faithfulness = sum(scores) / len(statements)
-        print(f"신실성 점수 (정량): {faithfulness:.3f}")
-        print(f"⏱완료 시간: {time.time() - start_time:.2f}초")
         return round(faithfulness, 3)
     
-    def calculate_relevancy(self, question: str, answer: str) -> float:
-        """답변 관련성 계산: 코드로 계산"""
-
-        print("관련성 계산 시작")
-        start_time = time.time()
-
+    async def calculate_relevancy_async(
+        self, question: str, answer: str
+    ) -> float:
+        """비동기 관련성 계산"""
         if not question.strip() or not answer.strip():
             return 0.0
         
-        # LLM으로 역질문 생성
-        reverse_question = self.llm_evaluator.generate_reverse_question(answer)
+        reverse_question = await self.llm_evaluator.generate_reverse_question(answer)
         
-        # 코사인 유사도 계산은 코드로
+        # 임베딩 계산은 동기적으로 (빠름)
         similarity = self._calculate_cosine_similarity(question, reverse_question)
-        print("similarity 점수: ", similarity)
-        
-        similarity = min(1.0, similarity)
-        elapsed = time.time() - start_time
-        print(f"관련성 계산 완료: {elapsed:.2f}초")
-        return round(similarity, 3)
+        return round(min(1.0, similarity), 3)
     
-    # def calculate_precision(self, contexts: List[str], question: str) -> float:
-    #     """
-    #     Context Precision 계산 (LLM 기반, Batch 처리)
-    #     → 유용한 context(질문과 관련된)의 비율
-    #     """
-    #     import time
-    #     print("📊 Context Precision 계산 시작")
-    #     start_time = time.time()
-
-    #     if not contexts or not question.strip():
-    #         return 0.0
-
-    #     is_useful_list = self._check_contexts_usefulness_batch(contexts, question)
-    #     relevant_count = sum(is_useful_list)
-
-    #     precision = relevant_count / len(contexts)
-    #     elapsed = time.time() - start_time
-    #     print(f"✅ Context Precision 계산 완료: {elapsed:.2f}초")
-    #     print(f"유용한 문서 수: {relevant_count}/{len(contexts)}")
-    #     print("precision 값: ", precision)
-    #     return round(min(precision + 0.5, 1.0), 3)
-    
-    def _check_contexts_usefulness_batch(self, contexts: List[str], question: str) -> List[bool]:
-        """
-        여러 context를 한 번에 평가하여 유용 여부 리스트로 반환
-        """
-        prompt = f"""
-    다음 질문에 대해 각 컨텍스트가 유용한지 판정해주세요.
-
-    질문: "{question}"
-
-    각 컨텍스트마다 "유용함" 또는 "유용하지 않음"으로만 판정해 주세요.
-
-    형식:
-    1. 유용함
-    2. 유용하지 않음
-    ...
-
-    컨텍스트 목록:
-    """
-
-        for i, ctx in enumerate(contexts, start=1):
-            prompt += f"{i}. {ctx}\n"
-
-        try:
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-            content = response.choices[0].message.content.strip()
-            print("LLM 응답 결과:\n", content)
-
-            # 결과 파싱
-            lines = content.splitlines()
-            result_flags = []
-            for line in lines:
-                if "유용함" in line:
-                    result_flags.append(True)
-                elif "유용하지 않음" in line:
-                    result_flags.append(False)
-
-            # fallback: 리스트 길이 안 맞으면 전부 False
-            if len(result_flags) != len(contexts):
-                print("판정 수 불일치, 전부 False 처리")
-                return [False] * len(contexts)
-
-            return result_flags
-
-        except Exception as e:
-            print(f"LLM 배치 판정 오류: {e}")
-            return [self._fallback_check_usefulness(ctx, question) for ctx in contexts]
-    
-    def _fallback_check_usefulness(self, context: str, question: str) -> bool:
-        """LLM 실패 시 폴백 유용성 판정"""
-        question_words = set(re.findall(r'\w+', question.lower()))
-        context_words = set(re.findall(r'\w+', context.lower()))
-        
-        if not context_words:
-            return False
-        
-        # 질문 단어와 컨텍스트 단어의 겹치는 비율 계산
-        overlap = len(question_words.intersection(context_words))
-        relevance_ratio = overlap / len(question_words)
-        
-        # 15% 이상 겹치면 유용한 문서로 간주
-        return relevance_ratio >= 0.15
-    
-
-    def calculate_recall(self, contexts: List[str], answer: str, question: str) -> float:
-        """컨텍스트 재현율 계산: Ground Truth의 정보가 검색된 컨텍스트에 얼마나 포함되어 있는가"""
-        print("recall 계산 시작")
-        start_time = time.time()
-
-        required_info = self._extract_key_information(question)
-
-        if not required_info or not contexts:
-            print("required_info 또는 context 없음")
+    async def calculate_recall_async(
+        self, contexts: List[str], answer: str, question: str
+    ) -> float:
+        """비동기 재현율 계산"""
+        if not contexts:
             return 1.0
-
-        total_score = 0
-        max_score = len(required_info)
         
+        # 핵심 정보 추출
+        required_info = await self.llm_evaluator.extract_key_information(question)
+        
+        if not required_info:
+            return 1.0
+        
+        # 배치로 답변 정확도 평가
         contexts_combined = ' '.join(contexts)
+        scores = await self.llm_evaluator.check_answer_accuracy_batch(
+            required_info, contexts_combined, answer
+        )
         
-        for i, info in enumerate(required_info):
-            print(f"\n--- 핵심 정보 {i+1}: '{info}' 검증 ---")
-            
-            # 단계 2: 핵심 정보가 컨텍스트에 있는지 확인
-            #context_has_info = self._check_info_in_context(info, contexts_combined)
-            #print(f"컨텍스트에 정보 존재: {context_has_info}")
-            
-            # 단계 3: 컨텍스트의 정보가 답변에 제대로 반영되었는지 확인
-            answer_accuracy = self._check_answer_accuracy(info, contexts_combined, answer)
-            print(f"답변 정확도: {answer_accuracy}")
-            
-            total_score += answer_accuracy
-        
-        # 최종 recall 계산
-        recall = total_score / max_score if max_score > 0 else 1.0
-        
-        print(f"\n최종 결과:")
-        print(f"총 점수: {total_score}/{max_score}")
-        print(f"Context Recall: {recall}")
-        
-        elapsed = time.time() - start_time
-        print(f"recall 계산 완료: {elapsed:.2f}초")
-
+        recall = sum(scores) / len(scores) if scores else 1.0
         return round(recall, 3)
     
-    def _check_info_in_context(self, info: str, contexts: str) -> bool:
-        """핵심 정보가 컨텍스트에 있는지 확인"""
-        
-        prompt = f"""
-        다음 핵심 정보가 주어진 컨텍스트에 포함되어 있는지 판단해주세요.
-        
-        핵심 정보: "{info}"
-        컨텍스트: "{contexts}"
-        
-        판단 기준:
-        1. 핵심 정보에 대한 직접적인 답변이 컨텍스트에 있는가?
-        2. 핵심 정보를 추론할 수 있는 내용이 컨텍스트에 있는가?
-        3. 유사한 의미의 표현이 컨텍스트에 있는가?
-        
-        "예" 또는 "아니오"로만 답해주세요.
-        """
-        
-        try:
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-            
-            answer = response.choices[0].message.content.strip().lower()
-            return "예" in answer or "yes" in answer
-            
-        except Exception as e:
-            print(f"컨텍스트 확인 실패: {e}")
-            # 폴백: 키워드 유사도
-            return self._semantic_similarity(info, contexts) > 0.3
-
-    def _check_answer_accuracy(self, info: str, context: str, answer: str) -> float:
-        """
-        핵심 정보(info)가 context에 존재하는지 + context 기반으로 answer가 info를 잘 반영했는지를 GPT로 판단.
-        반환 점수는 0.0 ~ 1.0 사이.
-        1) context 포함 여부: 정확히 포함(+0.5), 유사 포함(+0.4), 미포함(0.0)
-        2) answer 반영 여부: 정확히 반영(+0.5), 추론(+0.4), 유사 표현(+0.3), 미반영(0.0)
-        """
-        prompt = f"""
-    다음 정보(info)가 context에 존재하는지, 그리고 answer에서 잘 반영되었는지 각각 평가해주세요.
-
-    1단계) info가 context에 포함되어 있는지:
-    - 정확히 같은 문장이 있으면: +0.5
-    - 비슷한 의미(유사한 말로 표현)로 있으면: +0.4
-    - 관련이 없거나 없으면: +0.0
-
-    2단계) context 내용 중 info와 관련된 문장이 answer에서 반영되었는지:
-    - 정확히 반영되어 있으면: +0.5
-    - 추론이 가능할 정도로 반영되어 있으면: +0.4
-    - 비슷한 말로 표현되어 있으면: +0.3
-    - 반영 안되었으면: +0.0
-
-    각 단계별 점수를 따로 숫자로만 "0.5, 0.5"처럼 콤마로 구분해서 출력해주세요.
-
-    info: "{info}"
-    context: "{context}"
-    answer: "{answer}"
-    """
-
-        try:
-            response = client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-
-            result = response.choices[0].message.content.strip()
-            import re
-            numbers = re.findall(r'\d+\.?\d*', result)
-            if len(numbers) == 2:
-                score1 = float(numbers[0])
-                score2 = float(numbers[1])
-                return round(min(score1 + score2, 1.0), 3)
-            else:
-                print(f"[경고] GPT 응답에서 점수 2개 못 찾음: {result}")
-                return 0.0
-
-        except Exception as e:
-            print(f"답변 정확도 확인 실패: {e}")
-            # 폴백: 의미적 유사도
-            return self._semantic_similarity(context, answer)
-                
-
-    def _semantic_similarity(self, text1: str, text2: str) -> float:
-        """의미적 유사도 계산 (임베딩 기반)"""
-        
-        try:
-            # 1. OpenAI 임베딩 사용 (추천)
-            embedding1 = self._get_embedding(text1)
-            embedding2 = self._get_embedding(text2)
-            
-            # 코사인 유사도 계산
-            similarity = cosine_similarity([embedding1], [embedding2])[0][0]
-            return float(similarity)
-            
-        except Exception as e:
-            print(f"임베딩 기반 유사도 계산 실패: {e}")
-            # 폴백: TF-IDF 기반 유사도
-            return self._fallback_semantic_similarity(text1, text2)
-
-    def _get_embedding(self, text: str) -> List[float]:
-        """텍스트의 임베딩 벡터 획득"""
-        
-        try:
-            response = client.embeddings.create(
-                model="text-embedding-3-small",  # 또는 "text-embedding-ada-002"
-                input=text
-            )
-            return response.data[0].embedding
-            
-        except Exception as e:
-            print(f"임베딩 생성 실패: {e}")
-            # 폴백: 랜덤 벡터 (실제로는 다른 방법 사용)
-            raise e
-
-    def _fallback_semantic_similarity(self, text1: str, text2: str) -> float:
-        """폴백: TF-IDF 기반 의미적 유사도"""
-        
-        # TF-IDF 벡터화
-        vectorizer = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = vectorizer.fit_transform([text1, text2])
-        
-        # 코사인 유사도 계산
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        return float(similarity)
-
-    def _extract_key_information(self, question: str) -> List[str]:
-        """사용자 질문에서 답변에 필요한 핵심 정보 추출"""
-        
-        prompt = f"""
-        다음 질문에서 '완전한 답변을 위해 필요한 핵심 정보 개념'을 추출해주세요.
-
-        - 날짜, 숫자, 시기 등 구체적인 수치나 값은 제외합니다.
-        - 질문에 직접적으로 등장한 개념어(명사 중심)를 중심으로, 답변을 위해 필요한 주요 정보 항목을 일반화된 형태로 추출합니다.
-        - 정보는 "무엇에 대한 정보인가?"를 기준으로 간결하고 일반화된 형태로 기술해주세요.
-        - 질문에 들어있는 단어만을 추출해야 하며, 설명이나 범주는 포함하지 마세요.
-
-        예시:
-        질문: "한성대학교 컴퓨터공학과 교수진은 몇 명이고, 주요 연구분야는 무엇인가요?"
-        핵심 정보:
-        1. 교수진 인원
-        2. 연구분야
-        3. 컴퓨터공학과
-
-        질문: "파이썬 리스트의 특징과 사용법은 무엇인가요?"
-        핵심 정보:
-        1. 리스트 특징
-        2. 사용법
-        3. 파이썬
-
-        질문: "2023학년 2월 입학생은 몇 년도에 졸업이야?"
-        핵심 정보:
-        1. 입학생
-        2. 졸업
-        3. 년도
-
-        결과는 아래 형식으로 반환해주세요:
-        1. [핵심 정보 1]
-        2. [핵심 정보 2]
-        3. [핵심 정보 3]
-
-        핵심 정보가 없다면 "정보 없음"이라고 답해주세요.
-
-        질문: {question}
-        """
-        
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4.1",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-            
-            content = response.choices[0].message.content
-            print(f"질문에서 추출된 핵심 정보: {content}")
-            
-            # 번호가 있는 리스트에서 핵심 정보 추출
-            key_info = []
-            for line in content.split('\n'):
-                line = line.strip()
-                if re.match(r'\d+\.', line):
-                    info = re.sub(r'^\d+\.\s*', '', line).strip()
-                    if info and info != "정보 없음":
-                        key_info.append(info)
-            
-            return key_info if key_info else ["기본 정보"]
-            
-        except Exception as e:
-            print(f"핵심 정보 추출 실패: {e}")
-            return ["기본 정보"]
-
-    def _fallback_extract_key_info(self, text: str) -> List[str]:
-        """폴백: 간단한 문장 분리"""
-        sentences = re.split(r'[.!?。]', text)
-        return [s.strip() for s in sentences if len(s.strip()) > 10]
-    
     def _calculate_cosine_similarity(self, text1: str, text2: str) -> float:
-        """SBERT 기반 코사인 유사도 계산"""
+        """SBERT 기반 코사인 유사도 (동기)"""
         try:
             emb1 = self.embedding_model.encode(text1, convert_to_tensor=True)
             emb2 = self.embedding_model.encode(text2, convert_to_tensor=True)
-
+            
             emb1_np = emb1.cpu().detach().numpy().reshape(1, -1)
             emb2_np = emb2.cpu().detach().numpy().reshape(1, -1)
-
+            
             similarity = cosine_similarity(emb1_np, emb2_np)[0][0]
             return float(similarity)
         except Exception as e:
-            print(f"[오류] SBERT 유사도 계산 실패: {e}")
+            print(f"유사도 계산 실패: {e}")
             return 0.0
-
-
-    def calculate_accuracy(self, question: str, answer: str, contexts: List[str]) -> Dict[str, Any]:
-        """메인 정확도 계산 함수"""
+    
+    async def calculate_accuracy_async(
+        self, question: str, answer: str, contexts: List[str]
+    ) -> Dict[str, Any]:
+        """비동기 병렬 정확도 계산 - 메인 함수"""
         
-        # 1. 각 메트릭 계산 (LLM 평가 + 코드 계산)
-        faithfulness = self.calculate_faithfulness(answer, contexts)
-        relevancy = self.calculate_relevancy(question, answer)
-        #precision = self.calculate_precision(contexts, question)
-        recall = self.calculate_recall(contexts, answer, question)
+        start_time = time.time()
         
-        # 2. 가중치 적용하여 최종 점수 (순수 코드 계산)
-        #metrics = [faithfulness, relevancy, precision, recall]
-        metrics = [faithfulness, relevancy, recall]
+        # 세 가지 메트릭을 병렬로 계산
+        results = await asyncio.gather(
+            self.calculate_faithfulness_async(answer, contexts),
+            self.calculate_relevancy_async(question, answer),
+            self.calculate_recall_async(contexts, answer, question),
+            return_exceptions=True
+        )
+        
+        # 에러 처리
+        metrics = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                print(f"메트릭 {self.metric_names[i]} 계산 오류: {result}")
+                metrics.append(0.0)
+            else:
+                metrics.append(result)
+        
+        # 가중치 적용
         total_score = sum(w * m for w, m in zip(self.weights, metrics))
         
-        # 3. 등급 판정
+        elapsed = time.time() - start_time
+        print(f"⏱️ 총 계산 시간: {elapsed:.2f}초")
+        
         grade_info = self._get_grade(total_score)
         
-        # 4. 결과 반환
         return {
             'total_accuracy': round(total_score, 3),
             'percentage': round(total_score * 100, 1),
@@ -649,15 +300,11 @@ class AccuracyCalculator:
             'weights': {
                 name: weight for name, weight in zip(self.metric_names, self.weights)
             },
-            'detailed_breakdown': {
-                f"{name} ({weight})": f"{score} × {weight} = {round(score * weight, 3)}"
-                for name, score, weight in zip(self.metric_names, metrics, self.weights)
-            },
-            'metric_names': self.metric_names,
+            'calculation_time': round(elapsed, 2)
         }
     
     def _get_grade(self, total_score: float) -> Dict[str, str]:
-        """등급 판정 (순수 코드)"""
+        """등급 판정"""
         if total_score >= 0.95:
             return {"grade": "A+", "level": "최우수"}
         elif total_score >= 0.85:
@@ -668,6 +315,19 @@ class AccuracyCalculator:
             return {"grade": "C", "level": "기본"}
         else:
             return {"grade": "D", "level": "미흡"}
+
+
+# 사용 예시
+def calculate_accuracy_optimized(question: str, answer: str, contexts: List[str]):
+    """Flask나 ThreadPool 환경에서도 안전하게 비동기 함수 실행"""
+    calculator = OptimizedAccuracyCalculator()
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    result = new_loop.run_until_complete(
+        calculator.calculate_accuracy_async(question, answer, contexts)
+    )
+    new_loop.close()
+    return result
 
 
 def read_csv_as_text_list(file_path: str) -> list[str]:

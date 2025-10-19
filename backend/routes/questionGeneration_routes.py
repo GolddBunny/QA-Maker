@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import tiktoken
 import asyncio
+import threading
+import uuid
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
 from graphrag.config.enums import ModelType
@@ -20,11 +22,10 @@ from graphrag.query.question_gen.local_gen import LocalQuestionGen
 from graphrag.query.structured_search.local_search.mixed_context import LocalSearchMixedContext
 from graphrag.vector_stores.lancedb import LanceDBVectorStore
 
-from routes.query_routes import run_async
 from firebase_config import bucket
 
 # Flask에서 async 작업을 돌리기 위해 ThreadPool 사용
-thread_pool = ThreadPoolExecutor(max_workers=5)
+thread_pool = ThreadPoolExecutor(max_workers=10)
 question_bp = Blueprint('questionGeneration', __name__)
 
 load_dotenv()
@@ -32,6 +33,9 @@ load_dotenv()
 api_key = os.getenv("GRAPHRAG_API_KEY")
 llm_model = "gpt-4o-mini"
 embedding_model = "text-embedding-3-small"
+
+# 스레드 로컬 저장소 (각 스레드마다 독립적인 모델 매니저)
+thread_local = threading.local()
 
 def read_parquet_from_firebase(bucket_path: str) -> pd.DataFrame:
     """
@@ -45,6 +49,71 @@ def read_parquet_from_firebase(bucket_path: str) -> pd.DataFrame:
 
     data = blob.download_as_bytes()  # 바이트 스트림으로 다운로드
     return pd.read_parquet(BytesIO(data))  # 메모리 버퍼로 읽기
+
+def run_async_question_gen(coro):
+    """
+    각 스레드에서 독립적인 이벤트 루프 생성 및 실행
+    기존 루프와의 충돌 방지
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        try:
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        except Exception as e:
+            print(f"루프 정리 중 오류: {e}")
+        finally:
+            loop.close()
+            asyncio.set_event_loop(None)
+
+def create_fresh_models():
+    """
+    매 요청마다 완전히 새로운 모델 생성
+    기존 캐시를 사용하지 않음
+    """
+    import uuid
+    unique_id = str(uuid.uuid4())[:8]  # 고유 ID 생성
+    
+    # 완전히 새로운 ModelManager 인스턴스
+    model_manager = ModelManager()
+    
+    # 챗 모델 구성
+    chat_config = LanguageModelConfig(
+        api_key=api_key,
+        type=ModelType.OpenAIChat,
+        model=llm_model,
+        max_retries=20,
+    )
+    
+    # 고유한 이름으로 새 모델 생성 (캐싱 방지)
+    chat_model = model_manager.get_or_create_chat_model(
+        name=f"question_gen_chat_{unique_id}",
+        model_type=ModelType.OpenAIChat,
+        config=chat_config,
+    )
+
+    # 임베딩 모델 구성
+    embedding_config = LanguageModelConfig(
+        api_key=api_key,
+        type=ModelType.OpenAIEmbedding,
+        model=embedding_model,
+        max_retries=20,
+    )
+    
+    text_embedder = model_manager.get_or_create_embedding_model(
+        name=f"question_gen_embedding_{unique_id}",
+        model_type=ModelType.OpenAIEmbedding,
+        config=embedding_config,
+    )
+    
+    return chat_model, text_embedder
     
 @question_bp.route('/generate-related-questions', methods=['POST', 'OPTIONS'])
 def generate_related_questions():
@@ -56,19 +125,16 @@ def generate_related_questions():
     page_id = data.get("page_id")
     question = data.get("question")
 
-    try:
+    if not page_id or not question:
+        return jsonify({"error": "page_id와 question이 필요합니다"}), 400
+
+    def generate_questions():
+        """별도 스레드에서 질문 생성 실행"""
         # 로컬 경로 설정
         input_dir = f"../data/input/{page_id}/output"
         db_dir = f"{input_dir}/lancedb/default-entity-description.lance"
 
-        firebase_prefix = f"pages/{page_id}/results"
-
-        # entity_df = read_parquet_from_firebase(f"{firebase_prefix}/entities.parquet")
-        # community_df = read_parquet_from_firebase(f"{firebase_prefix}/communities.parquet")
-        # relationship_df = read_parquet_from_firebase(f"{firebase_prefix}/relationships.parquet")
-        # report_df = read_parquet_from_firebase(f"{firebase_prefix}/community_reports.parquet")
-        # text_unit_df = read_parquet_from_firebase(f"{firebase_prefix}/text_units.parquet")
-        # Firebase에서 parquet 읽는 부분 주석 처리하고 로컬 파일 사용
+        # 로컬 파일 사용
         entity_df = pd.read_parquet(f"{input_dir}/entities.parquet")
         community_df = pd.read_parquet(f"{input_dir}/communities.parquet")
         relationship_df = pd.read_parquet(f"{input_dir}/relationships.parquet")
@@ -98,31 +164,8 @@ def generate_related_questions():
         # 토큰 인코더 생성
         token_encoder = tiktoken.encoding_for_model(llm_model)
 
-        # 챗 모델 구성
-        chat_config = LanguageModelConfig(
-            api_key=api_key,
-            type=ModelType.OpenAIChat,
-            model=llm_model,
-            max_retries=20,
-        )
-        chat_model = ModelManager().get_or_create_chat_model(
-            name="local_search",
-            model_type=ModelType.OpenAIChat,
-            config=chat_config,
-        )
-
-        # 임베딩 모델 구성
-        embedding_config = LanguageModelConfig(
-            api_key=api_key,
-            type=ModelType.OpenAIEmbedding,
-            model=embedding_model,
-            max_retries=20,
-        )
-        text_embedder = ModelManager().get_or_create_embedding_model(
-            name="local_search_embedding",
-            model_type=ModelType.OpenAIEmbedding,
-            config=embedding_config,
-        )
+        # 매 요청마다 완전히 새로운 모델 생성
+        chat_model, text_embedder = create_fresh_models()
 
         # 로컬 검색 컨텍스트 빌더 생성
         context_builder = LocalSearchMixedContext(
@@ -191,24 +234,20 @@ def generate_related_questions():
             system_prompt=custom_system_prompt,
         )
 
-        # 실제 질문 생성 실행 함수
-        def run_generation():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(question_generator.generate(
-                    question_history=[question],
-                    context_data=None,
-                    question_count=3
-                ))
-            finally:
-                loop.close()
-        
-        # 스레드에서 질문 생성 실행
-        result = thread_pool.submit(run_generation).result()
+        # 독립적인 이벤트 루프에서 질문 생성 실행
+        result = run_async_question_gen(question_generator.generate(
+            question_history=[question],
+            context_data=None,
+            question_count=3
+        ))
 
-        print("Generated questions:", result.response)
-        return jsonify({"response": result.response})
+        return result.response
+
+    try:
+        # 별도 스레드에서 질문 생성 실행
+        response = thread_pool.submit(generate_questions).result(timeout=60)
+        print("Generated questions:", response)
+        return jsonify({"response": response})
 
     except Exception as e:
         import traceback
