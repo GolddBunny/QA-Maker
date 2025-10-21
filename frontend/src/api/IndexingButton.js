@@ -314,10 +314,10 @@ export const executeUpdatePipeline = async (pageId, onStepComplete) => {
     
     executionTimes.structuring = structuringResult.execution_time || null;
     
-    // 실시간 업데이트 콜백 호출
-    if (onStepComplete) {
-      onStepComplete('structuring', executionTimes.structuring);
-    }
+    // // 실시간 업데이트 콜백 호출
+    // if (onStepComplete) {
+    //   onStepComplete('structuring', executionTimes.structuring);
+    // }
 
     // 2단계-3: 문서 다운로더 (document_downloader.py)
     console.log("2-3. 문서 다운로더 시작...");

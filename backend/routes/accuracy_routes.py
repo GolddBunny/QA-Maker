@@ -4,7 +4,7 @@ import re
 from flask import Blueprint, Flask, request, jsonify
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
-from services.accuracy_service.accuracy import AccuracyCalculator, LLMEvaluator, read_csv_as_text_list
+from services.accuracy_service.accuracy import OptimizedAccuracyCalculator, OptimizedLLMEvaluator, read_csv_as_text_list, calculate_accuracy_optimized
 from dotenv import load_dotenv
 
 # 백엔드 디렉토리 경로 설정
@@ -42,9 +42,7 @@ def calculate_accuracy_api():
 
         def run_accuracy():
             # LLM 평가기와 정확도 계산기 초기화
-            evaluator = LLMEvaluator()
-            calculator = AccuracyCalculator(evaluator)
-            result = calculator.calculate_accuracy(question, answer, contexts)
+            result = calculate_accuracy_optimized(question, answer, contexts)
             return round(result.get("percentage", 0.0), 1)  # 소수점 첫째 자리까지 반올림
 
         percentage = thread_pool.submit(run_accuracy).result()  # 별도 스레드에서 정확도 계산 실행
