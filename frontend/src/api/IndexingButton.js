@@ -1,4 +1,5 @@
-import { startUrlCrawling, crawlAndStructure, line1, documentDownloader } from './UrlApi';
+import { startUrlCrawling, crawlAndStructure, documentDownloader } from './UrlApi';
+// import { line1 } from './UrlApi'; // 비활성화됨 - 내 의도적 제거
 import { processDocuments } from './DocumentApi';
 
 import BASE_URL from "../config/url";  
@@ -87,13 +88,24 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
     console.log("2-1. 웹 크롤링 및 구조화 시작...");
     const structStart = Date.now();
     const structuringResult = await crawlAndStructure(pageId);
-    if (!structuringResult.success) throw new Error(`웹 크롤링 및 구조화 실패: ${structuringResult.error}`);
-
-    // 2단계-2: line1 텍스트 정리
-    console.log("2-2. 웹 크롤링 텍스트 line1 정리 시작...");
-    const line1Result = await line1(pageId);
-    if (!line1Result.success) throw new Error(`line1 정리 실패: ${line1Result.error}`);
     
+    if (!structuringResult.success) {
+      throw new Error(`웹 크롤링 및 구조화 실패: ${structuringResult.error}`);
+    }
+    
+    console.log("✅ 웹 크롤링 및 구조화 완료:", structuringResult.results);
+    
+    // 2단계-2: 텍스트 정리 (line1.py) - 비활성화됨 (내 의도적 제거)
+    // console.log("2-2. 웹 크롤링 텍스트 line1 정리 시작...");
+    // const line1Result = await line1(pageId);
+    // if (!line1Result.success) throw new Error(`line1 정리 실패: ${line1Result.error}`);
+    
+    executionTimes.structuring = structuringResult.execution_time || null;
+    
+    // 실시간 업데이트 콜백 호출
+    if (onStepComplete) {
+      onStepComplete('structuring', executionTimes.structuring);
+    }
 
     // 2단계-3: 문서 다운로더 (document_downloader.py)
     console.log("2-3. 문서 다운로더 시작...");
@@ -103,7 +115,7 @@ export const executeFullPipeline = async (pageId, onStepComplete) => {
       throw new Error(`문서 다운로더 실패: ${documentDownloaderResult.error}`);
     }
 
-    console.log("문서 다운로더 완료:", documentDownloaderResult.results);
+    console.log("✅ 문서 다운로더 완료:", documentDownloaderResult.results);
     const structEnd = Date.now();
     executionTimes.structuring = (structEnd - structStart) / 1000;
     if (onStepComplete) onStepComplete('structuring', executionTimes.structuring);
@@ -190,7 +202,7 @@ export const updateIndexing = async (pageId) => {
   }
 };
 
-//Update Q&A System 버튼 클릭 시 문서 update
+// Update Q&A System 버튼 클릭 시 문서 update (main 브랜치에서 추가된 함수)
 export const updateDocIndexing = async (pageId) => {
   try {
     const response = await fetch(`${UPDATE_URL}/doc/${pageId}`, {
@@ -207,7 +219,7 @@ export const updateDocIndexing = async (pageId) => {
   }
 };
 
-//Update Q&A System 버튼 클릭 시 전체 파이프라인 실행 - 문서 인덱싱 시 updateDocIndexing 함수 실행
+// Update Q&A System 버튼 클릭 시 전체 파이프라인 실행 (main 브랜치에서 추가된 함수)
 export const executeUpdatePipeline = async (pageId, onStepComplete) => {
   try {
     console.log("QA System Update 파이프라인 시작:", pageId);
@@ -288,13 +300,24 @@ export const executeUpdatePipeline = async (pageId, onStepComplete) => {
     console.log("2-1. 웹 크롤링 및 구조화 시작...");
     const structStart = Date.now();
     const structuringResult = await crawlAndStructure(pageId);
-    if (!structuringResult.success) throw new Error(`웹 크롤링 및 구조화 실패: ${structuringResult.error}`);
-
-    // 2단계-2: line1 텍스트 정리
-    console.log("2-2. 웹 크롤링 텍스트 line1 정리 시작...");
-    const line1Result = await line1(pageId);
-    if (!line1Result.success) throw new Error(`line1 정리 실패: ${line1Result.error}`);
     
+    if (!structuringResult.success) {
+      throw new Error(`웹 크롤링 및 구조화 실패: ${structuringResult.error}`);
+    }
+    
+    console.log("✅ 웹 크롤링 및 구조화 완료:", structuringResult.results);
+    
+    // 2단계-2: 텍스트 정리 (line1.py) - 비활성화됨
+    // console.log("2-2. 웹 크롤링 텍스트 line1 정리 시작...");
+    // const line1Result = await line1(pageId);
+    // if (!line1Result.success) throw new Error(`line1 정리 실패: ${line1Result.error}`);
+    
+    executionTimes.structuring = structuringResult.execution_time || null;
+    
+    // // 실시간 업데이트 콜백 호출
+    // if (onStepComplete) {
+    //   onStepComplete('structuring', executionTimes.structuring);
+    // }
 
     // 2단계-3: 문서 다운로더 (document_downloader.py)
     console.log("2-3. 문서 다운로더 시작...");
@@ -304,7 +327,7 @@ export const executeUpdatePipeline = async (pageId, onStepComplete) => {
       throw new Error(`문서 다운로더 실패: ${documentDownloaderResult.error}`);
     }
 
-    console.log("문서 다운로더 완료:", documentDownloaderResult.results);
+    console.log("✅ 문서 다운로더 완료:", documentDownloaderResult.results);
     const structEnd = Date.now();
     executionTimes.structuring = (structEnd - structStart) / 1000;
     if (onStepComplete) onStepComplete('structuring', executionTimes.structuring);
@@ -348,6 +371,72 @@ export const executeUpdatePipeline = async (pageId, onStepComplete) => {
 
   } catch (error) {
     console.error("파이프라인 실행 중 오류 발생:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+// 인덱싱만 재실행하는 함수 (기존 파일들 이용 - 내가 추가한 함수)
+export const executeIndexingOnly = async (pageId, onStepComplete) => {
+  try {
+    console.log("🔄 기존 파일 이용 인덱싱 재시작:", pageId);
+    
+    const executionTimes = {
+      crawling: null,
+      structuring: null,
+      document: null,
+      indexing: null,
+      total: null
+    };
+    const pipelineStartTime = Date.now();
+    
+    // 단계를 indexing으로 설정
+    if (onStepComplete) {
+      onStepComplete('indexing', null);
+    }
+
+    // 4단계: 문서 인덱싱만 실행
+    console.log("4️⃣ 문서 인덱싱 재시작...");
+    const indexingResult = await applyIndexing(pageId);
+    
+    if (!indexingResult.success) {
+      throw new Error(`인덱싱 실패: ${indexingResult.error}`);
+    }
+    
+    console.log("✅ 문서 인덱싱 완료!");
+
+    // 5단계: 웹 증분 인덱싱
+    console.log("5️⃣ 웹 증분 인덱싱 시작...");
+    const updateResult = await updateIndexing(pageId);
+    
+    if (!updateResult.success) {
+      throw new Error(`웹 증분 인덱싱 실패: ${updateResult.error}`);
+    }
+    
+    executionTimes.indexing = indexingResult.execution_time + updateResult.execution_time || null;
+    
+    // 실시간 업데이트 콜백 호출
+    if (onStepComplete) {
+      onStepComplete('indexing', executionTimes.indexing);
+    }
+
+    console.log("✅ 웹 증분 인덱싱 완료!");
+    
+    // 전체 실행시간 계산
+    executionTimes.total = (Date.now() - pipelineStartTime) / 1000;
+
+    return {
+      success: true,
+      execution_times: executionTimes,
+      results: {
+        crawling: null,
+        structuring: null,
+        document: null,
+        indexing: indexingResult,
+      }
+    };
+    
+  } catch (error) {
+    console.error("❌ 인덱싱 재실행 중 오류:", error);
     return { success: false, error: error.message };
   }
 };

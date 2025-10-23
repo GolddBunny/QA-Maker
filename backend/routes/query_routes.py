@@ -1,5 +1,6 @@
 import os
 import subprocess
+import threading
 import pandas as pd
 import tiktoken
 import asyncio
@@ -39,7 +40,8 @@ query_bp = Blueprint('query', __name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data/input"))
 
 # Thread pool 생성 
-thread_pool = ThreadPoolExecutor(max_workers=5)
+thread_pool = ThreadPoolExecutor(max_workers=10)
+thread_local = threading.local()
 
 env_path = Path("../data/parquet/.env")
 load_dotenv(dotenv_path=env_path)
@@ -49,13 +51,69 @@ GRAPHRAG_LLM_MODEL = "gpt-4o-mini"
 GRAPHRAG_EMBEDDING_MODEL = "text-embedding-3-small"
 
 def run_async(coro):
-    """별도 이벤트 루프에서 비동기 코드를 실행"""
+    """
+    각 스레드에서 독립적인 이벤트 루프 생성 및 실행
+    기존 루프와의 충돌 방지
+    """
+    # 새로운 이벤트 루프 생성
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
     try:
         return loop.run_until_complete(coro)
     finally:
-        loop.close()
+        # 루프 정리
+        try:
+            # 모든 pending task 취소
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            # 취소된 task들이 완료될 때까지 대기
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        except Exception as e:
+            print(f"루프 정리 중 오류: {e}")
+        finally:
+            loop.close()
+            # 이벤트 루프 참조 제거
+            asyncio.set_event_loop(None)
+
+def create_fresh_models_for_local_search():
+    """
+    매 요청마다 완전히 새로운 모델 생성
+    기존 캐시를 사용하지 않음
+    """
+    unique_id = str(uuid.uuid4())[:8]
+    
+    model_manager = ModelManager()
+    
+    chat_config = LanguageModelConfig(
+        api_key=GRAPHRAG_API_KEY,
+        type=ModelType.OpenAIChat,
+        model=GRAPHRAG_LLM_MODEL,
+        max_retries=20,
+    )
+    
+    chat_model = model_manager.get_or_create_chat_model(
+        name=f"local_search_chat_{unique_id}",
+        model_type=ModelType.OpenAIChat,
+        config=chat_config,
+    )
+
+    embedding_config = LanguageModelConfig(
+        api_key=GRAPHRAG_API_KEY,
+        type=ModelType.OpenAIEmbedding,
+        model=GRAPHRAG_EMBEDDING_MODEL,
+        max_retries=20,
+    )
+    
+    text_embedder = model_manager.get_or_create_embedding_model(
+        name=f"local_search_embedding_{unique_id}",
+        model_type=ModelType.OpenAIEmbedding,
+        config=embedding_config,
+    )
+    
+    return chat_model, text_embedder
 
 # 로컬 질의 처리 API
 @query_bp.route('/run-local-query', methods=['POST'])
@@ -71,6 +129,7 @@ def run_local_query():
     if not query_text:
         return jsonify({'error': '질문이 제공되지 않았습니다.'}), 400
 
+    # Define input and database paths
     INPUT_DIR = f"../data/input/{page_id}/output"
     LANCEDB_URI = f"{INPUT_DIR}/lancedb"
     COMMUNITY_REPORT_TABLE = "community_reports"
@@ -81,106 +140,106 @@ def run_local_query():
     TEXT_UNIT_TABLE = "text_units"
     COMMUNITY_LEVEL = 2
 
-    # 엔티티, 커뮤니티 데이터 로드
-    entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
-    community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
-    entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
+    def execute_local_search():
+        """별도 스레드에서 로컬 검색 실행"""
+        # 엔티티, 커뮤니티 데이터 로드
+        entity_df = pd.read_parquet(f"{INPUT_DIR}/{ENTITY_TABLE}.parquet")
+        community_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_TABLE}.parquet")
+        entities = read_indexer_entities(entity_df, community_df, COMMUNITY_LEVEL)
 
-    # 설명 벡터를 LanceDB에 로드
-    description_embedding_store = LanceDBVectorStore(
-        collection_name="default-entity-description",
-    )
-    description_embedding_store.connect(db_uri=LANCEDB_URI)
+        # 설명 벡터를 LanceDB에 로드
+        description_embedding_store = LanceDBVectorStore(
+            collection_name="default-entity-description",
+        )
+        description_embedding_store.connect(db_uri=LANCEDB_URI)
 
-    # 관계 데이터 로드
-    relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
-    relationships = read_indexer_relationships(relationship_df)
+        # 관계 데이터 로드
+        relationship_df = pd.read_parquet(f"{INPUT_DIR}/{RELATIONSHIP_TABLE}.parquet")
+        relationships = read_indexer_relationships(relationship_df)
 
-    # 커뮤니티 보고서 데이터 로드
-    report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
-    reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
+        # 커뮤니티 보고서 데이터 로드
+        report_df = pd.read_parquet(f"{INPUT_DIR}/{COMMUNITY_REPORT_TABLE}.parquet")
+        reports = read_indexer_reports(report_df, community_df, COMMUNITY_LEVEL)
 
-    # 텍스트 유닛 데이터 로드
-    text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
-    text_units = read_indexer_text_units(text_unit_df)
+        # 텍스트 유닛 데이터 로드
+        text_unit_df = pd.read_parquet(f"{INPUT_DIR}/{TEXT_UNIT_TABLE}.parquet")
+        text_units = read_indexer_text_units(text_unit_df)
 
-    # LLM 모델 구성
-    api_key = GRAPHRAG_API_KEY
-    llm_model = GRAPHRAG_LLM_MODEL
-    embedding_model = GRAPHRAG_EMBEDDING_MODEL
+        # LLM 모델 구성
+        api_key = GRAPHRAG_API_KEY
+        llm_model = GRAPHRAG_LLM_MODEL
+        embedding_model = GRAPHRAG_EMBEDDING_MODEL
 
-    chat_config = LanguageModelConfig(
-        api_key=api_key,
-        type=ModelType.OpenAIChat,
-        model=llm_model,
-        max_retries=20,
-    )
-    chat_model = ModelManager().get_or_create_chat_model(
-        name="local_search",
-        model_type=ModelType.OpenAIChat,
-        config=chat_config,
-    )
-    token_encoder = tiktoken.encoding_for_model(llm_model)
+        chat_config = LanguageModelConfig(
+            api_key=api_key,
+            type=ModelType.OpenAIChat,
+            model=llm_model,
+            max_retries=20,
+        )
+        chat_model = ModelManager().get_or_create_chat_model(
+            name="local_search",
+            model_type=ModelType.OpenAIChat,
+            config=chat_config,
+        )
+        token_encoder = tiktoken.encoding_for_model(llm_model)
 
-    embedding_config = LanguageModelConfig(
-        api_key=api_key,
-        type=ModelType.OpenAIEmbedding,
-        model=embedding_model,
-        max_retries=20,
-    )
-    text_embedder = ModelManager().get_or_create_embedding_model(
-        name="local_search_embedding",
-        model_type=ModelType.OpenAIEmbedding,
-        config=embedding_config,
-    )
+        embedding_config = LanguageModelConfig(
+            api_key=api_key,
+            type=ModelType.OpenAIEmbedding,
+            model=embedding_model,
+            max_retries=20,
+        )
+        text_embedder = ModelManager().get_or_create_embedding_model(
+            name="local_search_embedding",
+            model_type=ModelType.OpenAIEmbedding,
+            config=embedding_config,
+        )
 
-    # 컨텍스트 빌더 생성 (로컬 검색용)
-    context_builder = LocalSearchMixedContext(
-        community_reports=reports,
-        text_units=text_units,
-        entities=entities,
-        relationships=relationships,
-        # covariates=covariates,
-        entity_text_embeddings=description_embedding_store,
-        embedding_vectorstore_key=EntityVectorStoreKey.ID,
-        text_embedder=text_embedder,
-        token_encoder=token_encoder,
-    )
+        # 컨텍스트 빌더 생성 (로컬 검색용)
+        context_builder = LocalSearchMixedContext(
+            community_reports=reports,
+            text_units=text_units,
+            entities=entities,
+            relationships=relationships,
+            entity_text_embeddings=description_embedding_store,
+            embedding_vectorstore_key=EntityVectorStoreKey.ID,
+            text_embedder=text_embedder,
+            token_encoder=token_encoder,
+        )
 
-    # 로컬 검색 파라미터
-    local_context_params = {
-        "text_unit_prop": 0.5,
-        "community_prop": 0.1,
-        "conversation_history_max_turns": 0,
-        "conversation_history_user_turns_only": True,
-        "top_k_mapped_entities": 15,
-        "top_k_relationships": 15,
-        "include_entity_rank": True,
-        "include_relationship_weight": True,
-        "include_community_rank": False,
-        "return_candidate_context": False,
-        "embedding_vectorstore_key": EntityVectorStoreKey.ID,
-        "max_tokens": 12_000,
-    }
+        # 로컬 검색 파라미터
+        local_context_params = {
+            "text_unit_prop": 0.5,
+            "community_prop": 0.1,
+            "conversation_history_max_turns": 0,
+            "conversation_history_user_turns_only": True,
+            "top_k_mapped_entities": 15,
+            "top_k_relationships": 15,
+            "include_entity_rank": True,
+            "include_relationship_weight": True,
+            "include_community_rank": False,
+            "return_candidate_context": False,
+            "embedding_vectorstore_key": EntityVectorStoreKey.ID,
+            "max_tokens": 12_000,
+        }
 
-    model_params = {
-        "max_tokens": 2_000,
-        "temperature": 0.0,
-    }
+        model_params = {
+            "max_tokens": 2_000,
+            "temperature": 0.0,
+        }
 
-    # 로컬 검색 엔진 생성
-    search_engine = LocalSearch(
-        model=chat_model,
-        context_builder=context_builder,
-        token_encoder=token_encoder,
-        model_params=model_params,
-        context_builder_params=local_context_params,
-        response_type="Multi-Page Report",
-    )
+        # 로컬 검색 엔진 생성
+        search_engine = LocalSearch(
+            model=chat_model,
+            context_builder=context_builder,
+            token_encoder=token_encoder,
+            model_params=model_params,
+            context_builder_params=local_context_params,
+            response_type="Multi-Page Report",
+        )
 
-    try:
-         # 별도 쓰레드에서 async 검색 실행
-        result = thread_pool.submit(run_async, search_engine.search(query_text)).result()
+        # 독립적인 이벤트 루프에서 검색 실행
+        result = run_async(search_engine.search(query_text))
 
         # 결과 데이터프레임 CSV로 저장
         context_files = {}
@@ -204,12 +263,18 @@ def run_local_query():
         # 서브 그래프 생성
         generate_and_save_graph(entities_list, relationships_list, page_id)
 
-        return jsonify({
+        return {
             'response': result.response,
             'context_files': context_files
-        })
+        }
+
+    try:
+        # 별도 스레드에서 검색 실행
+        result = thread_pool.submit(execute_local_search).result(timeout=60)
+        return jsonify(result)
     except Exception as e:
         print(f"Error in run_local_query: {str(e)}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 # 베이직 질의 처리 API

@@ -1,3 +1,5 @@
+# url을 필터링하여 artclView와 jina 크롤링을 수행하는 파일
+
 import os
 import time
 from pathlib import Path
@@ -81,7 +83,7 @@ def cleanup_temp_file(file_path):
     except Exception as e:
         logger.warning(f"임시 파일 삭제 실패: {file_path}, 오류: {e}")
 
-def integrated_crawling(page_id, url_list, output_base_dir=None, verbose=True):
+def integrated_crawling(page_id, url_list, output_base_dir=None, url_breadcrumb_map=None, verbose=True):
     """통합 크롤링 함수
     
     Args:
@@ -150,7 +152,17 @@ def integrated_crawling(page_id, url_list, output_base_dir=None, verbose=True):
             # artclView 크롤러용 저장 경로
             artcl_output_dir = output_base_dir / "artclView_crawling"
             
-            crawler = Crawler(urls=artcl_urls, output_base_dir=str(artcl_output_dir))
+            # 디버깅: breadcrumb 매핑 상태 확인
+            if url_breadcrumb_map:
+                logger.info(f"📍 artclView 크롤러에 breadcrumb 매핑 전달: {len(url_breadcrumb_map)}개")
+                # 샘플 URL 확인
+                sample_artcl_url = artcl_urls[0] if artcl_urls else None
+                if sample_artcl_url and sample_artcl_url in url_breadcrumb_map:
+                    logger.info(f"📋 샘플 매핑: {sample_artcl_url} -> {url_breadcrumb_map[sample_artcl_url]}")
+            else:
+                logger.warning("⚠️ artclView 크롤러에 breadcrumb 매핑이 비어있습니다!")
+            
+            crawler = Crawler(urls=artcl_urls, output_base_dir=str(artcl_output_dir), url_breadcrumb_map=url_breadcrumb_map)
             saved_files, saved_attachments = crawler.crawl_multiple_pages()
 
             results["artcl_results"] = {
@@ -191,6 +203,7 @@ def integrated_crawling(page_id, url_list, output_base_dir=None, verbose=True):
             jina_saved_files = batch_jina_crawling(
                 url_list_file=temp_url_file,
                 output_dir=str(jina_output_dir),
+                url_breadcrumb_map=url_breadcrumb_map,
                 verbose=verbose
             )
             
@@ -243,7 +256,7 @@ def integrated_crawling(page_id, url_list, output_base_dir=None, verbose=True):
     
     return results
 
-def crawl_from_file(url_file_path, page_id, output_base_dir=None,  verbose=True, **kwargs):
+def crawl_from_file(url_file_path, page_id, output_base_dir=None, url_breadcrumb_map=None, verbose=True, **kwargs):
     """파일에서 URL을 읽어 통합 크롤링을 수행하는 편의 함수
     
     Args:
@@ -282,6 +295,7 @@ def crawl_from_file(url_file_path, page_id, output_base_dir=None,  verbose=True,
             page_id=page_id,
             url_list=url_file_path,
             output_base_dir=output_base_dir,
+            url_breadcrumb_map=url_breadcrumb_map,
             verbose=verbose,
             **kwargs
         )

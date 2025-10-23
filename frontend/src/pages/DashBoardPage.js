@@ -419,15 +419,46 @@ const DashboardPage = () => {
         setLoading(true);
         loadedRef.current = true;
 
-        // 1. Firestore URL 실시간 구독
-        const urlsRef = collection(db, "url_list", pageId, "list");
-        const urlQuery = query(urlsRef, orderBy("date", "desc"));
+        // 1. Firestore URL 실시간 구독 (urls 컬렉션 사용, general과 crawled 타입)
+        const urlsRef = collection(db, "urls");
+        const urlQuery = query(
+            urlsRef, 
+            where("page_id", "==", pageId),
+            where("type", "in", ["general", "crawled"])
+        );
         
         const unsubscribeUrls = onSnapshot(urlQuery, (snapshot) => {
             const urlArray = snapshot.docs.map(doc => doc.data());
-            console.log("URL 실시간 업데이트:", urlArray.length);
-            setUploadedUrls(urlArray);
-            setUrlCount(urlArray.length);
+            
+            // 타입별로 분리하여 정렬
+            const generalUrls = urlArray.filter(url => url.type === "general");
+            const crawledUrls = urlArray.filter(url => url.type === "crawled");
+            
+            // 각 타입 내에서 timestamp 기준으로 오름차순 정렬 (오래된 순)
+            generalUrls.sort((a, b) => {
+                const timestampA = a.timestamp?.toDate?.() || new Date(a.date || 0);
+                const timestampB = b.timestamp?.toDate?.() || new Date(b.date || 0);
+                return timestampA - timestampB;
+            });
+            
+            crawledUrls.sort((a, b) => {
+                const timestampA = a.timestamp?.toDate?.() || new Date(a.date || 0);
+                const timestampB = b.timestamp?.toDate?.() || new Date(b.date || 0);
+                return timestampA - timestampB;
+            });
+            
+            // general 타입의 URL들을 Set으로 만들어서 중복 체크용으로 사용
+            const generalUrlSet = new Set(generalUrls.map(url => url.url));
+            
+            // crawled 타입에서 general 타입과 중복되지 않는 URL만 필터링
+            const filteredCrawledUrls = crawledUrls.filter(url => !generalUrlSet.has(url.url));
+            
+            // general 먼저, 그 다음 중복 제거된 crawled 순서로 합치기
+            const sortedUrls = [...generalUrls, ...filteredCrawledUrls];
+            
+            console.log("URL 실시간 업데이트:", sortedUrls.length, `(general: ${generalUrls.length}, crawled: ${crawledUrls.length} -> 필터링된 crawled: ${filteredCrawledUrls.length})`);
+            setUploadedUrls(sortedUrls);
+            setUrlCount(sortedUrls.length);
         }, (error) => {
             console.error("URL Firestore 구독 에러:", error);
         });

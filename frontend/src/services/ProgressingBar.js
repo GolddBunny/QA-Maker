@@ -117,12 +117,18 @@ const ProgressingBar = ({
   useEffect(() => {
     let timeoutId;
     if (isCompleted && currentStep === 'indexing') {
-      setShowAnalyzerButton(false);
-      timeoutId = setTimeout(() => {
-        setProgress(100);
-        setDisplayProgress(100);
-        setShowAnalyzerButton(true);
-      }, 10000);
+      const indexingTime = stepExecutionTimes.indexing || 0;
+      const updateTime = stepExecutionTimes.update || 0;
+      const indexingCompleted = indexingTime + updateTime > 0;
+
+      if (indexingCompleted) {
+        setShowAnalyzerButton(false);
+        timeoutId = setTimeout(() => {
+          setProgress(100);
+          setDisplayProgress(100);
+          setShowAnalyzerButton(true);
+        }, 10000);
+      }
     } else {
       setShowAnalyzerButton(false);
     }
@@ -132,7 +138,7 @@ const ProgressingBar = ({
         clearTimeout(timeoutId);
       }
     };
-  }, [isCompleted, currentStep]);
+  }, [isCompleted, currentStep, stepExecutionTimes]);
 
   // 단계별 상태를 결정하는 함수
   const getStepStatus = (stepName) => {

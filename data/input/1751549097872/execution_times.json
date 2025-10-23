@@ -1,0 +1,80 @@
+{
+  "url_crawling": {
+    "execution_time_seconds": 4,
+    "execution_time_formatted": "4.00초",
+    "timestamp": "2025-07-03T22:25:15.456084",
+    "step_name": "url_crawling",
+    "start_url": "https://hansung.ac.kr/CSE/10766/subview.do?enc=Zm5jdDF8QEB8JTJGYmJzJTJGQ1NFJTJGMTI0OCUyRjI2OTMyNiUyRmFydGNsVmlldy5kbyUzRnBhZ2UlM0QxJTI2c3JjaENvbHVtbiUzRCUyNnNyY2hXcmQlM0QlMjZiYnNDbFNlcSUzRCUyNmJic09wZW5XcmRTZXElM0QlMjZyZ3NCZ25kZVN0ciUzRCUyNnJnc0VuZGRlU3RyJTNEJTI2aXNWaWV3TWluZSUzRGZhbHNlJTI2cGFzc3dvcmQlM0QlMjY%3D",
+    "total_pages_discovered": 9,
+    "total_documents_discovered": 0,
+    "scope_patterns": [
+      "CSE",
+      "10766"
+    ],
+    "saved_pages": 9,
+    "saved_documents": 0
+  },
+  "web_structuring": {
+    "execution_time_seconds": 29,
+    "execution_time_formatted": "29.00초",
+    "timestamp": "2025-07-03T22:25:44.473994",
+    "step_name": "web_structuring",
+    "processed_urls": 9,
+    "result_success": true,
+    "page_id": "1751549097872",
+    "total_success_count": 9,
+    "output_dir": "../data/input/1751549097872_url/input",
+    "artcl_results": {},
+    "jina_results": {
+      "saved_files": [
+        "../data/input/1751549097872_url/input/학부 소식.txt",
+        "../data/input/1751549097872_url/input/학부 소식_1.txt",
+        "../data/input/1751549097872_url/input/학부 소식_2.txt",
+        "../data/input/1751549097872_url/input/학부 소식_3.txt",
+        "../data/input/1751549097872_url/input/학부 소식_4.txt",
+        "../data/input/1751549097872_url/input/학부 소식_5.txt",
+        "../data/input/1751549097872_url/input/학부 소식_6.txt",
+        "../data/input/1751549097872_url/input/학부 소식_7.txt",
+        "../data/input/1751549097872_url/input/학부 소식_8.txt"
+      ],
+      "success_count": 9,
+      "output_dir": "../data/input/1751549097872_url/input"
+    },
+    "execution_time": "0:00:28.926881",
+    "errors": []
+  },
+  "text_cleanup": {
+    "execution_time_seconds": 0,
+    "execution_time_formatted": "0.00초",
+    "timestamp": "2025-07-03T22:25:44.488824",
+    "step_name": "text_cleanup",
+    "input_path": "/Users/jiyoon/Library/Mobile Documents/com~apple~CloudDocs/황금토끼 GraphRAG/2025 캡스톤 프로젝트/domain_qa_system/data/input/1751549097872_url/input",
+    "result_success": true,
+    "processed_files": 9,
+    "processed_folders": {
+      "루트 폴더": 9
+    },
+    "message": "총 9개 파일 처리 완료 (루트 폴더: 9개)"
+  },
+  "document_processing": {
+    "execution_time_seconds": 0,
+    "execution_time_formatted": "0.00초",
+    "timestamp": "2025-07-03T22:25:44.868427",
+    "step_name": "document_processing",
+    "firebase_path": "pages/1751549097872/documents",
+    "input_path": "../data/input/1751549097872/input",
+    "documents_processed": 0
+  },
+  "incremental_indexing": {
+    "execution_time_seconds": 234.57328581809998,
+    "execution_time_formatted": "3분 54.6초",
+    "timestamp": "2025-07-03T22:29:46.604546",
+    "step_name": "incremental_indexing",
+    "base_path": "../data/input/1751549097872",
+    "url_input_path": "../data/input/1751549097872_url/input",
+    "downloaded_existing": false,
+    "operation_type": "index",
+    "uploaded_files_count": 8,
+    "process_returncode": 0
+  }
+}
