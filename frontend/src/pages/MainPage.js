@@ -56,18 +56,18 @@ function MainPage() {
       try {
         // 문서 개수
         const { count: documentCount } = await loadUploadedDocsFromFirestore(currentPageId);
-        setDocCount(documentCount || 0);
+        setDocCount(documentCount.toLocaleString() || 0);
 
         // URL 개수
         const urls = await fetchSavedUrlsApi(currentPageId);
         const urlArray = Array.isArray(urls) ? urls : [];
-        setUrlCount(urlArray.length);
+        setUrlCount(urlArray.length.toLocaleString() || 0);
 
         // 엔티티 개수
         const entitiesResult = await GetEntitiesCount(currentPageId);
         if (entitiesResult.success) {
-          setEntityCount(entitiesResult.totalCount);
-          console.log('엔티티 개수 업데이트:', entitiesResult.totalCount);
+          setEntityCount(entitiesResult.totalCount.toLocaleString());
+          console.log('엔티티 개수 업데이트:', entitiesResult);
         } else {
           console.error('엔티티 개수 가져오기 실패:', entitiesResult.error);
           setEntityCount(0);

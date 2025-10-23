@@ -111,7 +111,7 @@ export const getKnowledgeGraphDateStats = (knowledgeGraphStats, createdDate, tot
             dates[createdDateIndex].relationship += initialRelationships;
         } else {
             // 생성일이 배열에 없으면 추가 (11일 범위를 벗어난 경우)
-            console.log(`생성일 ${createdDateStr}이 최근 11일 범위에 없습니다.`);
+            //console.log(`생성일 ${createdDateStr}이 최근 11일 범위에 없습니다.`);
         }
     }
 

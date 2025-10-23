@@ -62,7 +62,7 @@ def upload_documents(page_id):
 
         # 날짜와 시간을 분리해 저장
         date_only = datetime.now().strftime('%Y-%m-%d')  # 날짜만
-        datetime_full = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # 날짜 + 시간
+        # datetime_full = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # 날짜 + 시간
 
         # 1. Firebase blob 생성
         blob = bucket.blob(upload_path)
@@ -72,7 +72,7 @@ def upload_documents(page_id):
             "original_filename": original_filename,
             "category": "uploaded",  # 기본값
             "date": date_only,  # 날짜만
-            "time": datetime_full  # 날짜 + 시간
+            # "time": datetime_full  # 날짜 + 시간
         }
 
         # 3. 파일 업로드
@@ -87,7 +87,7 @@ def upload_documents(page_id):
             'upload_date': date_only,  # 날짜만
             'category': "uploaded",  # 기본값
             'date': date_only,  # 날짜만
-            'time': datetime_full,  # 날짜 + 시간
+            # 'time': datetime_full,  # 날짜 + 시간
             'size_mb': round(size_mb, 2)  # 크기 정보
         }
 

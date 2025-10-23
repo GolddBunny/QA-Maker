@@ -11,6 +11,7 @@ import { fetchSavedUrls as fetchSavedUrlsApi } from '../api/UrlApi';
 import { loadUploadedDocsFromFirestore } from '../api/UploadedDocsFromFirestore';
 import { loadStepExecutionTimes } from '../services/LoadStepExecutionTimes';
 import { db } from "../firebase/sdk";
+import { getStorage, ref, getMetadata } from 'firebase/storage';
 
 import { 
     fetchKnowledgeGraphStats 
@@ -21,7 +22,8 @@ import {
     getKnowledgeGraphDateStats, 
     getGraphBuildDateStats 
 } from '../components/dashboard/dashboardStats';
-import { doc, getDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+
+import { doc, getDoc, collection, query, where, orderBy, onSnapshot, limit } from "firebase/firestore";
 
 const DashboardPage = () => {
     const navigate = useNavigate();
@@ -59,32 +61,20 @@ const DashboardPage = () => {
         indexing: null,
     });
 
-    // 초 -> 분/초 문자열로 변환
+    // 초 -> 시/분/초 문자열로 변환
     const formatSecondsToMinutes = (seconds) => {
         if (seconds == null) return "정보 없음";
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}분 ${secs}초`;
-    };
 
-    const formatRelativeTime = (timestamp) => {
-        if (!timestamp) return "정보 없음";
-        
-        const now = new Date();
-        const updateTime = new Date(timestamp);
-        const diffInSeconds = Math.floor((now - updateTime) / 1000);
-        
-        if (diffInSeconds < 60) {
-            return "방금 전";
-        } else if (diffInSeconds < 3600) {
-            const minutes = Math.floor(diffInSeconds / 60);
-            return `${minutes}분 전`;
-        } else if (diffInSeconds < 86400) {
-            const hours = Math.floor(diffInSeconds / 3600);
-            return `${hours}시간 전`;
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hrs > 0) {
+            // 1시간 이상일 경우: 초 표시 X
+            return `${hrs}시간 ${mins}분`;
         } else {
-            const days = Math.floor(diffInSeconds / 86400);
-            return `${days}일 전`;
+            // 1시간 미만일 경우: 분/초 표시
+            return `${mins}분 ${secs}초`;
         }
     };
 
@@ -396,6 +386,72 @@ const DashboardPage = () => {
         }
     }, [pageId, setDomainName, setSystemName]);
 
+    // Firebase Storage에서 lastUpdateTime을 가져오는 함수
+    const fetchLastUpdateTime = useCallback(async () => {
+        try {
+            console.log("=== fetchLastUpdateTime 시작 ===");
+            console.log("현재 pageId:", pageId);
+            
+            // Storage 참조 생성
+            const storage = getStorage();
+            const fileRef = ref(storage, `pages/${pageId}/results/entities.parquet`);
+            
+            console.log("파일 경로:", `pages/${pageId}/results/entities.parquet`);
+            
+            // 파일 메타데이터 가져오기
+            const metadata = await getMetadata(fileRef);
+            
+            console.log("파일 메타데이터:", metadata);
+            console.log("업데이트 시간:", metadata.updated);
+            
+            if (metadata.updated) {
+                // updated는 ISO 8601 문자열 형태
+                const date = new Date(metadata.updated);
+                
+                if (date && !isNaN(date.getTime())) {
+                    setLastUpdateTime(date);
+                    console.log("lastUpdateTime 설정 완료:", date);
+                } else {
+                    console.error("유효하지 않은 날짜:", metadata.updated);
+                }
+            } else {
+                console.warn("updated 필드가 없습니다");
+            }
+            
+        } catch (error) {
+            console.error("lastUpdateTime 가져오기 실패:", error);
+            console.error("에러 코드:", error.code);
+            
+            // 파일이 없는 경우 처리
+            if (error.code === 'storage/object-not-found') {
+                console.warn("entities.parquet 파일이 존재하지 않습니다");
+                setLastUpdateTime(null);
+            }
+        }
+    }, [pageId]);
+
+
+    const formatRelativeTime = (timestamp) => {
+        if (!timestamp) return "정보 없음";
+        
+        const now = new Date();
+        const updateTime = new Date(timestamp);
+        const diffInSeconds = Math.floor((now - updateTime) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return "방금 전";
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes}분 전`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours}시간 전`;
+        } else {
+            const days = Math.floor(diffInSeconds / 86400);
+            return `${days}일 전`;
+        }
+    };
+
     // 초기 데이터 로드 및 Firestore 실시간 구독
     useEffect(() => {
         if (loadedRef.current) return;
@@ -477,10 +533,10 @@ const DashboardPage = () => {
             setUploadedDocs(docArray);
             setDocCount(docArray.length);
 
-            if (docArray.length > 0 && docArray[0].time) {
-                console.log("마지막 업데이트 시간 설정:", docArray[0].time);
-                setLastUpdateTime(docArray[0].time);
-            }
+            // if (docArray.length > 0 && docArray[0].time) {
+            //     console.log("마지막 업데이트 시간 설정:", docArray[0].time);
+            //     setLastUpdateTime(docArray[0].time);
+            // }
         }, (error) => {
             console.error("문서 Firestore 구독 에러:", error);
         });
@@ -499,7 +555,8 @@ const DashboardPage = () => {
                     loadRelationships(pageId),
                     loadGraphData(pageId),
                     fetchKnowledgeGraphStats(pageId, setKnowledgeGraphStats),
-                    loadPageInfo()
+                    loadPageInfo(),
+                    fetchLastUpdateTime()
                 ]);
                 console.log("모든 데이터 로드 완료");
             } catch (error) {
@@ -518,7 +575,7 @@ const DashboardPage = () => {
             unsubscribeDocs();
             loadedRef.current = false;
         };
-    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, loadPageInfo, location.state]);
+    }, [pageId, navigate, loadEntities, loadRelationships, loadGraphData, loadPageInfo, fetchLastUpdateTime, location.state]);
 
     return (
         <div className={`dashboard-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -531,7 +588,7 @@ const DashboardPage = () => {
                         <div className="stat-header">
                             <span className="stat-icon">📅</span>
                         </div>
-                        <div className="stat-number">{createdDate || ""}</div>
+                        <div className="stat-number">{createdDate || "정보 없음"}</div>
                         <div className="stat-label">생성된 날짜</div>
                     </div>
                     <div className="stat-card url-card">
@@ -539,7 +596,7 @@ const DashboardPage = () => {
                             <span className="stat-icon">🌐</span>
                             {/* <span className="stat-change positive">+1</span> */}
                         </div>
-                        <div className="stat-number">{urlCount}</div>
+                        <div className="stat-number">{urlCount.toLocaleString()}</div>
                         <div className="stat-label">등록된 URL</div>
                     </div>
                     
@@ -547,7 +604,7 @@ const DashboardPage = () => {
                         <div className="stat-header">
                             <span className="stat-icon">📄</span>
                         </div>
-                        <div className="stat-number">{docCount}</div>
+                        <div className="stat-number">{docCount.toLocaleString()}</div>
                         <div className="stat-label">수집된 문서</div>
                     </div>
                     
@@ -555,7 +612,7 @@ const DashboardPage = () => {
                         <div className="stat-header">
                             <span className="stat-icon">🔗</span>
                         </div>
-                        <div className="stat-number">{filteredEntities.length}</div>
+                        <div className="stat-number">{filteredEntities.length.toLocaleString()}</div>
                         <div className="stat-label">추출된 엔티티</div>
                     </div>
                     
@@ -563,7 +620,7 @@ const DashboardPage = () => {
                         <div className="stat-header">
                             <span className="stat-icon">⚡</span>
                         </div>
-                        <div className="stat-number">{filteredRelationships.length}</div>
+                        <div className="stat-number">{filteredRelationships.length.toLocaleString()}</div>
                         <div className="stat-label">구축된 관계</div>
                     </div>
                     
@@ -626,7 +683,7 @@ const DashboardPage = () => {
                                     />
                                 </div> */}
                                 <div className="entity-count">
-                                {`총 URL 수: ${urlCount}`}
+                                {`총 URL 수: ${urlCount.toLocaleString()}`}
                                 </div>
                             </div>
                     </div>
@@ -683,7 +740,7 @@ const DashboardPage = () => {
                                 />
                             </div> */}
                             <div className="entity-count">
-                                {`총 문서 수: ${docCount}`}
+                                {`총 문서 수: ${docCount.toLocaleString()}`}
                             </div>
                         </div>
                     </div>
@@ -767,8 +824,8 @@ const DashboardPage = () => {
                                 </div>
                                 <div className="entity-count">
                                     {activeTab === "entity"
-                                        ? `총 엔티티 수: ${filteredEntities.length}`
-                                        : `총 관계 수: ${filteredRelationships.length}`}
+                                        ? `총 엔티티 수: ${filteredEntities.length.toLocaleString()}`
+                                        : `총 관계 수: ${filteredRelationships.length.toLocaleString()}`}
                                 </div>
                             </div>
                         </div>
@@ -933,11 +990,11 @@ const DashboardPage = () => {
                                 <div className="chart-stats">
                                     <div className="stat-item">
                                         <span className="stat-label">총 URL</span>
-                                        <span className="stat-value">{urlCount}개</span>
+                                        <span className="stat-value">{urlCount.toLocaleString()}개</span>
                                     </div>
                                     <div className="stat-item">
                                         <span className="stat-label">총 문서</span>
-                                        <span className="stat-value">{docCount}개</span>
+                                        <span className="stat-value">{docCount.toLocaleString()}개</span>
                                     </div>
                                 </div>
                             </div>
@@ -970,7 +1027,7 @@ const DashboardPage = () => {
                                                     <div 
                                                         className="bar entity-bar" 
                                                         style={{height: `${(item.entity / knowledgeGraphMaxValue) * 80}%`}}
-                                                        title={`엔티티: ${item.entity}개`}
+                                                        title={`엔티티: ${item.entity.toLocaleString()}개`}
                                                         data-count={item.entity}
                                                     >
                                                         <span className="bar-tooltip">엔티티: {item.entity}개</span>
@@ -994,11 +1051,11 @@ const DashboardPage = () => {
                                 <div className="chart-stats">
                                     <div className="stat-item">
                                         <span className="stat-label">총 엔티티</span>
-                                        <span className="stat-value">{entities.length}개</span>
+                                        <span className="stat-value">{entities.length.toLocaleString()}개</span>
                                     </div>
                                     <div className="stat-item">
                                         <span className="stat-label">총 관계</span>
-                                        <span className="stat-value">{relationships.length}개</span>
+                                        <span className="stat-value">{relationships.length.toLocaleString()}개</span>
                                     </div>
                                 </div>
                             </div>
