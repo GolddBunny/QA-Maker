@@ -48,18 +48,18 @@ const ProgressingBar = ({
           }
           // 10% 확률로 빠른 진행
           else if (randomAction < 0.6) {
-            const fastIncrement = Math.floor(Math.random() * 4) + 1; // 1~4% 증가
+            const fastIncrement = Math.floor(Math.random() * 5) + 1; // 1~4% 증가
             return Math.min(prev + fastIncrement, config.max);
           }
           // 40% 확률로 일반 진행
           else {
-            const normalIncrement = Math.floor(Math.random() * 2) + 1; // 1~2% 증가
+            const normalIncrement = Math.floor(Math.random() * 3) + 1; // 1~2% 증가
             return Math.min(prev + normalIncrement, config.max);
           }
         });
 
         // 다음 업데이트까지의 랜덤 시간 설정 (4000ms ~ 12000ms)
-        const nextDelay = Math.floor(Math.random() * 8000) + 4000;
+        const nextDelay = Math.floor(Math.random() * 3000) + 1000;
         
         setTimeout(() => {
           updateProgress();
@@ -104,7 +104,7 @@ const ProgressingBar = ({
         const increment = diff > 0 ? Math.ceil(diff / 10) : Math.floor(diff / 10);
         return prev + increment;
       });
-    }, 100); // 더 느린 애니메이션을 위해 간격 늘림
+    }, 50); // 더 느린 애니메이션을 위해 간격 늘림
 
     return () => {
       if (displayIntervalRef.current) {

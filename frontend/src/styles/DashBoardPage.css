@@ -860,7 +860,7 @@
 .knowledge-graph-container {
     background-color: white;
     padding: 1rem;
-    max-height: 400px;
+    max-height: 500px;
     display: flex;
     align-items: center;
     justify-content: center;

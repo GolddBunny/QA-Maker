@@ -9,6 +9,7 @@ import { useQAHistoryContext } from "../utils/QAHistoryContext";
 import Sidebar from "../components/navigation/Sidebar";
 import Modal from '../components/modal/Modal';
 import BASE_URL from "../config/url";  
+import answerGraph from "../json/answer_graphml_data.json";
 
 function ChatPage() {
     const { currentPageId, setCurrentPageId } = usePageContext();
@@ -686,12 +687,7 @@ function ChatPage() {
             setIsLoading(true);
             console.log("그래프 데이터 로딩 시작 (최신 질의응답 기준)");
 
-            // 동적으로 그래프 데이터 로드
-            const response = await fetch(`/json/${currentPageId}/admin_graphml_data.json`);
-            if (!response.ok) {
-                throw new Error(`그래프 데이터를 찾을 수 없습니다 (${response.status})`);
-            }
-            const jsonData = await response.json();
+            const jsonData = answerGraph;
 
             console.log("그래프 데이터 로드 성공:", jsonData);
 
