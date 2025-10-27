@@ -911,3 +911,10 @@ p.loading .bouncing-text {
   transform: none;
   box-shadow: 0 2px 4px rgba(156, 163, 175, 0.3);
 }
+
+.tooltip {
+  position: absolute;
+  z-index: 9999 !important;
+  pointer-events: none;
+  white-space: pre-line;
+}
