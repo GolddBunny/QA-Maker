@@ -9,6 +9,8 @@
 &nbsp;&nbsp;3) 변경사항을 적용하고 명확한 커밋 메시지로 커밋해주세요 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;**- PR 제목 형식**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Conventional Commit](https://www.conventionalcommits.org/) 규칙을 따릅니다.<br>
+&nbsp;&nbsp;<img width="800" height="601" alt="스크린샷 2025-11-01 오후 8 20 32" src="https://github.com/user-attachments/assets/a0d9c42b-2904-4795-9984-c06306b20a8e" />
+
 &nbsp;&nbsp;&nbsp;&nbsp;**- PR 설명 작성**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;주요 변경사항을 설명해주세요<br><br>
 &nbsp;&nbsp;4) 브랜치를 자신의 fork에 push 해주세요: <br>
