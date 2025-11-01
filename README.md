@@ -13,7 +13,7 @@
 QA Maker 실행하기 위해서는 아래 문서를 참고해주세요: <br>
 **Execute**: <a href="EXEC_KO.md">KO</a> | <a href="EXEC_EN.md">EN</a> <br>
 **Contribute**: <a href="CONTRIBUTING.md">Contribute</a> <br>
-**License**: <a href="LICENSE.md">License</a> | <a href=LICENSE_3rd.md">Third Party</a> <br>
+**License**: <a href="LICENSE.md">License</a> | <a href="LICENSE_3rd.md">Third Party</a> <br>
 
 ## 📝 작품 소개
 ### 1. 개발 배경
