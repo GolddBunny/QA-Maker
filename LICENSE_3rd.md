@@ -1,5 +1,5 @@
 # License of 3rd party libraries
-QA Maker는 AGPL v3.0 라이선스를 따릅니다.
+QA Maker는 AGPL v3.0 라이선스를 따릅니다. <br>
 그러나, QA Maker에 사용된 일부 서드파티 라이브러리들은 각 라이브러리별 고유 라이선스를 적용받으며, 세부 내역은 아래와 같습니다.
 
 ---
