@@ -9,7 +9,15 @@
 &nbsp;&nbsp;3) 변경사항을 적용하고 명확한 커밋 메시지로 커밋해주세요 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;**- PR 제목 형식**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Conventional Commit](https://www.conventionalcommits.org/) 규칙을 따릅니다.<br>
-&nbsp;&nbsp;<img width="800" height="601" alt="스크린샷 2025-11-01 오후 8 20 32" src="https://github.com/user-attachments/assets/a0d9c42b-2904-4795-9984-c06306b20a8e" />
+| **타입** | **의미** | **사용 시점** |
+| --- | --- | --- |
+| **feat** | 새로운 기능 추가 (feature) | 앱이나 모듈에 새로운 동작, 클래스, API, 옵션 등을 추가할 때  |
+| **fix** | 버그 수정  | 기존 코드에서 잘못된 동작, 에러, 예외 등을 수정했을 때  |
+| **docs** | 문서 수정  | README, 주석, 문서화, API 문서 등을 고쳤을 때 (코드 로직에 영향 없음)  |
+| **style** | 코드 스타일 변경  | 공백, 들여쓰기, 세미콜론, 변수명 통일 등 **로직에 영향 없는 형식 수정** |
+| **refactor** | 리팩토링 (동작 변화 없음)  | 코드 구조나 로직을 개선했지만 기능은 그대로일 때  |
+| **test** | 테스트 코드 관련  | 테스트 코드 추가, 수정, 제거 등 (프로덕션 코드 영향 없음)  |
+| **chore** | 기타 잡무  | 빌드 스크립트, 설정 파일, 의존성 업데이트 등  |
 
 &nbsp;&nbsp;&nbsp;&nbsp;**- PR 설명 작성**<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;주요 변경사항을 설명해주세요<br><br>
